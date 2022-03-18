@@ -44,13 +44,15 @@
     </div>
 
 
-    <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.min.js"></script>
+
+    <!-- <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script> -->
     <!-- <script src="./ace.js"></script> -->
     <script src="./build/editor.js"></script>
 
     <script>
 
-        const langTools = ace.require("ace/ext/language_tools");
         const Range = ace.require('ace/range').Range;
         
         let modes = ['html', 'css', 'javascript'];
@@ -66,7 +68,7 @@
             editor.setOptions({
                 enableBasicAutocompletion: true,
                 enableSnippets: true,
-                enableLiveAutocompletion: false,
+                enableLiveAutocompletion: true,
                 // enableEmmet: true              
             });
             
@@ -102,6 +104,10 @@
 
         });
         
+        // const langTools = ace.require("ace/ext/language_tools");
+        // const langTools = ace.require("ext-language_tools.min");
+        // const Autocomplete = ace.require("ace/autocomplete");
+
     </script>
 </body>
 
