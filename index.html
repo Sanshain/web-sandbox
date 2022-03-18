@@ -7,29 +7,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style>
+        body{
+            margin: 0;
+            padding: 0;
+        }
 
         .md_container{
             display: flex;
             flex-direction: row;
             justify-content: space-evenly;     
             flex-wrap: wrap;
+            background-color: gray;
         }        
 
         .editor, .view {
             /* display: inline-block; */
-
-            /* position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0; */
             margin-top: 1em;
-            width: 45vw;
+            width: calc(50vw - 1em);;
             height: 45vh;
         }
 
         .view{
             border: 1px gray solid;
+            margin-top: .7em;            
+            left: -2px;
+            position: relative;            
+            background-color: #fff;
         }
     </style>
 </head>
@@ -50,63 +53,65 @@
     <!-- <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script> -->
     <!-- <script src="./ace.js"></script> -->
     <script src="./build/editor.js"></script>
+    <script src="./source/ace_initialize.js"></script>
 
     <script>
 
-        const Range = ace.require('ace/range').Range;
-        
-        let modes = ['html', 'css', 'javascript'];
+        let editors = initializeEditor(ace, ['html', 'css', 'javascript'])
+    
+        function createHtml({body, style, script}) {
 
-        [].slice.call(document.querySelectorAll('.editor')).forEach((element, i) => {            
+            console.log(arguments);
+
+            const htmlStruct = {
+                html: {
+                    head: {
+                        style,
+                        script
+                    },
+                    body
+                }
+            }
+
+            function nodeCreate(nodeStruct) {
+                
+                let html = '';
+                for (const key in nodeStruct) {
+
+                    let content = typeof nodeStruct[key] === typeof nodeStruct 
+                        ? nodeCreate(nodeStruct[key]) 
+                        : nodeStruct[key];
+
+                    html += '<' + key + '>' + content + '</' + key + '>';
+
+                }
+                return html;
+            }
+
+            return nodeCreate(htmlStruct);
+
+        }
+
+        function createPage(prevUrl) {
             
-            var editor = ace.edit(element.id);
-            editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/" + modes[i]);
+            let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = editors[i].getValue()), acc), {}));
 
-            // editor.commands.bindKey("Tab", null)                    
-
-            editor.setOptions({
-                enableBasicAutocompletion: true,
-                enableSnippets: true,
-                enableLiveAutocompletion: true,
-                // enableEmmet: true              
-            });
+            let file = new Blob([html], { type: 'text/html' });
             
-            (i === 0) && editor.commands.addCommand({
-                name: "extend",
-                exec: function () {
-                    let cursor = editor.getCursorPosition();
-                    let row = cursor.row;
-                    if (cursor.column == editor.session.getLine(row).length){
-                        
-                        let line = editor.session.getLine(row);
-                        
-                        let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
-                        let endChar = cursor.column;
-                        let range = new Range(row, startChar, row, endChar);                        
+            prevUrl && URL.revokeObjectURL(prevUrl);
+            let url = URL.createObjectURL(file);
 
-                        let textRange = line.slice(startChar, endChar);
-                        let code = extend(textRange)
-                        // let text = editor.session.getValue();
-                        editor.session.replace(range, code)                           
-                                                
-                        editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#')) 
-                            ? startChar + code.length - textRange.length - 3 
-                            : startChar + code.length - 6
-                        )
+            let view = document.querySelector('.view');
+            view.innerHTML = '';
 
-                        return;
-                    }          
-                    editor.indent();          
-                },
-                bindKey: { win: 'Tab' }
-            })
+            let frame = document.createElement('iframe');
+            frame.src = url;                        
+            view.appendChild(frame)
 
-        });
-        
-        // const langTools = ace.require("ace/ext/language_tools");
-        // const langTools = ace.require("ext-language_tools.min");
-        // const Autocomplete = ace.require("ace/autocomplete");
+            return [url]
+        }
+
+        let curUrl = createPage()
 
     </script>
 </body>

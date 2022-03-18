@@ -4,7 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 // import typescript from '@rollup/plugin-typescript';
 
 module.exports = {
-    input: './source/editor.js',    
+    input: './source/em_initialize.js',
     output: {
         file: './build/editor.js',
         format: 'iife',
