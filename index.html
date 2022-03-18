@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+
+        .md_container{
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;     
+            flex-wrap: wrap;
+        }        
+
+        .editor, .view {
+            /* display: inline-block; */
+
+            /* position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0; */
+            margin-top: 1em;
+            width: 45vw;
+            height: 45vh;
+        }
+
+        .view{
+            border: 1px gray solid;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="md_container">
+        <div class="editor" id="htmleditor"></div>
+        <div class="editor" id="csseditor"></div>
+        <div class="editor" id="jseditor"></div>
+        <div class="view"></div>
+    </div>
+
+
+    <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script>
+    <!-- <script src="./ace.js"></script> -->
+    <script src="./build/editor.js"></script>
+
+    <script>
+
+        const langTools = ace.require("ace/ext/language_tools");
+        const Range = ace.require('ace/range').Range;
+        
+        let modes = ['html', 'css', 'javascript'];
+
+        [].slice.call(document.querySelectorAll('.editor')).forEach((element, i) => {            
+            
+            var editor = ace.edit(element.id);
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/" + modes[i]);
+
+            // editor.commands.bindKey("Tab", null)                    
+
+            editor.setOptions({
+                enableBasicAutocompletion: true,
+                enableSnippets: true,
+                enableLiveAutocompletion: false,
+                // enableEmmet: true              
+            });
+            
+            (i === 0) && editor.commands.addCommand({
+                name: "extend",
+                exec: function () {
+                    let cursor = editor.getCursorPosition();
+                    let row = cursor.row;
+                    if (cursor.column == editor.session.getLine(row).length){
+                        
+                        let line = editor.session.getLine(row);
+                        
+                        let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
+                        let endChar = cursor.column;
+                        let range = new Range(row, startChar, row, endChar);                        
+
+                        let textRange = line.slice(startChar, endChar);
+                        let code = extend(textRange)
+                        // let text = editor.session.getValue();
+                        editor.session.replace(range, code)                           
+                                                
+                        editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#')) 
+                            ? startChar + code.length - textRange.length - 3 
+                            : startChar + code.length - 6
+                        )
+
+                        return;
+                    }          
+                    editor.indent();          
+                },
+                bindKey: { win: 'Tab' }
+            })
+
+        });
+        
+    </script>
+</body>
+
+</html>
