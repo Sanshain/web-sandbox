@@ -13,6 +13,8 @@
         }
 
         .md_container{
+            position: relative;
+
             display: flex;
             flex-direction: row;
             justify-content: space-evenly;     
@@ -34,6 +36,25 @@
             position: relative;            
             background-color: #fff;
         }
+
+        .play{
+            cursor: pointer;
+            position: absolute;
+            bottom: 1em;
+            right: 2em;
+            width: 2em;
+            height: 2em;
+            background-color: #dfeefb;
+            clip-path: polygon(0 0, 0 100%, 100% 50%);        
+            transition: .5s;
+            border-radius: 1em;
+        }
+
+        .play:hover{
+            border-radius: 0;
+            /* background-color: #b7d9f7;     */
+            /* background-color: cadetblue; */
+        }
     </style>
 </head>
 
@@ -43,7 +64,8 @@
         <div class="editor" id="htmleditor"></div>
         <div class="editor" id="csseditor"></div>
         <div class="editor" id="jseditor"></div>
-        <div class="view"></div>
+        <div class="view"></div>        
+        <div class="play" onclick="webplay()"></div>
     </div>
 
 
@@ -56,6 +78,14 @@
     <script src="./source/ace_initialize.js"></script>
 
     <script>
+
+
+        function webplay(event) {
+
+            curUrl = createPage(curUrl);
+        }
+
+
 
         let editors = initializeEditor(ace, ['html', 'css', 'javascript'])
     
