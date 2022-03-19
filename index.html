@@ -55,6 +55,23 @@
             /* background-color: #b7d9f7;     */
             /* background-color: cadetblue; */
         }
+
+        iframe{
+            height: 100%;
+            width: 100%;
+            border: none;            
+        }
+
+        .ace_tooltip{
+            font-family: monospace, Arial;
+            color: #444;
+            opacity: 0.95;      
+            border: none;      
+        }
+        .ace_tooltip>b{
+            color: black;            
+            font-family: Arial;
+        }
     </style>
 </head>
 
@@ -64,8 +81,9 @@
         <div class="editor" id="htmleditor"></div>
         <div class="editor" id="csseditor"></div>
         <div class="editor" id="jseditor"></div>
-        <div class="view"></div>        
-        <div class="play" onclick="webplay()"></div>
+        <div class="view"></div>     
+
+        <div class="play"></div>
     </div>
 
 
@@ -74,74 +92,85 @@
 
     <!-- <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script> -->
     <!-- <script src="./ace.js"></script> -->
-    <script src="./build/editor.js"></script>
-    <script src="./source/ace_initialize.js"></script>
+
+    <!-- <script src="./build/editor.js"></script> -->
+    <!-- <script src="./source/ace_initialize.js"></script> -->
+
+    <script src="./build/page_builder.js"></script>
 
     <script>
 
+        // document.querySelector('.play').addEventListener('click', webplay);
 
-        function webplay(event) {
+        // function webplay(event) {
 
-            curUrl = createPage(curUrl);
-        }
+        //     // [iframe, curUrl] = createPage(curUrl);
+        //     console.log(iframe);
+
+        //     iframe.contentDocument.body.innerHTML = editors[0].getValue()
+        //     iframe.contentDocument.head.querySelector('style').innerText = editors[1].getValue()
+            
+        //     iframe.contentDocument.head.querySelector('script').innerText = editors[2].getValue()            
+        // }
 
 
 
-        let editors = initializeEditor(ace, ['html', 'css', 'javascript'])
+        // let editors = initializeEditor(ace, ['html', 'css', 'javascript'])
     
-        function createHtml({body, style, script}) {
+        // function createHtml({body, style, script}) {
 
-            console.log(arguments);
+        //     console.log(arguments);
 
-            const htmlStruct = {
-                html: {
-                    head: {
-                        style,
-                        script
-                    },
-                    body
-                }
-            }
+        //     const htmlStruct = {
+        //         html: {
+        //             head: {
+        //                 style,
+        //                 script
+        //             },
+        //             body
+        //         }
+        //     }
 
-            function nodeCreate(nodeStruct) {
+        //     function nodeCreate(nodeStruct) {
                 
-                let html = '';
-                for (const key in nodeStruct) {
+        //         let html = '';
+        //         for (const key in nodeStruct) {
 
-                    let content = typeof nodeStruct[key] === typeof nodeStruct 
-                        ? nodeCreate(nodeStruct[key]) 
-                        : nodeStruct[key];
+        //             let content = typeof nodeStruct[key] === typeof nodeStruct 
+        //                 ? nodeCreate(nodeStruct[key]) 
+        //                 : nodeStruct[key];
 
-                    html += '<' + key + '>' + content + '</' + key + '>';
+        //             html += '<' + key + '>' + content + '</' + key + '>';
 
-                }
-                return html;
-            }
+        //         }
+        //         return html;
+        //     }
 
-            return nodeCreate(htmlStruct);
+        //     return nodeCreate(htmlStruct);
 
-        }
+        // }
 
-        function createPage(prevUrl) {
+        // function createPage(prevUrl) {
             
-            let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = editors[i].getValue()), acc), {}));
+        //     let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = editors[i].getValue()), acc), {}));
 
-            let file = new Blob([html], { type: 'text/html' });
+        //     let file = new Blob([html], { type: 'text/html' });
             
-            prevUrl && URL.revokeObjectURL(prevUrl);
-            let url = URL.createObjectURL(file);
+        //     prevUrl && URL.revokeObjectURL(prevUrl);
+        //     let url = URL.createObjectURL(file);
 
-            let view = document.querySelector('.view');
-            view.innerHTML = '';
+        //     let view = document.querySelector('.view');
+        //     view.innerHTML = '';
 
-            let frame = document.createElement('iframe');
-            frame.src = url;                        
-            view.appendChild(frame)
+        //     let frame = document.createElement('iframe');
+        //     frame.src = url;                        
+        //     view.appendChild(frame)
 
-            return [url]
-        }
+        //     return [frame, url]
+        // }
 
-        let curUrl = createPage()
+        // let [iframe, curUrl] = createPage()
+        // let curUrl = page.url;
 
     </script>
 </body>
