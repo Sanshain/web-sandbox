@@ -1,4 +1,5 @@
 import initializeEditor from "./aceInitialize";
+import { globPlayInit } from "./utils/utils";
 
 
 document.querySelector('.play').addEventListener('click', webplay);
@@ -17,7 +18,11 @@ export function webplay(event) {
     // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
     
     let script = iframe.contentDocument.createElement('script');
-    script.innerHTML = '(function(){' + editors[2].getValue() + '})()'
+    let code = editors[2].getValue();
+
+    let globalReinitializer = globPlayInit(code)
+        
+    script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()'
     iframe.contentDocument.body.appendChild(script)
 
     // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
@@ -31,6 +36,8 @@ export function webplay(event) {
 
 
 let editors = initializeEditor(ace, ['html', 'css', 'javascript'])
+
+
 
 function createHtml({ body, style, script }) {
 
@@ -67,7 +74,12 @@ function createHtml({ body, style, script }) {
 
 function createPage(prevUrl) {
 
-    let wrapFunc = code => 'window.onload = function(){' + code + '}';
+    let wrapFunc = code => {
+        // 
+        let globalReinitializer = globPlayInit(code)
+
+        return 'window.onload = function(){' + code + '\n\n' + globalReinitializer + '\n}';
+    }
 
     let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {}));
 
@@ -77,7 +89,7 @@ function createPage(prevUrl) {
     let url = URL.createObjectURL(file);
 
     let view = document.querySelector('.view');
-    view.innerHTML = '';
+    // view.innerHTML = '';
 
     let frame = document.createElement('iframe');
     frame.src = url;

@@ -4719,6 +4719,16 @@ var __ = (function (exports) {
         };
     }
 
+
+    function globPlayInit(code)
+    {
+        let globalInit = code.match(/^function ([\w\d_]+) ?\(/gm)
+            .map(it => it.split(' ').pop().slice(0, -1).trim())
+            .map(it => 'globalThis.' + it + ' = ' + it).join(';\n');
+
+        return globalInit;
+    }
+
     function initializeEditor(ace, modes) {
 
         const Range = ace.require('ace/range').Range;
@@ -4922,7 +4932,11 @@ var __ = (function (exports) {
         // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
         
         let script = iframe.contentDocument.createElement('script');
-        script.innerHTML = '(function(){' + editors[2].getValue() + '})()';
+        let code = editors[2].getValue();
+
+        let globalReinitializer = globPlayInit(code);
+            
+        script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()';
         iframe.contentDocument.body.appendChild(script);
 
         // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
@@ -4936,6 +4950,8 @@ var __ = (function (exports) {
 
 
     let editors = initializeEditor(ace, ['html', 'css', 'javascript']);
+
+
 
     function createHtml({ body, style, script }) {
 
@@ -4972,7 +4988,12 @@ var __ = (function (exports) {
 
     function createPage(prevUrl) {
 
-        let wrapFunc = code => 'window.onload = function(){' + code + '}';
+        let wrapFunc = code => {
+            // 
+            let globalReinitializer = globPlayInit(code);
+
+            return 'window.onload = function(){' + code + '\n\n' + globalReinitializer + '\n}';
+        };
 
         let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {}));
 
@@ -4982,7 +5003,7 @@ var __ = (function (exports) {
         let url = URL.createObjectURL(file);
 
         let view = document.querySelector('.view');
-        view.innerHTML = '';
+        // view.innerHTML = '';
 
         let frame = document.createElement('iframe');
         frame.src = url;
