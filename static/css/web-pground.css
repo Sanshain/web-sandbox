@@ -15,6 +15,9 @@ body {
     /* todo: */
     /* height: 92vh; */
     height: 91vh;
+    background-color: #111;
+    background-color: #444;
+    /* background-color: white; */
 }
 
 .editor,
@@ -22,12 +25,13 @@ body {
     /* display: inline-block; */
     /* margin-top: .5em; */
     /* width     : calc(50vw - 1em); */
-    width: calc(50vw - 0.6em);
+    width: calc(50vw - 0.71em);
     height: 45vh;    
+    margin: 0;
 }
 
 .view {
-    border          : 1px gray solid;
+    border          : 1px lightgray solid;
     /* margin-top      : .4em; */
     left            : -2px;
     position        : relative;
