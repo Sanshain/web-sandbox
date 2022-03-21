@@ -20,6 +20,7 @@
         .h_line {
             left: 0;
             top: 44.7vh;
+            top: 44vh;
             width: 50%;
             /* width: 100%; */
 
@@ -45,6 +46,7 @@
             width: 1em;
             height: 1em;
             top: 44.7vh;
+            z-index: 1;
             /* background-color: red; */
         }
     </style>
@@ -112,28 +114,34 @@
             }
         })
 
+        window.addEventListener('resize', function resetSize(event) {
+            [hrSplitter, vertSplitter, centerSplitter, htmlEditor, styleEditor, jsEditor, editionView].forEach(el => {
+                el.style = null;
+            })
+        })
         container.addEventListener('mouseup', function (event) { hoSeized = vertSeized = allSeized = false; })
         container.addEventListener('mousemove', function (event) {
 
             if (hoSeized) hTune()
             else if (vertSeized) vTune()
             else if (allSeized) {
-                hTune()
-                vTune()
+                hTune() || vTune()
             }
         })
 
 
 
         function hTune() {
-            hrSplitter.style.top = event.clientY + 'px';
-            vertSplitter.style.height = event.clientY + 'px';
-            centerSplitter.style.top = event.clientY + 'px';
+            let prefLine = 10;
+
+            hrSplitter.style.top = event.clientY - prefLine + 'px';
+            vertSplitter.style.height = event.clientY - prefLine + 'px';
+            centerSplitter.style.top = event.clientY - prefLine + 'px';
 
             htmlEditor.style.height = event.clientY + 'px';
             styleEditor.style.height = event.clientY + 'px';
-            jsEditor.style.height = container.offsetHeight - event.clientY + 'px'
-            editionView.style.height = container.offsetHeight - event.clientY + 'px'
+            jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + 'px'
+            editionView.style.height = container.offsetHeight - event.clientY - prefLine + 'px'
         }
 
         function vTune() {
