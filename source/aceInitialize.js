@@ -3,6 +3,7 @@
 import { default as extend } from 'emmet';
 
 import { debounce } from "./utils/utils";
+import { expand } from './features/expantion';
 
 
 /**
@@ -46,12 +47,15 @@ export default function initializeEditor(ace, webCompile, modes) {
 
         editor.textInput.getElement().addEventListener('keydown', function (event)
         {
-            (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();            
+
             // console.log(event);
-            if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9') {
+
+            (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();
+            (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')})            
+            if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9')
+            {
                 event.preventDefault();                
                 webCompile();
-                // return false;
             }
         })
 
