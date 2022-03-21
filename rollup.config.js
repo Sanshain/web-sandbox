@@ -11,7 +11,7 @@ let modules = [
     //     outputName: 'extend',
     // },
     {
-        inputFile: './source/pageBuilder.js',
+        inputFile: './source/main.js',
         outputFile: 'page_builder.js',
         
         outputName: '__',

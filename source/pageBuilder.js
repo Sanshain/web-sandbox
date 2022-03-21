@@ -1,42 +1,13 @@
-import initializeEditor from "./aceInitialize";
-import { globPlayInit } from "./utils/utils";
+// @ts-check
+
+import { generateGlobalInintializer } from "./utils/page_generator";
 
 
-document.querySelector('.play').addEventListener('click', webplay);
-
-export function webplay(event) {
-
-    // [iframe, curUrl] = createPage(curUrl);
-    // console.log(iframe);
-
-    iframe.contentDocument.body.innerHTML = editors[0].getValue()
-    iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()
-
-    let lastScript = iframe.contentDocument.querySelector('script')
-    lastScript && lastScript.parentElement.removeChild(lastScript);
-
-    // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
-    
-    let script = iframe.contentDocument.createElement('script');
-    let code = editors[2].getValue();
-
-    let globalReinitializer = globPlayInit(code)
-        
-    script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()'
-    iframe.contentDocument.body.appendChild(script)
-
-    // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
-
-
-    localStorage.setItem('html', editors[0].getValue());
-    localStorage.setItem('css', editors[1].getValue());
-    localStorage.setItem('javascript', editors[2].getValue());
+export const playgroundObject = {
+    editors: [],
+    iframe: null,
+    curUrl: null
 }
-
-
-
-let editors = initializeEditor(ace, ['html', 'css', 'javascript'])
-
 
 
 function createHtml({ body, style, script }) {
@@ -53,6 +24,9 @@ function createHtml({ body, style, script }) {
         }
     }
 
+    /**
+     * @param {{ [x: string]: any; html?: { head: { style: any; script: any; }; body: any; }; }} nodeStruct
+     */
     function nodeCreate(nodeStruct) {
 
         let html = '';
@@ -72,16 +46,24 @@ function createHtml({ body, style, script }) {
 
 }
 
-function createPage(prevUrl) {
 
-    let wrapFunc = code => {
+/**
+ * @param { string } [prevUrl]
+ * @returns {[ HTMLElement, string ]}
+ */
+export function createPage(prevUrl) {
+
+    let wrapFunc = (/** @type {string} */ code) => {
         // 
-        let globalReinitializer = globPlayInit(code)
+        let globalReinitializer = generateGlobalInintializer(code)
 
         return 'window.onload = function(){' + code + '\n\n' + globalReinitializer + '\n}';
     }
 
-    let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {}));
+    let editors = playgroundObject.editors;
+    let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+    // @ts-ignore
+    let html = createHtml(htmlContent);
 
     let file = new Blob([html], { type: 'text/html' });
 
@@ -89,7 +71,8 @@ function createPage(prevUrl) {
     let url = URL.createObjectURL(file);
 
     let view = document.querySelector('.view');
-    // view.innerHTML = '';
+    playgroundObject.iframe && (playgroundObject.iframe.parentElement === view) && view.removeChild(playgroundObject.iframe);
+    // view.innerHTML = '';    
 
     let frame = document.createElement('iframe');
     frame.src = url;
@@ -98,4 +81,49 @@ function createPage(prevUrl) {
     return [frame, url]
 }
 
-let [iframe, curUrl] = createPage()
+
+/**
+ * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
+ */
+export function webCompile() {
+
+    // [iframe, curUrl] = createPage(curUrl);
+    // console.log(iframe);
+
+    let iframe = playgroundObject.iframe;
+    let editors = playgroundObject.editors;
+
+    if (iframe.contentDocument) {
+
+        iframe.contentDocument.body.innerHTML = editors[0].getValue()
+        iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()
+
+        let lastScript = iframe.contentDocument.querySelector('script')
+        lastScript && lastScript.parentElement.removeChild(lastScript);
+
+        // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
+
+        let script = iframe.contentDocument.createElement('script');
+        let code = editors[2].getValue();
+
+        let globalReinitializer = generateGlobalInintializer(code)
+
+        script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()'
+        iframe.contentDocument.body.appendChild(script)
+
+        // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
+    }
+    else {
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+        playgroundObject.iframe = iframe;
+        playgroundObject.curUrl = curUrl;
+    }
+
+
+    localStorage.setItem('html', editors[0].getValue());
+    localStorage.setItem('css', editors[1].getValue());
+    localStorage.setItem('javascript', editors[2].getValue());
+}
+
+
+

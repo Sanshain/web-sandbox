@@ -1,4 +1,4 @@
-var __ = (function (exports) {
+(function () {
     'use strict';
 
     /**
@@ -4701,6 +4701,8 @@ var __ = (function (exports) {
         return css(parse$1(abbr, config), config);
     }
 
+    //@ts-check
+
     function debounce(func, delay) {
 
         let inAwaiting = false;
@@ -4719,21 +4721,19 @@ var __ = (function (exports) {
         };
     }
 
+    // @ts-check
 
-    function globPlayInit(code)
-    {
-        let globalInit = code.match(/^function ([\w\d_]+) ?\(/gm)
-            .map(it => it.split(' ').pop().slice(0, -1).trim())
-            .map(it => 'globalThis.' + it + ' = ' + it).join(';\n');
 
-        return globalInit;
-    }
-
-    function initializeEditor(ace, modes) {
+    /**
+     * @param {{ require: (arg: string) => { (): any; new (): any; Range: any; }; edit: (arg: any) => any; }} ace
+     * @param {Function} webCompile
+     * @param {{ [x: string]: string; }} [modes]
+     */
+    function initializeEditor(ace, webCompile, modes) {
 
         const Range = ace.require('ace/range').Range;
         const delay = 500;
-        const autoPlay = debounce(() => setTimeout(webplay, delay), delay);
+        const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
 
         return [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
         {
@@ -4764,12 +4764,12 @@ var __ = (function (exports) {
             (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay);
 
             editor.textInput.getElement().addEventListener('keydown', function (event)
-            {            
+            {
                 (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();            
                 // console.log(event);
                 if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9') {
                     event.preventDefault();                
-                    webplay();
+                    webCompile();
                     // return false;
                 }
             });
@@ -4819,7 +4819,7 @@ var __ = (function (exports) {
                     editor.commands.on("afterExec", function (e) {
                         console.log(e.command.name);
                         if (e.command.name.toLowerCase() === 'return') {
-                            webplay();
+                            webCompile();
                         }
                         // if (e.command.name == "insertstring" && /^[\w.]$/.test(e.args)) {
                         //     editor.execCommand("startAutocomplete")
@@ -4916,41 +4916,27 @@ var __ = (function (exports) {
 
     }
 
-    document.querySelector('.play').addEventListener('click', webplay);
+    /**
+     * initialize global funcs in the sandbox
+     * @param {*} code 
+     * @returns 
+     */
+    function generateGlobalInintializer(code) {
+        let globalInit = (code.match(/^function ([\w\d_]+) ?\(/gm) || [])
+            .map(it => it.split(' ').pop().slice(0, -1).trim())
+            .map(it => 'globalThis.' + it + ' = ' + it).join(';\n');
 
-    function webplay(event) {
-
-        // [iframe, curUrl] = createPage(curUrl);
-        // console.log(iframe);
-
-        iframe.contentDocument.body.innerHTML = editors[0].getValue();
-        iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue();
-
-        let lastScript = iframe.contentDocument.querySelector('script');
-        lastScript && lastScript.parentElement.removeChild(lastScript);
-
-        // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
-        
-        let script = iframe.contentDocument.createElement('script');
-        let code = editors[2].getValue();
-
-        let globalReinitializer = globPlayInit(code);
-            
-        script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()';
-        iframe.contentDocument.body.appendChild(script);
-
-        // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
-
-
-        localStorage.setItem('html', editors[0].getValue());
-        localStorage.setItem('css', editors[1].getValue());
-        localStorage.setItem('javascript', editors[2].getValue());
+        return globalInit;
     }
 
+    // @ts-check
 
 
-    let editors = initializeEditor(ace, ['html', 'css', 'javascript']);
-
+    const playgroundObject = {
+        editors: [],
+        iframe: null,
+        curUrl: null
+    };
 
 
     function createHtml({ body, style, script }) {
@@ -4967,6 +4953,9 @@ var __ = (function (exports) {
             }
         };
 
+        /**
+         * @param {{ [x: string]: any; html?: { head: { style: any; script: any; }; body: any; }; }} nodeStruct
+         */
         function nodeCreate(nodeStruct) {
 
             let html = '';
@@ -4986,16 +4975,24 @@ var __ = (function (exports) {
 
     }
 
+
+    /**
+     * @param { string } [prevUrl]
+     * @returns {[ HTMLElement, string ]}
+     */
     function createPage(prevUrl) {
 
-        let wrapFunc = code => {
+        let wrapFunc = (/** @type {string} */ code) => {
             // 
-            let globalReinitializer = globPlayInit(code);
+            let globalReinitializer = generateGlobalInintializer(code);
 
             return 'window.onload = function(){' + code + '\n\n' + globalReinitializer + '\n}';
         };
 
-        let html = createHtml(['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {}));
+        let editors = playgroundObject.editors;
+        let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+        // @ts-ignore
+        let html = createHtml(htmlContent);
 
         let file = new Blob([html], { type: 'text/html' });
 
@@ -5003,7 +5000,8 @@ var __ = (function (exports) {
         let url = URL.createObjectURL(file);
 
         let view = document.querySelector('.view');
-        // view.innerHTML = '';
+        playgroundObject.iframe && (playgroundObject.iframe.parentElement === view) && view.removeChild(playgroundObject.iframe);
+        // view.innerHTML = '';    
 
         let frame = document.createElement('iframe');
         frame.src = url;
@@ -5012,13 +5010,115 @@ var __ = (function (exports) {
         return [frame, url]
     }
 
+
+    /**
+     * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
+     */
+    function webCompile() {
+
+        // [iframe, curUrl] = createPage(curUrl);
+        // console.log(iframe);
+
+        let iframe = playgroundObject.iframe;
+        let editors = playgroundObject.editors;
+
+        if (iframe.contentDocument) {
+
+            iframe.contentDocument.body.innerHTML = editors[0].getValue();
+            iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue();
+
+            let lastScript = iframe.contentDocument.querySelector('script');
+            lastScript && lastScript.parentElement.removeChild(lastScript);
+
+            // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
+
+            let script = iframe.contentDocument.createElement('script');
+            let code = editors[2].getValue();
+
+            let globalReinitializer = generateGlobalInintializer(code);
+
+            script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()';
+            iframe.contentDocument.body.appendChild(script);
+
+            // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
+        }
+        else {
+            let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+            playgroundObject.iframe = iframe;
+            playgroundObject.curUrl = curUrl;
+        }
+
+
+        localStorage.setItem('html', editors[0].getValue());
+        localStorage.setItem('css', editors[1].getValue());
+        localStorage.setItem('javascript', editors[2].getValue());
+    }
+
+    // @ts-check
+
+
+    /**
+     * @param {{ currentTarget: any; }} event
+     */
+    function expand(event) {
+
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+        playgroundObject.iframe = iframe;
+        playgroundObject.curUrl = curUrl;
+
+        const view = document.querySelector('.view');
+        // const view = event.currentTarget.parentElement;
+        // let iframe = view.querySelector('iframe');
+        let wrapper = document.querySelector('.expanded');
+
+        // @ts-ignore
+        if (wrapper && wrapper.style.display == 'none') {
+            // @ts-ignore
+            wrapper.style.display = 'block';
+            wrapper.innerHTML = '';
+        }
+        else if(!wrapper) {
+            wrapper = document.body.appendChild(document.createElement('div'));
+            wrapper.className = 'expanded';
+            // wrapper.tabIndex = '0';
+            // wrapper.onkeydown = function escape(event) { }        
+        }
+        // else if (wrapper) wrapper.innerHTML = '';
+        // wrapper.appendChild(iframe.cloneNode(true));
+        
+        wrapper.appendChild(iframe);    
+
+        let collapseButton = wrapper.appendChild(event.currentTarget);
+        collapseButton.classList.add('down');
+        collapseButton.dataset.title = 'Collapse';
+
+        collapseButton.onclick = function (event) {
+
+            view.appendChild(iframe);
+            view.appendChild(collapseButton);
+
+            collapseButton.classList.remove('down');
+            collapseButton.dataset.title = 'Expand';
+            collapseButton.onclick = expand;
+            // @ts-ignore
+            wrapper.style.display = 'none';
+        };
+    }
+
+    // @ts-check
+
+
+    // @ts-ignore
+    playgroundObject.editors = initializeEditor(ace, webCompile, ['html', 'css', 'javascript']);
+
     let [iframe, curUrl] = createPage();
 
-    exports.webplay = webplay;
+    playgroundObject.iframe = iframe;
+    playgroundObject.curUrl = curUrl;
 
-    Object.defineProperty(exports, '__esModule', { value: true });
 
-    return exports;
+    document.querySelector('.play').addEventListener('click', webCompile);
+    document.querySelector('.expand')['onclick'] = expand;
 
-})({});
+})();
 //# sourceMappingURL=page_builder.js.map

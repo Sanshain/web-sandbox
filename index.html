@@ -6,139 +6,11 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+
+    <link rel="stylesheet" href="./static/css/web-pground.css">
+
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
 
-        .md_container {
-            position: relative;
-
-            display: flex;
-            flex-direction: row;
-            justify-content: space-evenly;
-            flex-wrap: wrap;
-            background-color: gray;
-        }
-
-        .editor,
-        .view {
-            /* display: inline-block; */
-            margin-top: 1em;
-            width: calc(50vw - 1em);
-            ;
-            height: 45vh;
-        }
-
-        .view {
-            border: 1px gray solid;
-            margin-top: .7em;
-            left: -2px;
-            position: relative;
-            background-color: #fff;
-        }
-
-        .play {
-            cursor: pointer;
-            position: absolute;
-            bottom: 1em;
-            right: 2em;
-            width: 2em;
-            height: 2em;
-            background-color: #dfeefb;
-            clip-path: polygon(0 0, 0 100%, 100% 50%);
-            transition: .5s;
-            border-radius: 1em;
-        }
-
-        .play:hover {
-            border-radius: 0;
-            /* background-color: #b7d9f7;     */
-            /* background-color: cadetblue; */
-        }
-
-        iframe {
-            height: 100%;
-            width: 100%;
-            border: none;
-        }
-
-        .expanded{
-            position: fixed;            
-            top: 0;            
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 4;
-            background-color: white;
-        }
-
-        .expand{
-            position: absolute;
-            top: 1em;
-            right: .5em;
-            width: 2em;
-            height: 2em;
-            opacity: 0.04;
-            /* background-image: url(./static/expand_d.svg);     */
-            background: url(./static/expand_d.svg) no-repeat;
-            background-size: contain;
-            cursor: pointer;        
-            transition: .5s;
-            /* background-color: cornflowerblue; */
-        }
-
-        .expand.down{
-            /* background: url(./static/expand_v.svg) no-repeat; */
-            transform: scale(1.1);
-            background: url(./static/collapse_d.svg) no-repeat;
-            background-size: contain;
-            opacity: .1;
-            right: 1em;
-        }
-
-        .expand.down:hover{
-            opacity: .2;
-            transform: scale(.9);
-        }
-
-        .expand:hover{
-            transform: scale(1.1);
-            opacity: 0.15;
-        }
-
-        .expand::after{
-            content: attr(data-title);
-            position: absolute;
-            top: .1em;
-            font-size: small;
-            right: 0%;
-            pointer-events: none;
-            transition: 1s;
-            opacity: 0;
-            color: green;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .expand:hover::after{
-            opacity: 1;
-            right: 150%;
-        }
-        
-
-
-        .ace_tooltip {
-            font-family: monospace, Arial;
-            color: #444;
-            opacity: 0.95;
-            border: none;
-        }
-
-        .ace_tooltip>b {
-            color: black;
-            font-family: Arial;
-        }
     </style>
 </head>
 
@@ -150,7 +22,7 @@
         <div class="editor" id="csseditor"></div>
         <div class="editor" id="jseditor"></div>
         <div class="view">
-            <div class="expand" data-title="Expand" onclick="expand(event)"></div>
+            <div class="expand" data-title="Expand"></div>
         </div>
 
         <div class="play" title="RUN (press F9)"></div>
@@ -169,36 +41,7 @@
     <script src="./build/page_builder.js"></script>
 
     <script>
-        function expand(event) {
 
-            let iframe = event.currentTarget.parentElement.querySelector('iframe');
-            let wrapper =document.querySelector('expanded')  
-            if (!wrapper){
-                wrapper = document.body.appendChild(document.createElement('div'));
-                wrapper.className = 'expanded';
-                wrapper.tabindex = '0';
-                wrapper.onkeydown = function escape(event) {
-                    console.log(event);
-                }
-
-                // let close = wrapper.appendChild(document.createElement('div'));
-            }
-            wrapper.appendChild(iframe);
-
-            let collapseButton = wrapper.appendChild(event.currentTarget);
-            collapseButton.classList.add('down');
-            collapseButton.dataset.title = 'Collapse'
-            collapseButton.onclick = function(event) {
-                
-                const view = document.querySelector('.view');
-                view.appendChild(iframe);
-                view.appendChild(collapseButton);
-                collapseButton.classList.remove('down');
-                collapseButton.dataset.title = 'Expand'
-                collapseButton.onclick = expand;
-                wrapper.style.display = 'none';
-            }
-        }
     </script>
 </body>
 

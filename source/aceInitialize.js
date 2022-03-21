@@ -1,13 +1,20 @@
+// @ts-check
+
 import { default as extend } from 'emmet';
-import { webplay } from "./pageBuilder";
+
 import { debounce } from "./utils/utils";
 
 
-export default function initializeEditor(ace, modes) {
+/**
+ * @param {{ require: (arg: string) => { (): any; new (): any; Range: any; }; edit: (arg: any) => any; }} ace
+ * @param {Function} webCompile
+ * @param {{ [x: string]: string; }} [modes]
+ */
+export default function initializeEditor(ace, webCompile, modes) {
 
     const Range = ace.require('ace/range').Range;
     const delay = 500;
-    const autoPlay = debounce(() => setTimeout(webplay, delay), delay);
+    const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
 
     return [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
     {
@@ -38,12 +45,12 @@ export default function initializeEditor(ace, modes) {
         (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay)
 
         editor.textInput.getElement().addEventListener('keydown', function (event)
-        {            
+        {
             (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();            
             // console.log(event);
             if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9') {
                 event.preventDefault();                
-                webplay();
+                webCompile();
                 // return false;
             }
         })
@@ -93,7 +100,7 @@ export default function initializeEditor(ace, modes) {
                 editor.commands.on("afterExec", function (e) {
                     console.log(e.command.name);
                     if (e.command.name.toLowerCase() === 'return') {
-                        webplay()
+                        webCompile()
                     }
                     // if (e.command.name == "insertstring" && /^[\w.]$/.test(e.args)) {
                     //     editor.execCommand("startAutocomplete")
