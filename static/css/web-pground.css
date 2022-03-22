@@ -25,9 +25,9 @@ body {
     /* display: inline-block; */
     /* margin-top: .5em; */
     /* width     : calc(50vw - 1em); */
-    /* width : calc(50vw - 0.71em); */
+    width : calc(50vw - 0.71em);
     /* width : calc(50vw - 0.6em); */
-    width : calc(50vw - 0.8em);
+    /* width : calc(50vw - 0.8em); */
     height: 45vh;
     margin: 0;
 }

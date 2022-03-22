@@ -4,8 +4,12 @@ import { default as extend } from 'emmet';
 
 import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
-import { initResizers } from './features/resizing';
 
+const defaultValues = {
+    html: '<h2 onclick="greeting(event)">Hello world!</h2>',
+    css: 'h2 { color: green; cursor: pointer; }',
+    javascript: 'function greeting(event){ alert("greeting!") }'
+}
 
 /**
  * @param {{ require: (arg: string) => { (): any; new (): any; Range: any; }; edit: (arg: any) => any; }} ace
@@ -25,7 +29,7 @@ export default function initializeEditor(ace, webCompile, modes) {
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/" + modes[i]);
         
-        let value = localStorage.getItem(modes[i])        
+        let value = localStorage.getItem(modes[i]) || defaultValues[modes[i]];
         if (value) {
             editor.session.setValue(value)
         }
@@ -97,6 +101,7 @@ export default function initializeEditor(ace, webCompile, modes) {
                     enableBasicAutocompletion: true,
                     enableSnippets: true,
                     enableLiveAutocompletion: true,
+                    // placeholder: "Enter your " + modes[i] + " Code",
                     // enableEmmet: true        
                 }
             );
