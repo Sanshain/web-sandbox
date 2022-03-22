@@ -59,7 +59,7 @@ export default function initializeEditor(ace, webCompile, modes) {
             }
         })
 
-        if (i === 0) editor.commands.addCommand(
+        if (i === 0 && window.outerWidth > 600) editor.commands.addCommand(
             {
                 name: "extend",
                 exec: function () {
@@ -89,7 +89,8 @@ export default function initializeEditor(ace, webCompile, modes) {
                 },
                 bindKey: { win: 'Tab' }
         });
-        else if (i) {
+        else {  //  if (i)
+
             editor.setOptions(
                 {
                     enableBasicAutocompletion: true,

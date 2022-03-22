@@ -139,3 +139,34 @@ iframe {
     color      : black;
     font-family: Arial;
 }
+
+
+@media screen and (max-width: 600px){
+    .editor, .view{
+        width: 100%;
+        margin-bottom: 1em;
+    }   
+    .play{
+        position: fixed;
+        border-radius: unset;
+        opacity: .5;
+        right: 1em;
+        z-index: 5;
+    }
+    .md_container{
+        height: fit-content;
+    }    
+ 
+    #jseditor{
+        padding-bottom: 40vh;
+    }
+    .view{
+        position: fixed;
+        bottom  : 0;
+        top     : 60vh;        
+        z-index: 5;
+    }
+    .ace_autocomplete{
+        width: 200px  !important;
+    }
+}
