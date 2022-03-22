@@ -4,7 +4,10 @@ import initializeEditor from "./aceInitialize";
 import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 
 import { expand } from "./features/expantion";
+import { initResizers } from "./features/resizing";
 
+
+initResizers()
 
 // @ts-ignore
 let editors = playgroundObject.editors = initializeEditor(ace, webCompile, ['html', 'css', 'javascript'])

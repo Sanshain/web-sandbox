@@ -4,6 +4,7 @@ import { default as extend } from 'emmet';
 
 import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
+import { initResizers } from './features/resizing';
 
 
 /**
@@ -17,7 +18,7 @@ export default function initializeEditor(ace, webCompile, modes) {
     const delay = 500;
     const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
 
-    return [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
+    let editors = [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
     {
 
         let editor = ace.edit(element.id);
@@ -199,6 +200,10 @@ export default function initializeEditor(ace, webCompile, modes) {
         return editor;
 
     });
+
+    // initResizers()
+
+    return editors;
 
 }
 
