@@ -4736,6 +4736,18 @@
 
     // @ts-check
 
+    const reactCompiler = {
+        react: 'https://unpkg.com/react@17/umd/react.production.min.js',
+        reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+    };
+
+    const babelCompiler = {
+        link: 'https://unpkg.com/@babel/standalone/babel.min.js',
+        mode: ' type="text/babel" '
+    };
+
+    const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
+
 
     const playgroundObject = {
         editors: [],
@@ -4744,7 +4756,10 @@
     };
 
 
-    function createHtml({ body, style, script }) {
+    /**
+     * @param {{ [x: string]: string; }} [attrs]
+     */
+    function createHtml({ body, style, script }, attrs) {
 
         console.log(arguments);
 
@@ -4766,11 +4781,12 @@
             let html = '';
             for (const key in nodeStruct) {
 
+                let _attrs = attrs[key] || '';
                 let content = typeof nodeStruct[key] === typeof nodeStruct
                     ? nodeCreate(nodeStruct[key])
                     : nodeStruct[key];
 
-                html += '<' + key + '>' + content + '</' + key + '>';
+                html += '<' + key + _attrs + '>' + content + '</' + key + '>';
 
             }
             return html;
@@ -4782,10 +4798,12 @@
 
 
     /**
-     * @param { string } [prevUrl]
-     * @returns {[ HTMLElement, string ]}
+     * @param {string} [prevUrl]
+     * @returns {[HTMLElement, string]}
+     * @param {string | any[]} [additionalScripts]
+     * @param {string} [scriptType]
      */
-    function createPage(prevUrl) {
+    function createPage(prevUrl, additionalScripts, scriptType) {
 
         let wrapFunc = (/** @type {string} */ code) => {
             // 
@@ -4796,8 +4814,20 @@
 
         let editors = playgroundObject.editors;
         let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+
+        if (additionalScripts && additionalScripts.length) {
+            for (let i = 0; i < additionalScripts.length; i++) {
+                htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
+            }
+        }
+        console.log(htmlContent);
+
+        const attrs = {
+            script: scriptType
+        };
+
         // @ts-ignore
-        let html = createHtml(htmlContent);
+        let html = createHtml(htmlContent, attrs);
 
         let file = new Blob([html], { type: 'text/html' });
 
@@ -4818,8 +4848,9 @@
 
     /**
      * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
+     * @param {boolean} jsxMode
      */
-    function webCompile() {
+    function webCompile(jsxMode) {
 
         // [iframe, curUrl] = createPage(curUrl);
         // console.log(iframe);
@@ -4832,12 +4863,24 @@
             iframe.contentDocument.body.innerHTML = editors[0].getValue();
             iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue();
 
-            let lastScript = iframe.contentDocument.querySelector('script');
-            lastScript && lastScript.parentElement.removeChild(lastScript);
+            let lastScripts = iframe.contentDocument.querySelectorAll('script');
+            lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
+            {
+                element.parentElement.removeChild(element);
+            });
 
             // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
 
             let script = iframe.contentDocument.createElement('script');
+            alert(9);
+            if (jsxMode) {
+                
+                let jsxCompiler = iframe.contentDocument.createElement('script');
+                jsxCompiler.src = babelCompiler.link;
+                iframe.contentDocument.body.appendChild(script);
+
+                script.type = "text/babel";
+            }
             let code = editors[2].getValue();
 
             let globalReinitializer = generateGlobalInintializer(code);
@@ -4847,8 +4890,8 @@
 
             // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
         }
-        else {
-            let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+        else {        
+            let [iframe, curUrl] = jsxMode ? createPage(playgroundObject.curUrl, reactCompilers, babelCompiler.mode) : createPage(playgroundObject.curUrl);
             playgroundObject.iframe = iframe;
             playgroundObject.curUrl = curUrl;
         }
@@ -5206,15 +5249,19 @@
     initResizers();
 
     // @ts-ignore
-    playgroundObject.editors = initializeEditor(ace, webCompile, ['html', 'css', 'javascript']);
+    const inReactMode = document.getElementById('compiler_mode').selectedIndex;
+    let compileFunc = inReactMode ? webCompile.bind(null, true) : webCompile;
 
-    let [iframe, curUrl] = createPage();
+    // @ts-ignore
+    playgroundObject.editors = initializeEditor(ace, compileFunc, ['html', 'css', 'javascript']);
+
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, babelCompiler.mode) ;
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 
 
-    document.querySelector('.play').addEventListener('click', webCompile);
+    document.querySelector('.play').addEventListener('click', compileFunc);
     document.querySelector('.expand')['onclick'] = expand;
 
 })();

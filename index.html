@@ -10,11 +10,36 @@
     <link rel="stylesheet" href="./static/css/web-pground.css">
 
     <style>
+        .md_container{
+            padding: .3em 0 0;
+        }
+        .header{
+            height: 2.5em;            
+            background-color: gray;
+        }
 
+        .h_line{
+            top: calc(44vh + 2.8em);            
+            background-color: hotpink;
+        }
+
+        .header select{
+            margin: 1em;
+            background-color: gray;
+            cursor: pointer;            
+        }
     </style>
 </head>
 
 <body>
+
+    <div class="header">
+
+        <select name="compiler_mode" id="compiler_mode">
+            <option value="js">js</option>
+            <option value="jsx" selected>jsx</option>
+        </select>
+    </div>
 
     <div class="md_container">
 
@@ -39,12 +64,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.min.js"></script>
 
     <!-- <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script> -->
+    
     <!-- <script src="./ace.js"></script> -->
-
     <!-- <script src="./build/editor.js"></script> -->
     <!-- <script src="./source/ace_initialize.js"></script> -->
 
     <script src="./build/page_builder.js"></script>
+
+    
 
     <script>
 

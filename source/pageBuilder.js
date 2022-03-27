@@ -2,6 +2,18 @@
 
 import { generateGlobalInintializer } from "./utils/page_generator";
 
+export const reactCompiler = {
+    react: 'https://unpkg.com/react@17/umd/react.production.min.js',
+    reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+}
+
+export const babelCompiler = {
+    link: 'https://unpkg.com/@babel/standalone/babel.min.js',
+    mode: ' type="text/babel" '
+}
+
+export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
+
 
 export const playgroundObject = {
     editors: [],
@@ -10,7 +22,10 @@ export const playgroundObject = {
 }
 
 
-function createHtml({ body, style, script }) {
+/**
+ * @param {{ [x: string]: string; }} [attrs]
+ */
+function createHtml({ body, style, script }, attrs) {
 
     console.log(arguments);
 
@@ -32,11 +47,12 @@ function createHtml({ body, style, script }) {
         let html = '';
         for (const key in nodeStruct) {
 
+            let _attrs = attrs[key] || '';
             let content = typeof nodeStruct[key] === typeof nodeStruct
                 ? nodeCreate(nodeStruct[key])
                 : nodeStruct[key];
 
-            html += '<' + key + '>' + content + '</' + key + '>';
+            html += '<' + key + _attrs + '>' + content + '</' + key + '>';
 
         }
         return html;
@@ -48,10 +64,12 @@ function createHtml({ body, style, script }) {
 
 
 /**
- * @param { string } [prevUrl]
- * @returns {[ HTMLElement, string ]}
+ * @param {string} [prevUrl]
+ * @returns {[HTMLElement, string]}
+ * @param {string | any[]} [additionalScripts]
+ * @param {string} [scriptType]
  */
-export function createPage(prevUrl) {
+export function createPage(prevUrl, additionalScripts, scriptType) {
 
     let wrapFunc = (/** @type {string} */ code) => {
         // 
@@ -62,8 +80,20 @@ export function createPage(prevUrl) {
 
     let editors = playgroundObject.editors;
     let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+
+    if (additionalScripts && additionalScripts.length) {
+        for (let i = 0; i < additionalScripts.length; i++) {
+            htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
+        }
+    }
+    console.log(htmlContent);
+
+    const attrs = {
+        script: scriptType
+    }
+
     // @ts-ignore
-    let html = createHtml(htmlContent);
+    let html = createHtml(htmlContent, attrs);
 
     let file = new Blob([html], { type: 'text/html' });
 
@@ -84,8 +114,9 @@ export function createPage(prevUrl) {
 
 /**
  * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
+ * @param {boolean} jsxMode
  */
-export function webCompile() {
+export function webCompile(jsxMode) {
 
     // [iframe, curUrl] = createPage(curUrl);
     // console.log(iframe);
@@ -98,12 +129,24 @@ export function webCompile() {
         iframe.contentDocument.body.innerHTML = editors[0].getValue()
         iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()
 
-        let lastScript = iframe.contentDocument.querySelector('script')
-        lastScript && lastScript.parentElement.removeChild(lastScript);
+        let lastScripts = iframe.contentDocument.querySelectorAll('script');
+        lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
+        {
+            element.parentElement.removeChild(element);
+        });
 
         // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
 
         let script = iframe.contentDocument.createElement('script');
+        alert(9)
+        if (jsxMode) {
+            
+            let jsxCompiler = iframe.contentDocument.createElement('script');
+            jsxCompiler.src = babelCompiler.link;
+            iframe.contentDocument.body.appendChild(script);
+
+            script.type = "text/babel";
+        }
         let code = editors[2].getValue();
 
         let globalReinitializer = generateGlobalInintializer(code)
@@ -113,8 +156,8 @@ export function webCompile() {
 
         // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
     }
-    else {
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+    else {        
+        let [iframe, curUrl] = jsxMode ? createPage(playgroundObject.curUrl, reactCompilers, babelCompiler.mode) : createPage(playgroundObject.curUrl);
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;
     }
