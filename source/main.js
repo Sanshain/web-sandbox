@@ -1,27 +1,32 @@
 // @ts-check
 
 import initializeEditor from "./aceInitialize";
-import { createPage, webCompile, playgroundObject, babelCompiler, reactCompilers } from "./pageBuilder";
+import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 
 import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
+import { babelCompiler, compilers } from "./features/compiler";
 
 
 // const jsxMode = true;
 
-let jsxMode = Number.parseInt(localStorage.getItem('jsxmode'));
-document.querySelector('select').selectedIndex = jsxMode;
+let mode = Number.parseInt(localStorage.getItem('mode'));
+document.querySelector('select').selectedIndex = mode;
+console.log(mode);
 
 initResizers()
 
 // @ts-ignore
-const inReactMode = document.getElementById('compiler_mode').selectedIndex;
-let compileFunc = inReactMode ? webCompile.bind(null, true) : webCompile;
+let compileFunc = mode ? webCompile.bind(null, mode > 1, Object.values(compilers)[mode]) : webCompile;
+
+// let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
+// console.log(mode);
+// console.log(Object.values(compilers)[mode]);
 
 // @ts-ignore
 let editors = playgroundObject.editors = initializeEditor(ace, compileFunc, ['html', 'css', 'javascript'])
 
-let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined)
+let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[mode], mode > 1 ? babelCompiler.mode : undefined)
 
 playgroundObject.iframe = iframe;
 playgroundObject.curUrl = curUrl;

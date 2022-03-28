@@ -4721,6 +4721,53 @@
         };
     }
 
+    const reactCompiler = {
+        react: 'https://unpkg.com/react@17/umd/react.production.min.js',
+        reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+    };
+
+    const vueCompiler = {
+        // vue: "https://unpkg.com/vue@2.5.17/dist/vue.js"
+        vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'
+    };
+
+    const preactCompiler = {
+        // set: './build/_preact.js',
+        // set: '~/build/_preact.js',       
+
+        // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
+        // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
+        // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
+
+        set: 'http://127.0.0.1:3000/build/_preact.js',
+    };
+
+
+    const babelCompiler = {
+        link: 'https://unpkg.com/@babel/standalone/babel.min.js',
+        mode: ' type="text/babel" '
+    };
+
+
+    // export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
+
+    // export const reactCompilers = [
+    //     preactCompiler.set,
+    //     babelCompiler.link,
+    // ];
+
+    // export const reactCompilers = [
+    //     vueCompiler.vue
+    // ];
+
+
+    const compilers = {
+        vanile: undefined,
+        vue: Object.values(vueCompiler),
+        react: [babelCompiler.link].concat(Object.values(reactCompiler)),    
+        preact: [babelCompiler.link].concat(Object.values(preactCompiler)),    
+    };
+
     /**
      * initialize global funcs in the sandbox
      * @param {*} code 
@@ -4736,32 +4783,7 @@
 
     // @ts-check
 
-    const vueCompiler = {
-        // vue: "https://unpkg.com/vue@3.2.31/dist/vue.global.js",
-        // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.min.js',
-        // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.prod.min.js',
-        // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.runtime.global.min.js',
-        // vue: "https://unpkg.com/vue@2.5.17/dist/vue.js"
-        vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'
-    };
 
-
-
-    const babelCompiler = {
-        link: 'https://unpkg.com/@babel/standalone/babel.min.js',
-        mode: ' type="text/babel" '
-    };
-
-    // export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
-
-    // export const reactCompilers = [
-    //     preactCompiler.set,
-    //     babelCompiler.link,
-    // ];
-
-    const reactCompilers = [
-        vueCompiler.vue
-    ];
 
     const playgroundObject = {
         editors: [],
@@ -4775,7 +4797,7 @@
      */
     function createHtml({ body, style, script }, attrs) {
 
-        console.log(arguments);
+        // console.log(arguments);
 
         const htmlStruct = {
             html: {
@@ -4836,7 +4858,7 @@
                 optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
             }
         }
-        console.log(htmlContent);    
+        // console.log(htmlContent);    
 
         const attrs = {
             script: scriptType
@@ -4869,8 +4891,12 @@
     /**
      * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
      * @param {boolean} jsxMode
+     * ///! param {number} compilerMode
+     * @param {string[]} compilerMode
      */
-    function webCompile(jsxMode) {
+    function webCompile(jsxMode, compilerMode) {
+        
+        console.log('compile');
 
         // [iframe, curUrl] = createPage(curUrl);
         // console.log(iframe);
@@ -4910,8 +4936,11 @@
 
             // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
         }
-        else {        
-            let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined);
+        else {
+            // console.log(compilerMode);
+            // console.log(Object.values(compilers)[compilerMode]);
+            // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
+            let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
             playgroundObject.iframe = iframe;
             playgroundObject.curUrl = curUrl;
         }
@@ -5326,19 +5355,23 @@
 
     // const jsxMode = true;
 
-    let jsxMode = Number.parseInt(localStorage.getItem('jsxmode'));
-    document.querySelector('select').selectedIndex = jsxMode;
+    let mode = Number.parseInt(localStorage.getItem('mode'));
+    document.querySelector('select').selectedIndex = mode;
+    console.log(mode);
 
     initResizers();
 
     // @ts-ignore
-    const inReactMode = document.getElementById('compiler_mode').selectedIndex;
-    let compileFunc = inReactMode ? webCompile.bind(null, true) : webCompile;
+    let compileFunc = mode ? webCompile.bind(null, mode > 1, Object.values(compilers)[mode]) : webCompile;
+
+    // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
+    // console.log(mode);
+    // console.log(Object.values(compilers)[mode]);
 
     // @ts-ignore
     playgroundObject.editors = initializeEditor(ace, compileFunc, ['html', 'css', 'javascript']);
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined);
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[mode], mode > 1 ? babelCompiler.mode : undefined);
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;

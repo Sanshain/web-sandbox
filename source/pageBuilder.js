@@ -1,49 +1,9 @@
 // @ts-check
 
+import { babelCompiler, compilers } from "./features/compiler";
 import { generateGlobalInintializer } from "./utils/page_generator";
 
-export const reactCompiler = {
-    react: 'https://unpkg.com/react@17/umd/react.production.min.js',
-    reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
-}
 
-export const vueCompiler = {
-    // vue: "https://unpkg.com/vue@3.2.31/dist/vue.global.js",
-    // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.min.js',
-    // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.prod.min.js',
-    // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.runtime.global.min.js',
-    // vue: "https://unpkg.com/vue@2.5.17/dist/vue.js"
-    vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'
-}
-
-export const preactCompiler = {
-    // set: './build/_preact.js',
-    // set: '~/build/_preact.js',       
-
-    // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
-    // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
-    // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
-
-    set: 'http://127.0.0.1:3000/build/_preact.js',
-}
-
-
-
-export const babelCompiler = {
-    link: 'https://unpkg.com/@babel/standalone/babel.min.js',
-    mode: ' type="text/babel" '
-}
-
-// export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
-
-// export const reactCompilers = [
-//     preactCompiler.set,
-//     babelCompiler.link,
-// ];
-
-export const reactCompilers = [
-    vueCompiler.vue
-];
 
 export const playgroundObject = {
     editors: [],
@@ -57,7 +17,7 @@ export const playgroundObject = {
  */
 function createHtml({ body, style, script }, attrs) {
 
-    console.log(arguments);
+    // console.log(arguments);
 
     const htmlStruct = {
         html: {
@@ -118,7 +78,7 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
             optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
         }
     }
-    console.log(htmlContent);    
+    // console.log(htmlContent);    
 
     const attrs = {
         script: scriptType
@@ -151,8 +111,12 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
 /**
  * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
  * @param {boolean} jsxMode
+ * ///! param {number} compilerMode
+ * @param {string[]} compilerMode
  */
-export function webCompile(jsxMode) {
+export function webCompile(jsxMode, compilerMode) {
+    
+    console.log('compile');
 
     // [iframe, curUrl] = createPage(curUrl);
     // console.log(iframe);
@@ -192,8 +156,11 @@ export function webCompile(jsxMode) {
 
         // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
     }
-    else {        
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined);
+    else {
+        // console.log(compilerMode);
+        // console.log(Object.values(compilers)[compilerMode]);
+        // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;
     }

@@ -37,7 +37,10 @@
 
         <select name="compiler_mode" id="compiler_mode" onchange="modeChange(event)">
             <option value="js">js</option>
-            <option value="jsx">jsx</option>
+            <option value="vue">vue</option>
+            <option value="react">react</option>
+            <option value="preact">preact</option>
+            <!-- <option value="jsx">jsx</option> -->
         </select>
 
     </div>
@@ -79,8 +82,9 @@
 
     <script>
         function modeChange(event) {
-            localStorage.setItem('jsxmode', event.target.selectedIndex)
-            console.log(88);
+            localStorage.setItem('mode', event.target.selectedIndex)
+            // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
+            console.log(event.target.selectedIndex);
         }
     </script>
 </body>
