@@ -20,7 +20,7 @@
 
         .h_line{
             top: calc(44vh + 2.8em);            
-            background-color: hotpink;
+            /* background-color: hotpink; */
         }
 
         .header select{
@@ -35,10 +35,11 @@
 
     <div class="header">
 
-        <select name="compiler_mode" id="compiler_mode">
+        <select name="compiler_mode" id="compiler_mode" onchange="modeChange(event)">
             <option value="js">js</option>
-            <option value="jsx" selected>jsx</option>
+            <option value="jsx">jsx</option>
         </select>
+
     </div>
 
     <div class="md_container">
@@ -74,9 +75,13 @@
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->
     
+    <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script>
 
     <script>
-
+        function modeChange(event) {
+            localStorage.setItem('jsxmode', event.target.selectedIndex)
+            console.log(88);
+        }
     </script>
 </body>
 

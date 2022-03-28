@@ -12,11 +12,13 @@ let vertSeized = false;
 let allSeized = false;
 
 const container = document.querySelector('.md_container');
+const header = document.querySelector('.header');
+const headerHeight = header.offsetHeight;
 
 /**
  * Initialize resize lines
  */
-export function initResizers() {
+export function initResizers() {        
 
     container.addEventListener('mousedown', function (event) {
         if (event.target === hrSplitter) {
@@ -50,16 +52,17 @@ export function initResizers() {
 
 
 function hTune(event) {
+    let marginTop = headerHeight;
     let prefLine = 10;
 
     hrSplitter.style.top = event.clientY - prefLine + 'px';
     vertSplitter.style.height = event.clientY - prefLine + 'px';
     centerSplitter.style.top = event.clientY - prefLine + 'px';
 
-    htmlEditor.style.height = event.clientY + 'px';
-    styleEditor.style.height = event.clientY + 'px';
-    jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + 'px'
-    editionView.style.height = container.offsetHeight - event.clientY - prefLine + 'px'
+    htmlEditor.style.height = event.clientY - marginTop + 'px';
+    styleEditor.style.height = event.clientY - marginTop + 'px';
+    jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px'
+    editionView.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px'
 }
 
 function vTune(event) {

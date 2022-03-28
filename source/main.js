@@ -7,8 +7,10 @@ import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
 
 
-const jsxMode = true;
+// const jsxMode = true;
 
+let jsxMode = Number.parseInt(localStorage.getItem('jsxmode'));
+document.querySelector('select').selectedIndex = jsxMode;
 
 initResizers()
 
@@ -19,7 +21,7 @@ let compileFunc = inReactMode ? webCompile.bind(null, true) : webCompile;
 // @ts-ignore
 let editors = playgroundObject.editors = initializeEditor(ace, compileFunc, ['html', 'css', 'javascript'])
 
-let [iframe, curUrl] = jsxMode ? createPage(playgroundObject.curUrl, reactCompilers, babelCompiler.mode) : createPage(playgroundObject.curUrl);
+let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined)
 
 playgroundObject.iframe = iframe;
 playgroundObject.curUrl = curUrl;

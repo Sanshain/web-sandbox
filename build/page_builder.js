@@ -4736,14 +4736,13 @@
 
     // @ts-check
 
-    const preactCompiler = {
-        // set: './build/_preact.js',
-        // set: '~/build/_preact.js',
-        set: 'http://127.0.0.1:3000/build/_preact.js',    
-
-        // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
-        // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
-        // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
+    const vueCompiler = {
+        // vue: "https://unpkg.com/vue@3.2.31/dist/vue.global.js",
+        // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.min.js',
+        // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.global.prod.min.js',
+        // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.31/vue.runtime.global.min.js',
+        // vue: "https://unpkg.com/vue@2.5.17/dist/vue.js"
+        vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'
     };
 
 
@@ -4754,12 +4753,15 @@
     };
 
     // export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
-    const reactCompilers = [
-        preactCompiler.set,
-        babelCompiler.link,
-        // reactCompiler.react, reactCompiler.hooks, reactCompiler.compat
-    ];
 
+    // export const reactCompilers = [
+    //     preactCompiler.set,
+    //     babelCompiler.link,
+    // ];
+
+    const reactCompilers = [
+        vueCompiler.vue
+    ];
 
     const playgroundObject = {
         editors: [],
@@ -4834,7 +4836,7 @@
                 optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
             }
         }
-        console.log(htmlContent);
+        console.log(htmlContent);    
 
         const attrs = {
             script: scriptType
@@ -4909,7 +4911,7 @@
             // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
         }
         else {        
-            let [iframe, curUrl] = jsxMode ? createPage(playgroundObject.curUrl, reactCompilers, babelCompiler.mode) : createPage(playgroundObject.curUrl);
+            let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined);
             playgroundObject.iframe = iframe;
             playgroundObject.curUrl = curUrl;
         }
@@ -5249,11 +5251,13 @@
     let allSeized = false;
 
     const container = document.querySelector('.md_container');
+    const header = document.querySelector('.header');
+    const headerHeight = header.offsetHeight;
 
     /**
      * Initialize resize lines
      */
-    function initResizers() {
+    function initResizers() {        
 
         container.addEventListener('mousedown', function (event) {
             if (event.target === hrSplitter) {
@@ -5287,16 +5291,17 @@
 
 
     function hTune(event) {
+        let marginTop = headerHeight;
         let prefLine = 10;
 
         hrSplitter.style.top = event.clientY - prefLine + 'px';
         vertSplitter.style.height = event.clientY - prefLine + 'px';
         centerSplitter.style.top = event.clientY - prefLine + 'px';
 
-        htmlEditor.style.height = event.clientY + 'px';
-        styleEditor.style.height = event.clientY + 'px';
-        jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + 'px';
-        editionView.style.height = container.offsetHeight - event.clientY - prefLine + 'px';
+        htmlEditor.style.height = event.clientY - marginTop + 'px';
+        styleEditor.style.height = event.clientY - marginTop + 'px';
+        jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px';
+        editionView.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px';
     }
 
     function vTune(event) {
@@ -5319,6 +5324,11 @@
     // @ts-check
 
 
+    // const jsxMode = true;
+
+    let jsxMode = Number.parseInt(localStorage.getItem('jsxmode'));
+    document.querySelector('select').selectedIndex = jsxMode;
+
     initResizers();
 
     // @ts-ignore
@@ -5328,7 +5338,7 @@
     // @ts-ignore
     playgroundObject.editors = initializeEditor(ace, compileFunc, ['html', 'css', 'javascript']);
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, babelCompiler.mode) ;
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, reactCompilers, jsxMode ? babelCompiler.mode : undefined);
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
