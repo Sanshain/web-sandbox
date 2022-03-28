@@ -5119,10 +5119,10 @@
                         style: '',
                         color: '',
 
-                        ReactDOM: {
-                            desc: 'only for react lib namespace',
-                            return: 'namespace'
-                        },
+                        // ReactDOM: {
+                        //     desc: 'only for react lib namespace',
+                        //     return: 'namespace'
+                        // },
                         render: {
                             desc: 'render preact/react component to html DOM',
                             sign: {
