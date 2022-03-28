@@ -20,7 +20,15 @@ import { useState, useEffect, useRef } from 'preact/hooks';
 
 // render(<App />, document.body);
 
-let _preact = { useState, useEffect, Component, render, h };
+// alert(9)
+
+let _preact = {
+    useState, useEffect, useRef, Component, render, 
+    React: {
+        createElement: h
+    }
+};
+
 
 Object.assign(globalThis, _preact);
 

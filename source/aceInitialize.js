@@ -152,10 +152,60 @@ export default function initializeEditor(ace, webCompile, modes) {
                     color: '',
 
                     ReactDOM: {
-                        desc: 'only for react lib'
+                        desc: 'only for react lib namespace',
+                        return: 'namespace'
                     },
-                    render: '',
+                    render: {
+                        desc: 'render preact/react component to html DOM',
+                        sign: {
+                            'component': {
+                                desc: 'react/preact component',
+                                type: 'VNode<any>'
+                            },
+                            parent: {
+                                desc: 'app root inside DOM tree',
+                                type: 'HTMLElement'
+                            }
+                        },
+                        return: 'HTMLElement'
+                    },
                     
+
+                    useRef: {
+                        desc: 'get a reference to a DOM node inside a functional components',
+                        sign: {
+                            initialValue: {
+                                desc: 'initial value'
+                            }
+                        },
+                        'return': 'Ref<T>'
+                    },
+                    useState: {
+                        desc: 'assigns the starting state value, and returns an array of two elements',
+                        sign: {
+                            initialState: {
+                                type: '<T>(initialState: T | (() => T))',
+                                desc: 'initial state'
+                            }
+                        },
+                        'return': '[T, StateUpdater<T>]'
+                    },
+                    useEffect: {
+                        desc: '',
+                        sign: {
+                            effect: {
+                                type: 'EffectCallback',
+                                desc: 'callback function'
+                            },
+                            inputs: {
+                                type: 'Inputs?',
+                                desc: ''
+                            }
+                        }
+                    },
+                    
+
+
                     querySelectorAll: '',
                     querySelector: {
                         desc: 'get element by selector',

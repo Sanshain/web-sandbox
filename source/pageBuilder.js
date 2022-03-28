@@ -8,7 +8,9 @@ export const reactCompiler = {
 }
 
 export const preactCompiler = {
-    set: './build/_preact.js',
+    // set: './build/_preact.js',
+    // set: '~/build/_preact.js',
+    set: 'http://127.0.0.1:3000/build/_preact.js',    
 
     // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
     // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
