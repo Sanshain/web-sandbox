@@ -4945,10 +4945,11 @@
             playgroundObject.curUrl = curUrl;
         }
 
+        let compiler = Number.parseInt(localStorage.getItem('mode') || '0');
 
-        localStorage.setItem('html', editors[0].getValue());
-        localStorage.setItem('css', editors[1].getValue());
-        localStorage.setItem('javascript', editors[2].getValue());
+        localStorage.setItem(compiler + '__html', editors[0].getValue());
+        localStorage.setItem(compiler + '__css', editors[1].getValue());
+        localStorage.setItem(compiler + '__javascript', editors[2].getValue());
     }
 
     // @ts-check
@@ -5004,18 +5005,36 @@
 
     // @ts-check
 
-    const defaultValues = {
-        html: '<h2 onclick="greeting(event)">Hello world!</h2>',
-        css: 'h2 { color: green; cursor: pointer; }',
-        javascript: 'function greeting(event){ alert("greeting!") }'
-    };
+    const defaultValues = [
+        {
+            html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
+            css: 'h2 {\n\tcolor: green;\n\tcursor: pointer; \n}',
+            javascript: 'function greeting(event){\n\talert("greeting!")\n}'
+        },
+        {
+            html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
+            css: '#app { \n\tcolor: green; \n}',
+            javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
+        },
+        {
+            html: '<div id="root"></div>',
+            css: '#root{\n\tcolor: red;\n}',
+            javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+        },
+        {
+            html: '<div id="root"></div>',
+            css: '#root{\n\tcolor: red;\n}',
+            javascript: "const name = 'world'; \n\trender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
+        }
+    ];
 
     /**
-     * @param {{ require: (arg: string) => { (): any; new (): any; Range: any; }; edit: (arg: any) => any; }} ace
+     * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
      * @param {Function} webCompile
-     * @param {{ [x: string]: string; }} [modes]
+     * @param {string[]} modes
+     * @param {string | number} syntax
      */
-    function initializeEditor(ace, webCompile, modes) {
+    function initializeEditor(ace, webCompile, modes, syntax) {
 
         const Range = ace.require('ace/range').Range;
         const delay = 500;
@@ -5028,7 +5047,7 @@
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/" + modes[i]);
             
-            let value = localStorage.getItem(modes[i]) || defaultValues[modes[i]];
+            let value = localStorage.getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];        
             if (value) {
                 editor.session.setValue(value);
             }
@@ -5355,23 +5374,24 @@
 
     // const jsxMode = true;
 
-    let mode = Number.parseInt(localStorage.getItem('mode'));
-    document.querySelector('select').selectedIndex = mode;
-    console.log(mode);
+    let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
+    document.querySelector('select').selectedIndex = syntaxMode;
+
 
     initResizers();
 
     // @ts-ignore
-    let compileFunc = mode ? webCompile.bind(null, mode > 1, Object.values(compilers)[mode]) : webCompile;
+    let compileFunc = syntaxMode ? webCompile.bind(null, syntaxMode > 1, Object.values(compilers)[syntaxMode]) : webCompile;
+    const modes = ['html', 'css', 'javascript'];
 
     // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
     // console.log(mode);
     // console.log(Object.values(compilers)[mode]);
 
     // @ts-ignore
-    playgroundObject.editors = initializeEditor(ace, compileFunc, ['html', 'css', 'javascript']);
+    let editors = playgroundObject.editors = initializeEditor(ace, compileFunc, modes, syntaxMode);
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[mode], mode > 1 ? babelCompiler.mode : undefined);
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[syntaxMode], syntaxMode > 1 ? babelCompiler.mode : undefined);
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
@@ -5379,6 +5399,25 @@
 
     document.querySelector('.play').addEventListener('click', compileFunc);
     document.querySelector('.expand')['onclick'] = expand;
+    document.getElementById('compiler_mode').addEventListener('change', function (event) {
+        
+        // @ts-ignore
+        localStorage.setItem('mode', event.target.selectedIndex);
+
+        // @ts-ignore
+        if (event.target.selectedIndex || true) location.reload();
+        else {
+            for (let i = 0; i < editors.length; i++) {        
+                //@ts-ignore
+                let value = localStorage.getItem(event.target.selectedIndex + '__' + modes[i]) || '';
+                editors[i].session.setValue(value);
+            }
+            // document.querySelector('.play').click();
+        }    
+
+        // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
+        // console.log(event.target.selectedIndex);
+    });
 
 })();
 //# sourceMappingURL=page_builder.js.map

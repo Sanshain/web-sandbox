@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
@@ -35,7 +35,7 @@
 
     <div class="header">
 
-        <select name="compiler_mode" id="compiler_mode" onchange="modeChange(event)">
+        <select name="compiler_mode" id="compiler_mode">
             <option value="js">js</option>
             <option value="vue">vue</option>
             <option value="react">react</option>
@@ -81,11 +81,7 @@
     <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script>
 
     <script>
-        function modeChange(event) {
-            localStorage.setItem('mode', event.target.selectedIndex)
-            // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
-            console.log(event.target.selectedIndex);
-        }
+
     </script>
 </body>
 

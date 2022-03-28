@@ -165,10 +165,11 @@ export function webCompile(jsxMode, compilerMode) {
         playgroundObject.curUrl = curUrl;
     }
 
+    let compiler = Number.parseInt(localStorage.getItem('mode') || '0');
 
-    localStorage.setItem('html', editors[0].getValue());
-    localStorage.setItem('css', editors[1].getValue());
-    localStorage.setItem('javascript', editors[2].getValue());
+    localStorage.setItem(compiler + '__html', editors[0].getValue());
+    localStorage.setItem(compiler + '__css', editors[1].getValue());
+    localStorage.setItem(compiler + '__javascript', editors[2].getValue());
 }
 
 
