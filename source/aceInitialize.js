@@ -4,29 +4,9 @@ import { default as extend } from 'emmet';
 
 import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
+import { defaultValues } from './features/compiler';
 
-const defaultValues = [
-    {
-        html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
-        css: 'h2 {\n\tcolor: green;\n\tcursor: pointer; \n}',
-        javascript: 'function greeting(event){\n\talert("greeting!")\n}'
-    },
-    {
-        html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
-        css: '#app { \n\tcolor: green; \n}',
-        javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
-    },
-    {
-        html: '<div id="root"></div>',
-        css: '#root{\n\tcolor: red;\n}',
-        javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
-    },
-    {
-        html: '<div id="root"></div>',
-        css: '#root{\n\tcolor: red;\n}',
-        javascript: "const name = 'world'; \n\trender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
-    }
-]
+
 
 /**
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace

@@ -4,11 +4,14 @@ import { createPage, playgroundObject } from "../pageBuilder";
 
 
 /**
- * @param {{ currentTarget: any; }} event
+ * @param {{currentTarget: any;}} event
+ * @param {string | any[]} [additionalScripts]
+ * @param {string} [scriptType]
  */
-export function expand(event) {
+export function expand(event, additionalScripts, scriptType) {
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, additionalScripts, scriptType);
+
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 

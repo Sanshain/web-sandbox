@@ -4763,10 +4763,38 @@
 
     const compilers = {
         vanile: undefined,
+        preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
         vue: Object.values(vueCompiler),
         react: [babelCompiler.link].concat(Object.values(reactCompiler)),    
-        preact: [babelCompiler.link].concat(Object.values(preactCompiler)),    
     };
+
+
+    const defaultValues = [
+        // html
+        {
+            html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
+            css: 'h2 {\n\tcolor: green;\n\tcursor: pointer; \n}',
+            javascript: 'function greeting(event){\n\talert("greeting!")\n}'
+        },
+        // preact
+        {
+            html: '<div id="root"></div>',
+            css: '#root{\n\tcolor: red;\n}',
+            javascript: "const name = 'world'; \n\trender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
+        },
+        // vue
+        {
+            html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
+            css: '#app { \n\tcolor: green; \n}',
+            javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
+        },
+        // react
+        {
+            html: '<div id="root"></div>',
+            css: '#root{\n\tcolor: red;\n}',
+            javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+        },
+    ];
 
     /**
      * initialize global funcs in the sandbox
@@ -4956,11 +4984,14 @@
 
 
     /**
-     * @param {{ currentTarget: any; }} event
+     * @param {{currentTarget: any;}} event
+     * @param {string | any[]} [additionalScripts]
+     * @param {string} [scriptType]
      */
-    function expand(event) {
+    function expand(event, additionalScripts, scriptType) {
 
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl);
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, additionalScripts, scriptType);
+
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;
 
@@ -5005,28 +5036,7 @@
 
     // @ts-check
 
-    const defaultValues = [
-        {
-            html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
-            css: 'h2 {\n\tcolor: green;\n\tcursor: pointer; \n}',
-            javascript: 'function greeting(event){\n\talert("greeting!")\n}'
-        },
-        {
-            html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
-            css: '#app { \n\tcolor: green; \n}',
-            javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
-        },
-        {
-            html: '<div id="root"></div>',
-            css: '#root{\n\tcolor: red;\n}',
-            javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
-        },
-        {
-            html: '<div id="root"></div>',
-            css: '#root{\n\tcolor: red;\n}',
-            javascript: "const name = 'world'; \n\trender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
-        }
-    ];
+
 
     /**
      * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
@@ -5372,16 +5382,16 @@
     // @ts-check
 
 
-    // const jsxMode = true;
-
     let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
     document.querySelector('select').selectedIndex = syntaxMode;
 
+    const jsxMode = !!(syntaxMode % 2);
+    const compilerMode = Object.values(compilers)[syntaxMode];
 
     initResizers();
 
     // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, syntaxMode > 1, Object.values(compilers)[syntaxMode]) : webCompile;
+    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
     const modes = ['html', 'css', 'javascript'];
 
     // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
@@ -5391,14 +5401,14 @@
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, compileFunc, modes, syntaxMode);
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[syntaxMode], syntaxMode > 1 ? babelCompiler.mode : undefined);
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 
 
     document.querySelector('.play').addEventListener('click', compileFunc);
-    document.querySelector('.expand')['onclick'] = expand;
+    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerMode, jsxMode ? babelCompiler.mode : undefined);
     document.getElementById('compiler_mode').addEventListener('change', function (event) {
         
         // @ts-ignore

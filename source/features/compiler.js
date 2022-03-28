@@ -40,7 +40,35 @@ export const babelCompiler = {
 
 export const compilers = {
     vanile: undefined,
+    preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
     vue: Object.values(vueCompiler),
     react: [babelCompiler.link].concat(Object.values(reactCompiler)),    
-    preact: [babelCompiler.link].concat(Object.values(preactCompiler)),    
-}
+};
+
+
+export const defaultValues = [
+    // html
+    {
+        html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
+        css: 'h2 {\n\tcolor: green;\n\tcursor: pointer; \n}',
+        javascript: 'function greeting(event){\n\talert("greeting!")\n}'
+    },
+    // preact
+    {
+        html: '<div id="root"></div>',
+        css: '#root{\n\tcolor: red;\n}',
+        javascript: "const name = 'world'; \n\trender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
+    },
+    // vue
+    {
+        html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
+        css: '#app { \n\tcolor: green; \n}',
+        javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
+    },
+    // react
+    {
+        html: '<div id="root"></div>',
+        css: '#root{\n\tcolor: red;\n}',
+        javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+    },
+]
