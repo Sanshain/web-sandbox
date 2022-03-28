@@ -11,6 +11,12 @@ let modules = [
     //     outputName: 'extend',
     // },
     {
+        inputFile: './source/libs/Preact.js',
+        outputFile: '_preact.js',
+
+        outputName: '_preact',
+    },
+    {
         inputFile: './source/main.js',
         outputFile: 'page_builder.js',
         

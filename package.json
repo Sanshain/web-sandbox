@@ -10,7 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "emmet": "^2.3.6"
+    "emmet": "^2.3.6",
+    "preact": "^10.6.6"
   },
   "devDependencies": {
     "rollup": "^2.70.1",

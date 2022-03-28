@@ -7,12 +7,27 @@ export const reactCompiler = {
     reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
 }
 
+export const preactCompiler = {
+    set: './build/_preact.js',
+
+    // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
+    // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
+    // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
+}
+
+
+
 export const babelCompiler = {
     link: 'https://unpkg.com/@babel/standalone/babel.min.js',
     mode: ' type="text/babel" '
 }
 
-export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
+// export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
+export const reactCompilers = [
+    preactCompiler.set,
+    babelCompiler.link,
+    // reactCompiler.react, reactCompiler.hooks, reactCompiler.compat
+];
 
 
 export const playgroundObject = {
@@ -81,9 +96,11 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
     let editors = playgroundObject.editors;
     let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
 
+    let optionalScripts = ''
     if (additionalScripts && additionalScripts.length) {
         for (let i = 0; i < additionalScripts.length; i++) {
-            htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
+            // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
+            optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
         }
     }
     console.log(htmlContent);
@@ -94,6 +111,10 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
 
     // @ts-ignore
     let html = createHtml(htmlContent, attrs);
+
+    console.log(optionalScripts);
+    html = html.replace('<head>', '<head>' + optionalScripts);
+    html = html.replace('<head>', '<head><meta charset="UTF-8">');
 
     let file = new Blob([html], { type: 'text/html' });
 
@@ -138,7 +159,7 @@ export function webCompile(jsxMode) {
         // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
 
         let script = iframe.contentDocument.createElement('script');
-        alert(9)
+
         if (jsxMode) {
             
             let jsxCompiler = iframe.contentDocument.createElement('script');

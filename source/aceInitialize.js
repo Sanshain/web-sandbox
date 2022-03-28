@@ -151,6 +151,11 @@ export default function initializeEditor(ace, webCompile, modes) {
                     style: '',
                     color: '',
 
+                    ReactDOM: {
+                        desc: 'only for react lib'
+                    },
+                    render: '',
+                    
                     querySelectorAll: '',
                     querySelector: {
                         desc: 'get element by selector',
