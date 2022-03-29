@@ -124,29 +124,38 @@ export function webCompile(jsxMode, compilerMode) {
     let iframe = playgroundObject.iframe;
     let editors = playgroundObject.editors;
 
-    if (iframe.contentDocument) {
+    if (iframe.contentDocument && !jsxMode) {
 
         iframe.contentDocument.body.innerHTML = editors[0].getValue()
         iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()
 
-        let lastScripts = iframe.contentDocument.querySelectorAll('script');
-        lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
-        {
-            element.parentElement.removeChild(element);
-        });
+        let lastScript = [].slice.call(iframe.contentDocument.querySelectorAll('script')).pop();
+        lastScript && lastScript.parentElement.removeChild(lastScript);
 
-        // let script = iframe.contentDocument.body.appendChild(iframe.contentDocument.createElement('script'));
-
+        // let lastScripts = iframe.contentDocument.querySelectorAll('script');
+        // lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
+        // {
+        //     element.parentElement.removeChild(element);
+        // });
+        
         let script = iframe.contentDocument.createElement('script');
+        
+        console.log(jsxMode)
+        console.log(compilerMode);
 
         if (jsxMode) {
             
-            let jsxCompiler = iframe.contentDocument.createElement('script');
-            jsxCompiler.src = babelCompiler.link;
-            iframe.contentDocument.body.appendChild(script);
+            // for (let i = 0; i < compilerMode.length; i++) {
+            //     const link = compilerMode[i];
+
+            //     let jsxCompiler = iframe.contentDocument.createElement('script');
+            //     jsxCompiler.src = link;
+            //     iframe.contentDocument.body.appendChild(jsxCompiler);
+            // }
 
             script.type = "text/babel";
         }
+
         let code = editors[2].getValue();
 
         let globalReinitializer = generateGlobalInintializer(code)
