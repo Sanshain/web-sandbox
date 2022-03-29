@@ -8,17 +8,17 @@ import { initResizers } from "./features/resizing";
 import { babelCompiler, compilers } from "./features/compiler";
 
 
+const modes = ['html', 'css', 'javascript']
+
 let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
 document.querySelector('select').selectedIndex = syntaxMode;
 
 const jsxMode = !!(syntaxMode % 2);
 const compilerMode = Object.values(compilers)[syntaxMode];
-
-initResizers()
-
 // @ts-ignore
 let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
-const modes = ['html', 'css', 'javascript']
+
+initResizers()
 
 // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
 // console.log(mode);
