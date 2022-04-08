@@ -8,6 +8,7 @@
     <title>Document</title>
 
     <link rel="stylesheet" href="./static/css/web-pground.css">
+    <link rel="stylesheet" href="./static/css/tabs.css">
 
     <style>
         .md_container{
@@ -28,6 +29,17 @@
             background-color: gray;
             cursor: pointer;            
         }
+
+        .tabs{
+            position: absolute;
+            top: 43.6vh;
+            background-color: transparent;
+            left: 3.5em;
+        }
+        .tab::before{
+            background-color:#292929;
+        }
+
     </style>
 </head>
 
@@ -54,6 +66,11 @@
         <div class="center_line"></div>
         <div class="v_line"></div>
 
+        <div class="tabs">
+            <div class="tab" tabindex="0">hfo</div>
+            <div class="tab" tabindex="1">карма</div>
+            <div class="tab" tabindex="2">sdsf sdf</div>
+        </div>
         <div class="editor" id="jseditor"></div>
         <div class="view">
             <div class="expand" data-title="Expand"></div>
