@@ -66,10 +66,9 @@
         <div class="center_line"></div>
         <div class="v_line"></div>
 
-        <div class="tabs">
-            <div class="tab" tabindex="0">hfo</div>
-            <div class="tab" tabindex="1">карма</div>
-            <div class="tab" tabindex="2">sdsf sdf</div>
+        <div class="tabs" style="display: none;">
+            <div class="tab" tabindex="0">app.js</div>
+            <div class="tab">+</div>
         </div>
         <div class="editor" id="jseditor"></div>
         <div class="view">
@@ -79,6 +78,7 @@
 
         <div class="play" title="RUN (press F9)"></div>
     </div>
+    
     <hr>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
@@ -97,7 +97,9 @@
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
 
     <script>
-
+        window.addEventListener('DOMContentLoaded', function(event) {
+            document.querySelector('.tabs').style.display = 'block'
+        })
     </script>
 </body>
 
