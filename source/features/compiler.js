@@ -10,13 +10,15 @@ const vueCompiler = {
 
 const preactCompiler = {
     // set: './build/_preact.js',
-    // set: '~/build/_preact.js',       
+    // set: '~/build/_preact.js',
 
     // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
     // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
     // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
 
-    set: 'http://127.0.0.1:3000/build/_preact.js',
+    // set: 'http://127.0.0.1:3000/build/_preact.js',
+
+    set: document.location.origin + (~document.location.host.indexOf('3000') ? '/build/_preact.js' : '/static/js/compiler_libs/_preact.js'),
 }
 
 
@@ -68,7 +70,9 @@ export const defaultValues = [
     // react
     {
         html: '<div id="root"></div>',
-        css: '#root{\n\tcolor: red;\n}',
-        javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+        css: '#root{\n\tcolor: red;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
+        // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+        javascript: "const name = 'world';function App(){\n\tconst [count, setCount] = React.useState(0);" +
+                    "\n\treturn <h1 onClick={()=>setCount(count+1)}>Привет, {name} {count}!</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
     },
 ]

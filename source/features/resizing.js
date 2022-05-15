@@ -13,7 +13,12 @@ let allSeized = false;
 
 const container = document.querySelector('.md_container');
 const header = document.querySelector('.header');
-const headerHeight = header.offsetHeight;
+
+// const headerHeight = header.offsetHeight;
+// const headerHeight = container.offsetTop;
+const headerHeight = container.getBoundingClientRect().top;
+const paddingTop = parseFloat(getComputedStyle(container).padding) * 2 || 0;
+console.log(paddingTop);
 
 /**
  * Initialize resize lines
@@ -52,17 +57,20 @@ export function initResizers() {
 
 
 function hTune(event) {
-    let marginTop = headerHeight;
-    let prefLine = 10;
+    let marginTop = headerHeight;    
 
-    hrSplitter.style.top = event.clientY - prefLine + 'px';
-    vertSplitter.style.height = event.clientY - prefLine + 'px';
-    centerSplitter.style.top = event.clientY - prefLine + 'px';
+    hrSplitter.style.top = event.clientY - paddingTop + 'px';
+    vertSplitter.style.height = event.clientY - paddingTop + 'px';
+    centerSplitter.style.top = event.clientY - paddingTop + 'px';
+
 
     htmlEditor.style.height = event.clientY - marginTop + 'px';
     styleEditor.style.height = event.clientY - marginTop + 'px';
-    jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px'
-    editionView.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px'
+
+    // let lowerHeight = container.offsetHeight - event.clientY - paddingTop - 10 + marginTop + 'px';
+    let lowerHeight = container.offsetHeight - event.clientY - (paddingTop || 10) + marginTop + 'px';        
+
+    jsEditor.style.height = editionView.style.height = lowerHeight;    
 }
 
 function vTune(event) {

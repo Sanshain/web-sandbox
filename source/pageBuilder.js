@@ -4,6 +4,8 @@ import { babelCompiler, compilers } from "./features/compiler";
 import { generateGlobalInintializer } from "./utils/page_generator";
 
 
+export { compilers, babelCompiler };
+
 
 export const playgroundObject = {
     editors: [],
@@ -179,6 +181,8 @@ export function webCompile(jsxMode, compilerMode) {
     localStorage.setItem(compiler + '__html', editors[0].getValue());
     localStorage.setItem(compiler + '__css', editors[1].getValue());
     localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+
+    // document.getElementById('compiler_mode')
 }
 
 

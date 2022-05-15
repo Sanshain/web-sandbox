@@ -1,5 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import { terser } from "rollup-plugin-terser";
+
 
 // import typescript from '@rollup/plugin-typescript';
 
@@ -20,8 +22,14 @@ let modules = [
         inputFile: './source/main.js',
         outputFile: 'page_builder.js',
         
-        outputName: '__',
-    }
+        outputName: 'IDE',
+    },
+    {
+        inputFile: './source/pageBuilder.js',
+        outputFile: 'page_compiler.js',
+
+        outputName: 'pageBuilder',
+    },
 ]
 
 module.exports = modules.map(function (config) {
@@ -38,7 +46,7 @@ module.exports = modules.map(function (config) {
             resolve({
                 browser: true
             }),
-            commonjs(),
+            commonjs(),            
 
             // typescript({
             //     // module: 'CommonJS', 
@@ -46,6 +54,12 @@ module.exports = modules.map(function (config) {
             //     lib: ["es6", "dom"], //es5
             //     target: "es5",
             //     sourceMap: true
+            // }),
+
+            // terser({
+            //     output: {
+            //         comments: false,
+            //     }
             // }),
         ]
     }

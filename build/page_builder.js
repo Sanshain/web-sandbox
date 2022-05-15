@@ -1,4 +1,4 @@
-(function () {
+var IDE = (function (exports) {
     'use strict';
 
     /**
@@ -4733,13 +4733,15 @@
 
     const preactCompiler = {
         // set: './build/_preact.js',
-        // set: '~/build/_preact.js',       
+        // set: '~/build/_preact.js',
 
         // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
         // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
         // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
 
-        set: 'http://127.0.0.1:3000/build/_preact.js',
+        // set: 'http://127.0.0.1:3000/build/_preact.js',
+
+        set: document.location.origin + (~document.location.host.indexOf('3000') ? '/build/_preact.js' : '/static/js/compiler_libs/_preact.js'),
     };
 
 
@@ -4791,8 +4793,10 @@
         // react
         {
             html: '<div id="root"></div>',
-            css: '#root{\n\tcolor: red;\n}',
-            javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+            css: '#root{\n\tcolor: red;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
+            // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+            javascript: "const name = 'world';function App(){\n\tconst [count, setCount] = React.useState(0);" +
+                        "\n\treturn <h1 onClick={()=>setCount(count+1)}>Привет, {name} {count}!</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
         },
     ];
 
@@ -4810,7 +4814,6 @@
     }
 
     // @ts-check
-
 
 
     const playgroundObject = {
@@ -4987,6 +4990,8 @@
         localStorage.setItem(compiler + '__html', editors[0].getValue());
         localStorage.setItem(compiler + '__css', editors[1].getValue());
         localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+
+        // document.getElementById('compiler_mode')
     }
 
     // @ts-check
@@ -5049,24 +5054,29 @@
 
     /**
      * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
-     * @param {Function} webCompile
+     * @param {{ compileFunc: any; controlSave?: any; storage?: any}} editorOptions
      * @param {string[]} modes
      * @param {string | number} syntax
+     * @param {?[string?, string?, string?]} [values]
      */
-    function initializeEditor(ace, webCompile, modes, syntax) {
+    function initializeEditor(ace, editorOptions, modes, syntax, values) {
+
+        const webCompile = editorOptions.compileFunc;
 
         const Range = ace.require('ace/range').Range;
         const delay = 500;
         const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
 
-        let editors = [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
+        values = values || [];
+
+        let editors = [].slice.call(document.querySelectorAll('.editor')).map((/** @type {{ id: any; }} */ element, /** @type {number} */ i, /** @type {any[]} */ arr) =>
         {
 
             let editor = ace.edit(element.id);
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/" + modes[i]);
             
-            let value = localStorage.getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];        
+            let value = values[i] || (editorOptions.storage || localStorage).getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];
             if (value) {
                 editor.session.setValue(value);
             }
@@ -5087,17 +5097,20 @@
             
             (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay);
 
-            editor.textInput.getElement().addEventListener('keydown', function (event)
+            editor.textInput.getElement().addEventListener('keydown', function (/** @type {{ ctrlKey: any; keyCode: number; key: string; preventDefault: () => void; }} */ event)
             {
 
                 // console.log(event);
 
                 (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();
                 (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')});            
-                if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9')
+                if ( event.key === 'F9')      // ctrl+s
                 {
-                    event.preventDefault();                
-                    webCompile();
+                    event.preventDefault(), webCompile();
+                }
+                else if (event.ctrlKey && event.keyCode === 83) {
+                    
+                    event.preventDefault(), (editorOptions.controlSave || webCompile)();
                 }
             });
 
@@ -5157,7 +5170,7 @@
 
                     const colorsCompleter = {                    
                         getCompletions: function (editor, session, pos, prefix, callback) {
-                            let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black'];
+                            let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
                             wordList = wordList.concat(['div', 'input', 'select']);
                             // console.log(pos);                        
                             callback(null, wordList.map(
@@ -5182,7 +5195,7 @@
 
                     editor.completers.push(colorsCompleter);
                 }
-                else {
+                else if(i === 2) {
                     
                     let domFuncs = {
                         style: '',
@@ -5318,8 +5331,13 @@
     let allSeized = false;
 
     const container = document.querySelector('.md_container');
-    const header = document.querySelector('.header');
-    const headerHeight = header.offsetHeight;
+    document.querySelector('.header');
+
+    // const headerHeight = header.offsetHeight;
+    // const headerHeight = container.offsetTop;
+    const headerHeight = container.getBoundingClientRect().top;
+    const paddingTop = parseFloat(getComputedStyle(container).padding) * 2 || 0;
+    console.log(paddingTop);
 
     /**
      * Initialize resize lines
@@ -5358,17 +5376,20 @@
 
 
     function hTune(event) {
-        let marginTop = headerHeight;
-        let prefLine = 10;
+        let marginTop = headerHeight;    
 
-        hrSplitter.style.top = event.clientY - prefLine + 'px';
-        vertSplitter.style.height = event.clientY - prefLine + 'px';
-        centerSplitter.style.top = event.clientY - prefLine + 'px';
+        hrSplitter.style.top = event.clientY - paddingTop + 'px';
+        vertSplitter.style.height = event.clientY - paddingTop + 'px';
+        centerSplitter.style.top = event.clientY - paddingTop + 'px';
+
 
         htmlEditor.style.height = event.clientY - marginTop + 'px';
         styleEditor.style.height = event.clientY - marginTop + 'px';
-        jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px';
-        editionView.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px';
+
+        // let lowerHeight = container.offsetHeight - event.clientY - paddingTop - 10 + marginTop + 'px';
+        let lowerHeight = container.offsetHeight - event.clientY - (paddingTop || 10) + marginTop + 'px';        
+
+        jsEditor.style.height = editionView.style.height = lowerHeight;    
     }
 
     function vTune(event) {
@@ -5388,55 +5409,94 @@
         editionView.style.width = container.offsetWidth - event.clientX + post + 'px';
     }
 
+    "function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout;
+
     // @ts-check
 
 
-    const modes = ['html', 'css', 'javascript'];
-
-    let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
-    document.querySelector('select').selectedIndex = syntaxMode;
-
-    const jsxMode = !!(syntaxMode % 2);
-    const compilerMode = Object.values(compilers)[syntaxMode];
-    // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
-
-    initResizers();
-
-    // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
-    // console.log(mode);
-    // console.log(Object.values(compilers)[mode]);
-
-    // @ts-ignore
-    let editors = playgroundObject.editors = initializeEditor(ace, compileFunc, modes, syntaxMode);
-
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
-
-    playgroundObject.iframe = iframe;
-    playgroundObject.curUrl = curUrl;
+    const modes = [
+        'html',
+        'css',
+        'javascript',
+        // 'typescript',
+    ];
 
 
-    document.querySelector('.play').addEventListener('click', compileFunc);
-    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerMode, jsxMode ? babelCompiler.mode : undefined);
-    document.getElementById('compiler_mode').addEventListener('change', function (event) {
+    /**
+     * @param {string[]} values
+     * @param {{onControlSave?: Function}?} options
+     * @returns {any[]}
+     */
+    function initialize(values, options) {
+
+        options = options || {};
         
-        // @ts-ignore
-        localStorage.setItem('mode', event.target.selectedIndex);
+        let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
+        //@ts-ignore
+        document.getElementById('compiler_mode').selectedIndex = syntaxMode;
 
+        const jsxMode = !!(syntaxMode % 2);
+
+        if (jsxMode) {
+            document.getElementById('jseditor').classList.add('dis_errors');
+        }
+
+        const compilerMode = Object.values(compilers)[syntaxMode];
         // @ts-ignore
-        if (event.target.selectedIndex || true) location.reload();
-        else {
-            for (let i = 0; i < editors.length; i++) {        
-                //@ts-ignore
-                let value = localStorage.getItem(event.target.selectedIndex + '__' + modes[i]) || '';
-                editors[i].session.setValue(value);
+        let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
+
+        initResizers();
+
+        // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
+        // console.log(mode);
+        // console.log(Object.values(compilers)[mode]);
+
+        const editorOptions = {
+            compileFunc,
+            controlSave: options.onControlSave
+        };
+        // @ts-ignore
+        let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);
+
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+
+        playgroundObject.iframe = iframe;
+        playgroundObject.curUrl = curUrl;
+
+
+        document.querySelector('.play').addEventListener('click', compileFunc);
+        document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+        document.getElementById('compiler_mode').addEventListener('change', function (event) {
+
+            // @ts-ignore
+            localStorage.setItem('mode', event.target.selectedIndex);
+
+            // @ts-ignore
+            if (event.target.selectedIndex || true) location.reload();
+            else {
+                for (let i = 0; i < editors.length; i++) {
+                    //@ts-ignore
+                    let value = localStorage.getItem(event.target.selectedIndex + '__' + modes[i]) || '';
+                    editors[i].session.setValue(value);
+                }
+                // document.querySelector('.play').click();
             }
-            // document.querySelector('.play').click();
-        }    
 
-        // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
-        // console.log(event.target.selectedIndex);
-    });
+            // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
+            // console.log(event.target.selectedIndex);
+        });
 
-})();
+        return editors;
+    }
+
+
+    // export const {editors}
+
+    exports.initialize = initialize;
+
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+    return exports;
+
+})({});
 //# sourceMappingURL=page_builder.js.map

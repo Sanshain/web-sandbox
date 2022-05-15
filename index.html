@@ -15,7 +15,7 @@
             padding: .3em 0 0;
         }
         .header{
-            height: 2.5em;            
+            height: 4em;            
             background-color: gray;
         }
 
@@ -35,6 +35,16 @@
             top: 43.6vh;
             background-color: transparent;
             left: 3.5em;
+
+            top: 43.2vh;
+        }
+        .tab{
+            font-size: small;
+            line-height: 1.6em; 
+            padding: 0 0.75em;           
+        }
+        .tab.active{
+            color: azure;
         }
         .tab::before{
             background-color:#292929;
@@ -68,7 +78,7 @@
 
         <div class="tabs" style="display: none;">
             <div class="tab" tabindex="0">app.js</div>
-            <div class="tab">+</div>
+            <div class="tab" onclick="fileAttach(event)">+</div>
         </div>
         <div class="editor" id="jseditor"></div>
         <div class="view">
@@ -78,11 +88,16 @@
 
         <div class="play" title="RUN (press F9)"></div>
     </div>
-    
+
     <hr>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.min.js"></script> -->
+
+
+    <script src="./static/js/ace.js"></script>
+    <script src="./static/js/ext-language_tools.min.js"></script>
+
 
     <!-- <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script> -->
     
@@ -90,6 +105,7 @@
     <!-- <script src="./build/editor.js"></script> -->
     <!-- <script src="./source/ace_initialize.js"></script> -->
 
+    <!-- must have some params for initialization: 1 - preact (and other) relative path, 2 - height for size change line calculation -->
     <script src="./build/page_builder.js"></script>
 
     <!-- test: -->
@@ -97,8 +113,65 @@
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
 
     <script>
+
+        const fileStore = { _active: 0 };
+
+        function fileAttach(event) {
+
+            let filename = prompt('Enter file name:');
+            let title = ~filename.indexOf('.') ? filename : (filename + '.js');
+
+            if (~Object.keys(fileStore).indexOf(title)){
+                alert('Файл с таким именем уже существует');
+                return;
+            }
+            
+            // filename
+            let origTab = event.target.parentElement.children[0];
+            origTab.onclick = origTab.onclick || function(e) 
+            {
+                let prevTab = document.querySelector('.tab.active');
+                if (prevTab) {
+
+                    prevTab.classList.toggle('active');
+                    fileStore[prevTab.innerText] = editors[2].getValue();        
+                    
+                    const defaultExport = fileStore[prevTab.innerText].match(/export default function (\w+)/);
+                    if (defaultExport){
+                        // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
+                    }
+                }
+                e.target.classList.add('active');
+
+                editors[2].setValue(fileStore[e.target.innerText]);
+
+                console.log('toggle tab...');
+            }
+
+            let newTab = origTab.cloneNode();
+            newTab.innerText = title;
+            newTab.classList.add('active');
+            newTab.onclick = origTab.onclick;
+                
+            fileStore[origTab.innerText] = editors[2].getValue();
+            fileStore[newTab.innerText] = '';                   // create new
+            editors[2].setValue(fileStore[newTab.innerText]);
+
+            editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+
+            event.target.parentElement.insertBefore(newTab, event.target);
+
+        }
+
+
+        let editors = IDE.initialize({ fileStore });
+
         window.addEventListener('DOMContentLoaded', function(event) {
             document.querySelector('.tabs').style.display = 'block'
+            
+            // setTimeout(function() {
+            //     editors[2].session.$mode.$highlightRules.$keywordList.push("from ")
+            // }, 1000)
         })
     </script>
 </body>

@@ -190,7 +190,9 @@ iframe {
 }
 
 
-
+.dis_errors .ace_error{
+    background-image: none;
+}
 
 
 
