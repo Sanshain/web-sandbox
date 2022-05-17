@@ -70,9 +70,12 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     
     if (window['fileStore'] && playgroundObject.editors) {
         const fileStorage = window['fileStore'];
+        let activeTab = document.querySelector('.tabs .tab.active');
         // update current tab content:
-        //@ts-ignore
-        fileStorage[document.querySelector('.tabs .tab.active').innerText] = playgroundObject.editors[2].getValue()
+
+        if (fileStorage) {
+            fileStorage[fileStorage.innerText] = playgroundObject.editors[2].getValue()
+        }        
     }
     
     let appCode = (window['fileStore'] || {})['app.js'];

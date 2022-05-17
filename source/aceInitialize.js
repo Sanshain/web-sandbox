@@ -289,23 +289,25 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
         let i = 0;
 
-        for (const key in _modules) {
-            if (Object.hasOwnProperty.call(_modules, key)) {
-                fileStorage[key] = _modules[key];
-                // create tabs:
+        if (fileCreate) {
+            for (const key in _modules) {
+                if (Object.hasOwnProperty.call(_modules, key)) {
+                    fileStorage[key] = _modules[key];
+                    // create tabs:
 
-                console.log(key);
-                //@ts-ignore
-                if (i++) fileCreate.onclick({ target: fileCreate, file: key });
-                else {
-                    // set editor value
-                    editors[2].setValue(_modules[key])
+                    console.log(key);
+                    //@ts-ignore
+                    if (i++) fileCreate.onclick({ target: fileCreate, file: key });
+                    else {
+                        // set editor value
+                        editors[2].setValue(_modules[key])
+                    }
                 }
             }
-        }
 
-        document.querySelector('.tabs .tab.active').classList.toggle('active');
-        document.querySelector('.tabs .tab').classList.add('active');
+            document.querySelector('.tabs .tab.active').classList.toggle('active');
+            document.querySelector('.tabs .tab').classList.add('active');
+        }
     }    
 
     // initResizers()

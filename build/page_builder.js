@@ -4882,9 +4882,12 @@ var IDE = (function (exports) {
         
         if (window['fileStore'] && playgroundObject.editors) {
             const fileStorage = window['fileStore'];
+            document.querySelector('.tabs .tab.active');
             // update current tab content:
-            //@ts-ignore
-            fileStorage[document.querySelector('.tabs .tab.active').innerText] = playgroundObject.editors[2].getValue();
+
+            if (fileStorage) {
+                fileStorage[fileStorage.innerText] = playgroundObject.editors[2].getValue();
+            }        
         }
         
         let appCode = (window['fileStore'] || {})['app.js'];
@@ -5381,23 +5384,25 @@ var IDE = (function (exports) {
 
             let i = 0;
 
-            for (const key in _modules) {
-                if (Object.hasOwnProperty.call(_modules, key)) {
-                    fileStorage[key] = _modules[key];
-                    // create tabs:
+            if (fileCreate) {
+                for (const key in _modules) {
+                    if (Object.hasOwnProperty.call(_modules, key)) {
+                        fileStorage[key] = _modules[key];
+                        // create tabs:
 
-                    console.log(key);
-                    //@ts-ignore
-                    if (i++) fileCreate.onclick({ target: fileCreate, file: key });
-                    else {
-                        // set editor value
-                        editors[2].setValue(_modules[key]);
+                        console.log(key);
+                        //@ts-ignore
+                        if (i++) fileCreate.onclick({ target: fileCreate, file: key });
+                        else {
+                            // set editor value
+                            editors[2].setValue(_modules[key]);
+                        }
                     }
                 }
-            }
 
-            document.querySelector('.tabs .tab.active').classList.toggle('active');
-            document.querySelector('.tabs .tab').classList.add('active');
+                document.querySelector('.tabs .tab.active').classList.toggle('active');
+                document.querySelector('.tabs .tab').classList.add('active');
+            }
         }    
 
         // initResizers()
