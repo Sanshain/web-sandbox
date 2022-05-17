@@ -60,10 +60,20 @@ function createHtml({ body, style, script }, attrs) {
  * @returns {[HTMLElement, string]}
  * @param {string | any[]} [additionalScripts]
  * @param {string} [scriptType]
+ * @param {object} [options]
  */
-export function createPage(prevUrl, additionalScripts, scriptType) {
+export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
-    let wrapFunc = (/** @type {string} */ code) => {
+    let wrapFunc = (/** @type {string} */ code) => {        
+
+        if (window['simplestBundler']) {
+            code = window['simplestBundler'].default(code, window['fileStore']);
+        }
+        else {
+            console.warn('bundler is absent');
+            alert('Warn/ look logs')
+        }
+
         // 
         let globalReinitializer = generateGlobalInintializer(code)
 

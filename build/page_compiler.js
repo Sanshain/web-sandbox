@@ -52,6 +52,9 @@ var pageBuilder = (function (exports) {
 
     /**
      * initialize global funcs in the sandbox
+     * 
+     * (обработчики событий, назначенных в атрибутах, должны быть глобальными. Назначаем их глобальными здесь)
+     * 
      * @param {*} code 
      * @returns 
      */
@@ -119,10 +122,20 @@ var pageBuilder = (function (exports) {
      * @returns {[HTMLElement, string]}
      * @param {string | any[]} [additionalScripts]
      * @param {string} [scriptType]
+     * @param {object} [options]
      */
-    function createPage(prevUrl, additionalScripts, scriptType) {
+    function createPage(prevUrl, additionalScripts, scriptType, options) {
 
-        let wrapFunc = (/** @type {string} */ code) => {
+        let wrapFunc = (/** @type {string} */ code) => {        
+
+            if (window['simplestBundler']) {
+                code = window['simplestBundler'].default(code, window['fileStore']);
+            }
+            else {
+                console.warn('bundler is absent');
+                alert('Warn/ look logs');
+            }
+
             // 
             let globalReinitializer = generateGlobalInintializer(code);
 

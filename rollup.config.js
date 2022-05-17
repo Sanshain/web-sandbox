@@ -25,11 +25,17 @@ let modules = [
         outputName: 'IDE',
     },
     {
+        // just page builder (w/o ui)
         inputFile: './source/pageBuilder.js',
         outputFile: 'page_compiler.js',
 
         outputName: 'pageBuilder',
     },
+    {
+        inputFile: './source/utils/bundler.js',
+        outputFile: 'bundler.js',
+        outputName: 'simplestBundler'
+    }
 ]
 
 module.exports = modules.map(function (config) {
@@ -41,12 +47,16 @@ module.exports = modules.map(function (config) {
             format: 'iife',
             name: config.outputName,
             sourcemap: true,
+            globals: {
+                fs: undefined + '',
+                // fs: 'window'
+            }
         },
         plugins: [
             resolve({
                 browser: true
             }),
-            commonjs(),            
+            commonjs(),
 
             // typescript({
             //     // module: 'CommonJS', 

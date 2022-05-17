@@ -41,7 +41,8 @@
         .tab{
             font-size: small;
             line-height: 1.6em; 
-            padding: 0 0.75em;           
+            padding: 0 0.75em;       
+            margin-right: .9em;    
         }
         .tab.active{
             color: azure;
@@ -106,53 +107,53 @@
     <!-- <script src="./source/ace_initialize.js"></script> -->
 
     <!-- must have some params for initialization: 1 - preact (and other) relative path, 2 - height for size change line calculation -->
-    <script src="./build/page_builder.js"></script>
 
-    <!-- test: -->
-    <!-- <script src="./build/_preact.js"></script> -->    
-    <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
 
     <script>
 
-        const fileStore = { _active: 0 };
+        var fileStore = { _active: 0 };
 
         function fileAttach(event) {
 
             let filename = prompt('Enter file name:');
             let title = ~filename.indexOf('.') ? filename : (filename + '.js');
 
-            if (~Object.keys(fileStore).indexOf(title)){
+            if (~Object.keys(fileStore).indexOf(title)) {
                 alert('Файл с таким именем уже существует');
                 return;
             }
-            
+
             // filename
             let origTab = event.target.parentElement.children[0];
-            origTab.onclick = origTab.onclick || function(e) 
-            {
+            origTab.onclick = origTab.onclick || function (ev) {
                 let prevTab = document.querySelector('.tab.active');
                 if (prevTab) {
 
                     prevTab.classList.toggle('active');
-                    fileStore[prevTab.innerText] = editors[2].getValue();        
-                    
+                    fileStore[prevTab.innerText] = editors[2].getValue();
+
                     const defaultExport = fileStore[prevTab.innerText].match(/export default function (\w+)/);
-                    if (defaultExport){
+                    if (defaultExport) {
                         // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
                     }
                 }
-                e.target.classList.add('active');
+                ev.target.classList.add('active');
 
-                editors[2].setValue(fileStore[e.target.innerText]);
+                editors[2].setValue(fileStore[ev.target.innerText]);
 
                 console.log('toggle tab...');
             }
 
             let newTab = origTab.cloneNode();
             newTab.innerText = title;
+
+            let prevTab = document.querySelector('.tab.active');
+            prevTab && prevTab.classList.toggle('active');
             newTab.classList.add('active');
+
+            newTab.style.marginRight = '1.25em';
             newTab.onclick = origTab.onclick;
-                
+
             fileStore[origTab.innerText] = editors[2].getValue();
             fileStore[newTab.innerText] = '';                   // create new
             editors[2].setValue(fileStore[newTab.innerText]);
@@ -160,9 +161,17 @@
             editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
 
             event.target.parentElement.insertBefore(newTab, event.target);
+        }        
+    </script>
 
-        }
+    <script src="./build/bundler.js"></script>
+    <script src="./build/page_builder.js"></script>    
 
+    <!-- test: -->
+    <!-- <script src="./build/_preact.js"></script> -->    
+    <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
+
+    <script>
 
         let editors = IDE.initialize({ fileStore });
 

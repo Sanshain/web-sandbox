@@ -53,7 +53,7 @@ export function initialize(values, options) {
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined)
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined, options)
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
