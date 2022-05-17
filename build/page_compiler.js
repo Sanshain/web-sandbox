@@ -72,7 +72,8 @@ var pageBuilder = (function (exports) {
     const playgroundObject = {
         editors: [],
         iframe: null,
-        curUrl: null
+        curUrl: null,
+        fileStorage:{ _active: 0 }
     };
 
 
@@ -127,7 +128,17 @@ var pageBuilder = (function (exports) {
      * @param {string} [scriptType]
      * @param {object} [options]
      */
-    function createPage(prevUrl, additionalScripts, scriptType, options) {
+    function createPage(prevUrl, additionalScripts, scriptType, options) {    
+        
+        if (window['fileStore'] && playgroundObject.editors) {
+            const fileStorage = window['fileStore'];
+            // update current tab content:
+            //@ts-ignore
+            fileStorage[document.querySelector('.tabs .tab.active').innerText] = playgroundObject.editors[2].getValue();
+        }
+        
+        let appCode = (window['fileStore'] || {})['app.js'];
+        // console.log('appCode');
 
         let wrapFunc = (/** @type {string} */ code) => {        
 
@@ -147,7 +158,7 @@ var pageBuilder = (function (exports) {
         };
 
         let editors = playgroundObject.editors;
-        let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+        let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(appCode || editors[i].getValue())), acc), {});
 
         let optionalScripts = '';
         if (additionalScripts && additionalScripts.length) {
