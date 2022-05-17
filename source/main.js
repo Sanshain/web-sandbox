@@ -48,7 +48,8 @@ export function initialize(values, options) {
 
     const editorOptions = {
         compileFunc,
-        controlSave: options.onControlSave
+        controlSave: options.onControlSave,
+        storage: localStorage
     }
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
@@ -64,7 +65,7 @@ export function initialize(values, options) {
     document.getElementById('compiler_mode').addEventListener('change', function (event) {
 
         // @ts-ignore
-        localStorage.setItem('mode', event.target.selectedIndex)
+        (editorOptions.storage || localStorage).setItem('mode', event.target.selectedIndex)
 
         // @ts-ignore
         if (event.target.selectedIndex || true) location.reload()

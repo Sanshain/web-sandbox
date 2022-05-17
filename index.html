@@ -115,16 +115,20 @@
 
         function fileAttach(event) {
 
-            let filename = prompt('Enter file name:');
+            filename = event.file || prompt('Enter file name:');
+            if (!filename) return;
+
             let title = ~filename.indexOf('.') ? filename : (filename + '.js');
 
-            if (~Object.keys(fileStore).indexOf(title)) {
+            if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
                 alert('Файл с таким именем уже существует');
                 return;
             }
 
+            let target = event.target;
+
             // filename
-            let origTab = event.target.parentElement.children[0];
+            let origTab = target.parentElement.children[0];
             origTab.onclick = origTab.onclick || function (ev) {
                 let prevTab = document.querySelector('.tab.active');
                 if (prevTab) {
@@ -142,6 +146,10 @@
                 editors[2].setValue(fileStore[ev.target.innerText]);
 
                 console.log('toggle tab...');
+
+                console.log(fileStore[ev.target.innerText].split('\n').length);
+                editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)                
+                editors[2].focus();
             }
 
             let newTab = origTab.cloneNode();
@@ -154,13 +162,15 @@
             newTab.style.marginRight = '1.25em';
             newTab.onclick = origTab.onclick;
 
-            fileStore[origTab.innerText] = editors[2].getValue();
-            fileStore[newTab.innerText] = '';                   // create new
-            editors[2].setValue(fileStore[newTab.innerText]);
-
-            editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
-
-            event.target.parentElement.insertBefore(newTab, event.target);
+            if (!event.file){
+                fileStore[origTab.innerText] = editors[2].getValue();
+                fileStore[newTab.innerText] = '';                   // create new
+                editors[2].setValue(fileStore[newTab.innerText]);
+                
+                editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+            }            
+            
+            target.parentElement.insertBefore(newTab, target);            
         }        
     </script>
 

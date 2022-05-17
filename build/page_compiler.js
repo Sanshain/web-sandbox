@@ -118,6 +118,9 @@ var pageBuilder = (function (exports) {
 
 
     /**
+     * 
+     * TODO: option {simplestBundler, fileStore}
+     * 
      * @param {string} [prevUrl]
      * @returns {[HTMLElement, string]}
      * @param {string | any[]} [additionalScripts]
@@ -130,6 +133,7 @@ var pageBuilder = (function (exports) {
 
             if (window['simplestBundler']) {
                 code = window['simplestBundler'].default(code, window['fileStore']);
+                console.log('build...');
             }
             else {
                 console.warn('bundler is absent');
@@ -187,6 +191,8 @@ var pageBuilder = (function (exports) {
      * @param {boolean} jsxMode
      * ///! param {number} compilerMode
      * @param {string[]} compilerMode
+     * 
+     * TODO: options: {storage (localStorage|sessionStorage), fileStore}
      */
     function webCompile(jsxMode, compilerMode) {
         
@@ -253,6 +259,24 @@ var pageBuilder = (function (exports) {
         localStorage.setItem(compiler + '__html', editors[0].getValue());
         localStorage.setItem(compiler + '__css', editors[1].getValue());
         localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+        
+        const fileStorage = window['fileStore'];
+        let modulesStore = {};
+
+        //@ts-ignore
+        fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+
+        if (fileStorage && Object.keys(fileStorage).length > 1) {
+            
+            for (let i = 0; i < Object.keys(fileStorage).length; i++) {
+                const fileName = Object.keys(fileStorage)[i];
+                if (fileName.startsWith('_')) continue;
+                modulesStore[fileName] = fileStorage[fileName];
+            }
+
+            localStorage.setItem('_modules', JSON.stringify(modulesStore));
+            console.log('save modules...');
+        }
 
         // document.getElementById('compiler_mode')
     }

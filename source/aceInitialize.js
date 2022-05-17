@@ -9,6 +9,11 @@ import { defaultValues } from './features/compiler';
 
 
 /**
+ * 
+ * TODO: options {
+ *  + fileStore
+ * }
+ * 
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
  * @param {{ compileFunc: any; controlSave?: any; storage?: any}} editorOptions
  * @param {string[]} modes
@@ -211,6 +216,12 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     },
                     
 
+                    target: '',
+                    innerText: '',
+
+                    appendChild: '',
+                    insertBefore: '',
+                    createElement: '',
 
                     querySelectorAll: '',
                     querySelector: {
@@ -260,12 +271,42 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
                 editor.completers.push(domCompleter)
             }
-        }
-        
+        }                
         
         return editor;
 
     });
+
+    // read modules:
+
+    //@ts-ignore
+    let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
+    // fileStorage
+    let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+    if (modulesStorage) {
+        let _modules = JSON.parse(modulesStorage);
+        let fileCreate = document.querySelector('.tabs .tab:last-child');
+
+        let i = 0;
+
+        for (const key in _modules) {
+            if (Object.hasOwnProperty.call(_modules, key)) {
+                fileStorage[key] = _modules[key];
+                // create tabs:
+
+                console.log(key);
+                //@ts-ignore
+                if (i++) fileCreate.onclick({ target: fileCreate, file: key });
+                else {
+                    // set editor value
+                    editors[2].setValue(_modules[key])
+                }
+            }
+        }
+
+        document.querySelector('.tabs .tab.active').classList.toggle('active');
+        document.querySelector('.tabs .tab').classList.add('active');
+    }    
 
     // initResizers()
 

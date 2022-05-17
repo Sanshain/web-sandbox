@@ -4868,6 +4868,9 @@ var IDE = (function (exports) {
 
 
     /**
+     * 
+     * TODO: option {simplestBundler, fileStore}
+     * 
      * @param {string} [prevUrl]
      * @returns {[HTMLElement, string]}
      * @param {string | any[]} [additionalScripts]
@@ -4880,6 +4883,7 @@ var IDE = (function (exports) {
 
             if (window['simplestBundler']) {
                 code = window['simplestBundler'].default(code, window['fileStore']);
+                console.log('build...');
             }
             else {
                 console.warn('bundler is absent');
@@ -4937,6 +4941,8 @@ var IDE = (function (exports) {
      * @param {boolean} jsxMode
      * ///! param {number} compilerMode
      * @param {string[]} compilerMode
+     * 
+     * TODO: options: {storage (localStorage|sessionStorage), fileStore}
      */
     function webCompile(jsxMode, compilerMode) {
         
@@ -5003,6 +5009,24 @@ var IDE = (function (exports) {
         localStorage.setItem(compiler + '__html', editors[0].getValue());
         localStorage.setItem(compiler + '__css', editors[1].getValue());
         localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+        
+        const fileStorage = window['fileStore'];
+        let modulesStore = {};
+
+        //@ts-ignore
+        fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+
+        if (fileStorage && Object.keys(fileStorage).length > 1) {
+            
+            for (let i = 0; i < Object.keys(fileStorage).length; i++) {
+                const fileName = Object.keys(fileStorage)[i];
+                if (fileName.startsWith('_')) continue;
+                modulesStore[fileName] = fileStorage[fileName];
+            }
+
+            localStorage.setItem('_modules', JSON.stringify(modulesStore));
+            console.log('save modules...');
+        }
 
         // document.getElementById('compiler_mode')
     }
@@ -5066,6 +5090,11 @@ var IDE = (function (exports) {
 
 
     /**
+     * 
+     * TODO: options {
+     *  + fileStore
+     * }
+     * 
      * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
      * @param {{ compileFunc: any; controlSave?: any; storage?: any}} editorOptions
      * @param {string[]} modes
@@ -5268,6 +5297,12 @@ var IDE = (function (exports) {
                         },
                         
 
+                        target: '',
+                        innerText: '',
+
+                        appendChild: '',
+                        insertBefore: '',
+                        createElement: '',
 
                         querySelectorAll: '',
                         querySelector: {
@@ -5317,12 +5352,42 @@ var IDE = (function (exports) {
 
                     editor.completers.push(domCompleter);
                 }
-            }
-            
+            }                
             
             return editor;
 
         });
+
+        // read modules:
+
+        //@ts-ignore
+        let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
+        // fileStorage
+        let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+        if (modulesStorage) {
+            let _modules = JSON.parse(modulesStorage);
+            let fileCreate = document.querySelector('.tabs .tab:last-child');
+
+            let i = 0;
+
+            for (const key in _modules) {
+                if (Object.hasOwnProperty.call(_modules, key)) {
+                    fileStorage[key] = _modules[key];
+                    // create tabs:
+
+                    console.log(key);
+                    //@ts-ignore
+                    if (i++) fileCreate.onclick({ target: fileCreate, file: key });
+                    else {
+                        // set editor value
+                        editors[2].setValue(_modules[key]);
+                    }
+                }
+            }
+
+            document.querySelector('.tabs .tab.active').classList.toggle('active');
+            document.querySelector('.tabs .tab').classList.add('active');
+        }    
 
         // initResizers()
 
@@ -5466,7 +5531,8 @@ var IDE = (function (exports) {
 
         const editorOptions = {
             compileFunc,
-            controlSave: options.onControlSave
+            controlSave: options.onControlSave,
+            storage: localStorage
         };
         // @ts-ignore
         let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);
@@ -5482,7 +5548,7 @@ var IDE = (function (exports) {
         document.getElementById('compiler_mode').addEventListener('change', function (event) {
 
             // @ts-ignore
-            localStorage.setItem('mode', event.target.selectedIndex);
+            (editorOptions.storage || localStorage).setItem('mode', event.target.selectedIndex);
 
             // @ts-ignore
             if (event.target.selectedIndex || true) location.reload();
