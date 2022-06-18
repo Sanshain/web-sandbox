@@ -1,3 +1,8 @@
+//@ts-check
+
+
+
+
 const reactCompiler = {
     react: 'https://unpkg.com/react@17/umd/react.production.min.js',
     reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',

@@ -1,7 +1,13 @@
 //@ts-check
 
-export function debounce(func, delay) {
+export const commonStorage = sessionStorage;
 
+/**
+ * @param {{ (): number; (): any; }} func
+ * @param {number} delay
+ */
+export function debounce(func, delay) {
+    
     let inAwaiting = false;
 
     return function ()

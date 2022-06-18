@@ -4703,8 +4703,14 @@ var IDE = (function (exports) {
 
     //@ts-check
 
-    function debounce(func, delay) {
+    const commonStorage = sessionStorage;
 
+    /**
+     * @param {{ (): number; (): any; }} func
+     * @param {number} delay
+     */
+    function debounce(func, delay) {
+        
         let inAwaiting = false;
 
         return function ()
@@ -4720,6 +4726,11 @@ var IDE = (function (exports) {
             }
         };
     }
+
+    //@ts-check
+
+
+
 
     const reactCompiler = {
         react: 'https://unpkg.com/react@17/umd/react.production.min.js',
@@ -4873,10 +4884,10 @@ var IDE = (function (exports) {
      * TODO: option {simplestBundler, fileStore}
      * 
      * @param {string} [prevUrl]
-     * @returns {[HTMLElement, string]}
      * @param {string | any[]} [additionalScripts]
      * @param {string} [scriptType]
      * @param {object} [options]
+     * @returns {[HTMLElement, string]}
      */
     function createPage(prevUrl, additionalScripts, scriptType, options) {    
         
@@ -4901,7 +4912,7 @@ var IDE = (function (exports) {
             }
             else {
                 console.warn('bundler is absent');
-                alert('Warn/ look logs');
+                // alert('Warn/ look logs')
             }
 
             // 
@@ -4954,7 +4965,7 @@ var IDE = (function (exports) {
      * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
      * @param {boolean} jsxMode
      * ///! param {number} compilerMode
-     * @param {string[]} compilerMode
+     * @param {string[]} compilerMode - 
      * 
      * TODO: options: {storage (localStorage|sessionStorage), fileStore}
      */
@@ -5018,17 +5029,18 @@ var IDE = (function (exports) {
             playgroundObject.curUrl = curUrl;
         }
 
-        let compiler = Number.parseInt(localStorage.getItem('mode') || '0');
+        let compiler = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
 
-        localStorage.setItem(compiler + '__html', editors[0].getValue());
-        localStorage.setItem(compiler + '__css', editors[1].getValue());
-        localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+        // just sandbox feature:
+        (commonStorage || localStorage).setItem(compiler + '__html', editors[0].getValue());
+        (commonStorage || localStorage).setItem(compiler + '__css', editors[1].getValue());
+        (commonStorage || localStorage).setItem(compiler + '__javascript', editors[2].getValue());
         
         const fileStorage = window['fileStore'];
         let modulesStore = {};
 
         //@ts-ignore
-        fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+        if (fileStorage) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
 
         if (fileStorage && Object.keys(fileStorage).length > 1) {
             
@@ -5038,7 +5050,8 @@ var IDE = (function (exports) {
                 modulesStore[fileName] = fileStorage[fileName];
             }
 
-            localStorage.setItem('_modules', JSON.stringify(modulesStore));
+            // js multitabs:
+            (commonStorage || localStorage).setItem('_modules', JSON.stringify(modulesStore));
             console.log('save modules...');
         }
 
@@ -5110,7 +5123,7 @@ var IDE = (function (exports) {
      * }
      * 
      * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
-     * @param {{ compileFunc: any; controlSave?: any; storage?: any}} editorOptions
+     * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage}} editorOptions
      * @param {string[]} modes
      * @param {string | number} syntax
      * @param {?[string?, string?, string?]} [values]
@@ -5166,7 +5179,10 @@ var IDE = (function (exports) {
                 }
                 else if (event.ctrlKey && event.keyCode === 83) {
                     
-                    event.preventDefault(), (editorOptions.controlSave || webCompile)();
+                    console.log(editorOptions);
+                    // event.preventDefault(), (editorOptions.controlSave || webCompile)();
+
+                    event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
                 }
             });
 
@@ -5411,6 +5427,9 @@ var IDE = (function (exports) {
 
     }
 
+    //@ts-check
+
+
     let hrSplitter = document.querySelector('.h_line');
     let vertSplitter = document.querySelector('.v_line');
     let centerSplitter = document.querySelector('.center_line');
@@ -5431,7 +5450,8 @@ var IDE = (function (exports) {
     // const headerHeight = container.offsetTop;
     const headerHeight = container.getBoundingClientRect().top;
     const paddingTop = parseFloat(getComputedStyle(container).padding) * 2 || 0;
-    console.log(paddingTop);
+    //@ts-ignore
+    window.__debug && console.log(paddingTop);
 
     /**
      * Initialize resize lines
@@ -5453,16 +5473,27 @@ var IDE = (function (exports) {
 
         window.addEventListener('resize', function resetSize(event) {
             [hrSplitter, vertSplitter, centerSplitter, htmlEditor, styleEditor, jsEditor, editionView].forEach(el => {
+                //@ts-ignore
                 el.style = null;
             });
         });
-        container.addEventListener('mouseup', function (event) { hoSeized = vertSeized = allSeized = false; });
+        container.addEventListener('mouseup', function (event) {
+            if (hoSeized || allSeized) {
+                //@ts-ignore
+                editors.forEach(function(elem) {
+                    elem.resize();
+                    console.log('resize...');
+                });
+            }
+            hoSeized = vertSeized = allSeized = false;
+            console.log('ok');
+        });
         container.addEventListener('mousemove', function (event) {
 
             if (hoSeized) hTune(event);
             else if (vertSeized) vTune(event);
             else if (allSeized) {
-                hTune(event) || vTune(event);
+                hTune(event) ;
             }
         });
     }
@@ -5470,10 +5501,14 @@ var IDE = (function (exports) {
 
 
     function hTune(event) {
+        
         let marginTop = headerHeight;    
 
+        //@ts-ignore
         hrSplitter.style.top = event.clientY - paddingTop + 'px';
+        //@ts-ignore
         vertSplitter.style.height = event.clientY - paddingTop + 'px';
+        //@ts-ignore
         centerSplitter.style.top = event.clientY - paddingTop + 'px';
 
 
@@ -5481,9 +5516,13 @@ var IDE = (function (exports) {
         styleEditor.style.height = event.clientY - marginTop + 'px';
 
         // let lowerHeight = container.offsetHeight - event.clientY - paddingTop - 10 + marginTop + 'px';
+        //@ts-ignore
         let lowerHeight = container.offsetHeight - event.clientY - (paddingTop || 10) + marginTop + 'px';        
 
-        jsEditor.style.height = editionView.style.height = lowerHeight;    
+        //@ts-ignore
+        jsEditor.style.height = editionView.style.height = lowerHeight;
+        
+        return true;
     }
 
     function vTune(event) {
@@ -5493,13 +5532,18 @@ var IDE = (function (exports) {
         // let pref = 32;
         let post = 0;
 
+        //@ts-ignore
         vertSplitter.style.left = event.clientX - prefLine + 'px';
+        //@ts-ignore
         hrSplitter.style.width = event.clientX - prefLine + 'px';
+        //@ts-ignore
         centerSplitter.style.left = event.clientX - prefLine + 'px';
 
         htmlEditor.style.width = event.clientX - pref + 'px';
         jsEditor.style.width = event.clientX - pref + 'px';
+        //@ts-ignore
         styleEditor.style.width = container.offsetWidth - event.clientX + post + 'px';
+        //@ts-ignore
         editionView.style.width = container.offsetWidth - event.clientX + post + 'px';
     }
 
@@ -5515,7 +5559,6 @@ var IDE = (function (exports) {
         // 'typescript',
     ];
 
-
     /**
      * @param {string[]} values
      * @param {{onControlSave?: Function}?} options
@@ -5525,7 +5568,7 @@ var IDE = (function (exports) {
 
         options = options || {};
         
-        let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
+        let syntaxMode = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
         //@ts-ignore
         document.getElementById('compiler_mode').selectedIndex = syntaxMode;
 
@@ -5548,7 +5591,7 @@ var IDE = (function (exports) {
         const editorOptions = {
             compileFunc,
             controlSave: options.onControlSave,
-            storage: localStorage
+            storage: commonStorage
         };
         // @ts-ignore
         let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);
@@ -5571,7 +5614,7 @@ var IDE = (function (exports) {
             else {
                 for (let i = 0; i < editors.length; i++) {
                     //@ts-ignore
-                    let value = localStorage.getItem(event.target.selectedIndex + '__' + modes[i]) || '';
+                    let value = (editorOptions.storage || localStorage).getItem(event.target.selectedIndex + '__' + modes[i]) || '';
                     editors[i].session.setValue(value);
                 }
                 // document.querySelector('.play').click();

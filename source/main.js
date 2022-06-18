@@ -7,6 +7,7 @@ import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
 import { babelCompiler, compilers } from "./features/compiler";
 import { options } from 'preact';
+import { commonStorage } from "./utils/utils";
 
 
 const modes = [
@@ -15,7 +16,6 @@ const modes = [
     'javascript',
     // 'typescript',
 ]
-
 
 /**
  * @param {string[]} values
@@ -26,7 +26,7 @@ export function initialize(values, options) {
 
     options = options || {};
     
-    let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
+    let syntaxMode = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
     //@ts-ignore
     document.getElementById('compiler_mode').selectedIndex = syntaxMode;
 
@@ -49,12 +49,12 @@ export function initialize(values, options) {
     const editorOptions = {
         compileFunc,
         controlSave: options.onControlSave,
-        storage: localStorage
+        storage: commonStorage
     }
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined, options)
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined, editorOptions)
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
@@ -72,7 +72,7 @@ export function initialize(values, options) {
         else {
             for (let i = 0; i < editors.length; i++) {
                 //@ts-ignore
-                let value = localStorage.getItem(event.target.selectedIndex + '__' + modes[i]) || '';
+                let value = (editorOptions.storage || localStorage).getItem(event.target.selectedIndex + '__' + modes[i]) || '';
                 editors[i].session.setValue(value)
             }
             // document.querySelector('.play').click();

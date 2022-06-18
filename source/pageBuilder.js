@@ -2,6 +2,7 @@
 
 import { babelCompiler, compilers } from "./features/compiler";
 import { generateGlobalInintializer } from "./utils/page_generator";
+import { commonStorage } from './utils/utils';
 
 
 export { compilers, babelCompiler };
@@ -61,10 +62,10 @@ function createHtml({ body, style, script }, attrs) {
  * TODO: option {simplestBundler, fileStore}
  * 
  * @param {string} [prevUrl]
- * @returns {[HTMLElement, string]}
  * @param {string | any[]} [additionalScripts]
  * @param {string} [scriptType]
  * @param {object} [options]
+ * @returns {[HTMLElement, string]}
  */
 export function createPage(prevUrl, additionalScripts, scriptType, options) {    
     
@@ -89,7 +90,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         }
         else {
             console.warn('bundler is absent');
-            alert('Warn/ look logs')
+            // alert('Warn/ look logs')
         }
 
         // 
@@ -142,7 +143,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
  * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
  * @param {boolean} jsxMode
  * ///! param {number} compilerMode
- * @param {string[]} compilerMode
+ * @param {string[]} compilerMode - 
  * 
  * TODO: options: {storage (localStorage|sessionStorage), fileStore}
  */
@@ -206,17 +207,18 @@ export function webCompile(jsxMode, compilerMode) {
         playgroundObject.curUrl = curUrl;
     }
 
-    let compiler = Number.parseInt(localStorage.getItem('mode') || '0');
+    let compiler = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
 
-    localStorage.setItem(compiler + '__html', editors[0].getValue());
-    localStorage.setItem(compiler + '__css', editors[1].getValue());
-    localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+    // just sandbox feature:
+    (commonStorage || localStorage).setItem(compiler + '__html', editors[0].getValue());
+    (commonStorage || localStorage).setItem(compiler + '__css', editors[1].getValue());
+    (commonStorage || localStorage).setItem(compiler + '__javascript', editors[2].getValue());
     
     const fileStorage = window['fileStore'];
     let modulesStore = {};
 
     //@ts-ignore
-    fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue()
+    if (fileStorage) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue()
 
     if (fileStorage && Object.keys(fileStorage).length > 1) {
         
@@ -226,7 +228,8 @@ export function webCompile(jsxMode, compilerMode) {
             modulesStore[fileName] = fileStorage[fileName];
         }
 
-        localStorage.setItem('_modules', JSON.stringify(modulesStore));
+        // js multitabs:
+        (commonStorage || localStorage).setItem('_modules', JSON.stringify(modulesStore));
         console.log('save modules...');
     }
 

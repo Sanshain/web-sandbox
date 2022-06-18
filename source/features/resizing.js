@@ -1,3 +1,6 @@
+//@ts-check
+
+
 let hrSplitter = document.querySelector('.h_line');
 let vertSplitter = document.querySelector('.v_line');
 let centerSplitter = document.querySelector('.center_line');
@@ -18,7 +21,8 @@ const header = document.querySelector('.header');
 // const headerHeight = container.offsetTop;
 const headerHeight = container.getBoundingClientRect().top;
 const paddingTop = parseFloat(getComputedStyle(container).padding) * 2 || 0;
-console.log(paddingTop);
+//@ts-ignore
+window.__debug && console.log(paddingTop);
 
 /**
  * Initialize resize lines
@@ -40,10 +44,21 @@ export function initResizers() {
 
     window.addEventListener('resize', function resetSize(event) {
         [hrSplitter, vertSplitter, centerSplitter, htmlEditor, styleEditor, jsEditor, editionView].forEach(el => {
+            //@ts-ignore
             el.style = null;
         })
     })
-    container.addEventListener('mouseup', function (event) { hoSeized = vertSeized = allSeized = false; })
+    container.addEventListener('mouseup', function (event) {
+        if (hoSeized || allSeized) {
+            //@ts-ignore
+            editors.forEach(function(elem) {
+                elem.resize();
+                console.log('resize...');
+            })
+        }
+        hoSeized = vertSeized = allSeized = false;
+        console.log('ok');
+    })
     container.addEventListener('mousemove', function (event) {
 
         if (hoSeized) hTune(event)
@@ -57,10 +72,14 @@ export function initResizers() {
 
 
 function hTune(event) {
+    
     let marginTop = headerHeight;    
 
+    //@ts-ignore
     hrSplitter.style.top = event.clientY - paddingTop + 'px';
+    //@ts-ignore
     vertSplitter.style.height = event.clientY - paddingTop + 'px';
+    //@ts-ignore
     centerSplitter.style.top = event.clientY - paddingTop + 'px';
 
 
@@ -68,9 +87,13 @@ function hTune(event) {
     styleEditor.style.height = event.clientY - marginTop + 'px';
 
     // let lowerHeight = container.offsetHeight - event.clientY - paddingTop - 10 + marginTop + 'px';
+    //@ts-ignore
     let lowerHeight = container.offsetHeight - event.clientY - (paddingTop || 10) + marginTop + 'px';        
 
-    jsEditor.style.height = editionView.style.height = lowerHeight;    
+    //@ts-ignore
+    jsEditor.style.height = editionView.style.height = lowerHeight;
+    
+    return true;
 }
 
 function vTune(event) {
@@ -80,12 +103,17 @@ function vTune(event) {
     // let pref = 32;
     let post = 0;
 
+    //@ts-ignore
     vertSplitter.style.left = event.clientX - prefLine + 'px';
+    //@ts-ignore
     hrSplitter.style.width = event.clientX - prefLine + 'px';
+    //@ts-ignore
     centerSplitter.style.left = event.clientX - prefLine + 'px';
 
     htmlEditor.style.width = event.clientX - pref + 'px';
     jsEditor.style.width = event.clientX - pref + 'px'
+    //@ts-ignore
     styleEditor.style.width = container.offsetWidth - event.clientX + post + 'px'
+    //@ts-ignore
     editionView.style.width = container.offsetWidth - event.clientX + post + 'px'
 }

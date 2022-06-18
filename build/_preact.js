@@ -36,7 +36,7 @@ var _preact = (function (exports) {
 
     Object.assign(globalThis, _preact);
 
-    console.log(globalThis);
+    globalThis['__debug'] && console.log(globalThis);
 
     let __preact = _preact;
 

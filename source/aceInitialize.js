@@ -15,7 +15,7 @@ import { defaultValues } from './features/compiler';
  * }
  * 
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
- * @param {{ compileFunc: any; controlSave?: any; storage?: any}} editorOptions
+ * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage}} editorOptions
  * @param {string[]} modes
  * @param {string | number} syntax
  * @param {?[string?, string?, string?]} [values]
@@ -71,7 +71,10 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 
-                event.preventDefault(), (editorOptions.controlSave || webCompile)();
+                console.log(editorOptions);
+                // event.preventDefault(), (editorOptions.controlSave || webCompile)();
+
+                event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
             }
         })
 
