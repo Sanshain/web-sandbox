@@ -65,7 +65,7 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
         // 
         let globalReinitializer = generateGlobalInintializer(code)
 
-        return 'window.onload = function(){' + code + '\n\n' + globalReinitializer + '\n}';
+        return 'window.addEventListener("DOMContentLoaded", function(){' + code + '\n\n' + globalReinitializer + '\n});';
     }
 
     let editors = playgroundObject.editors;
