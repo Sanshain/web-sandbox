@@ -9,25 +9,35 @@ import { defaultValues } from './features/compiler';
 
 
 /**
+ * 
+ * TODO: options {
+ *  + fileStore
+ * }
+ * 
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
- * @param {Function} webCompile
+ * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage}} editorOptions
  * @param {string[]} modes
  * @param {string | number} syntax
+ * @param {?[string?, string?, string?]} [values]
  */
-export default function initializeEditor(ace, webCompile, modes, syntax) {
+export default function initializeEditor(ace, editorOptions, modes, syntax, values) {
+
+    const webCompile = editorOptions.compileFunc;
 
     const Range = ace.require('ace/range').Range;
     const delay = 500;
     const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
 
-    let editors = [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
+    values = values || [];
+
+    let editors = [].slice.call(document.querySelectorAll('.editor')).map((/** @type {{ id: any; }} */ element, /** @type {number} */ i, /** @type {any[]} */ arr) =>
     {
 
         let editor = ace.edit(element.id);
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/" + modes[i]);
         
-        let value = localStorage.getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];        
+        let value = values[i] || (editorOptions.storage || localStorage).getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];
         if (value) {
             editor.session.setValue(value)
         }
@@ -48,17 +58,23 @@ export default function initializeEditor(ace, webCompile, modes, syntax) {
         
         (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay)
 
-        editor.textInput.getElement().addEventListener('keydown', function (event)
+        editor.textInput.getElement().addEventListener('keydown', function (/** @type {{ ctrlKey: any; keyCode: number; key: string; preventDefault: () => void; }} */ event)
         {
 
             // console.log(event);
 
             (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();
             (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')})            
-            if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9')
+            if ( event.key === 'F9')      // ctrl+s
             {
-                event.preventDefault();                
-                webCompile();
+                event.preventDefault(), webCompile();
+            }
+            else if (event.ctrlKey && event.keyCode === 83) {
+                
+                console.log(editorOptions);
+                // event.preventDefault(), (editorOptions.controlSave || webCompile)();
+
+                event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
             }
         })
 
@@ -118,7 +134,7 @@ export default function initializeEditor(ace, webCompile, modes, syntax) {
 
                 const colorsCompleter = {                    
                     getCompletions: function (editor, session, pos, prefix, callback) {
-                        let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black'];
+                        let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
                         wordList = wordList.concat(['div', 'input', 'select'])
                         // console.log(pos);                        
                         callback(null, wordList.map(
@@ -143,7 +159,7 @@ export default function initializeEditor(ace, webCompile, modes, syntax) {
 
                 editor.completers.push(colorsCompleter)
             }
-            else {
+            else if(i === 2) {
                 
                 let domFuncs = {
                     style: '',
@@ -203,6 +219,12 @@ export default function initializeEditor(ace, webCompile, modes, syntax) {
                     },
                     
 
+                    target: '',
+                    innerText: '',
+
+                    appendChild: '',
+                    insertBefore: '',
+                    createElement: '',
 
                     querySelectorAll: '',
                     querySelector: {
@@ -252,12 +274,44 @@ export default function initializeEditor(ace, webCompile, modes, syntax) {
 
                 editor.completers.push(domCompleter)
             }
-        }
-        
+        }                
         
         return editor;
 
     });
+
+    // read modules:
+
+    //@ts-ignore
+    let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
+    // fileStorage
+    let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+    if (modulesStorage) {
+        let _modules = JSON.parse(modulesStorage);
+        let fileCreate = document.querySelector('.tabs .tab:last-child');
+
+        let i = 0;
+
+        if (fileCreate) {
+            for (const key in _modules) {
+                if (Object.hasOwnProperty.call(_modules, key)) {
+                    fileStorage[key] = _modules[key];
+                    // create tabs:
+
+                    console.log(key);
+                    //@ts-ignore
+                    if (i++) fileCreate.onclick({ target: fileCreate, file: key });
+                    else {
+                        // set editor value
+                        editors[2].setValue(_modules[key])
+                    }
+                }
+            }
+
+            document.querySelector('.tabs .tab.active').classList.toggle('active');
+            document.querySelector('.tabs .tab').classList.add('active');
+        }
+    }    
 
     // initResizers()
 

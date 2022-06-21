@@ -1,5 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import { terser } from "rollup-plugin-terser";
+
 
 // import typescript from '@rollup/plugin-typescript';
 
@@ -20,7 +22,19 @@ let modules = [
         inputFile: './source/main.js',
         outputFile: 'page_builder.js',
         
-        outputName: '__',
+        outputName: 'IDE',
+    },
+    {
+        // just page builder (w/o ui)
+        inputFile: './source/pageBuilder.js',
+        outputFile: 'page_compiler.js',
+
+        outputName: 'pageBuilder',
+    },
+    {
+        inputFile: './source/utils/bundler.js',
+        outputFile: 'bundler.js',
+        outputName: 'simplestBundler'
     }
 ]
 
@@ -33,6 +47,10 @@ module.exports = modules.map(function (config) {
             format: 'iife',
             name: config.outputName,
             sourcemap: true,
+            globals: {
+                fs: undefined + '',
+                // fs: 'window'
+            }
         },
         plugins: [
             resolve({
@@ -46,6 +64,12 @@ module.exports = modules.map(function (config) {
             //     lib: ["es6", "dom"], //es5
             //     target: "es5",
             //     sourceMap: true
+            // }),
+
+            // terser({
+            //     output: {
+            //         comments: false,
+            //     }
             // }),
         ]
     }

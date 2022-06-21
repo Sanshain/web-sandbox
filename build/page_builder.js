@@ -1,4 +1,4 @@
-(function () {
+var IDE = (function (exports) {
     'use strict';
 
     /**
@@ -4703,8 +4703,14 @@
 
     //@ts-check
 
-    function debounce(func, delay) {
+    const commonStorage = sessionStorage;
 
+    /**
+     * @param {{ (): number; (): any; }} func
+     * @param {number} delay
+     */
+    function debounce(func, delay) {
+        
         let inAwaiting = false;
 
         return function ()
@@ -4721,6 +4727,11 @@
         };
     }
 
+    //@ts-check
+
+
+
+
     const reactCompiler = {
         react: 'https://unpkg.com/react@17/umd/react.production.min.js',
         reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
@@ -4733,13 +4744,15 @@
 
     const preactCompiler = {
         // set: './build/_preact.js',
-        // set: '~/build/_preact.js',       
+        // set: '~/build/_preact.js',
 
         // preact: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/preact.umd.min.js',     // preact
         // hooks: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/hooks.umd.min.js',      // hooks
         // compat: 'https://cdnjs.cloudflare.com/ajax/libs/preact/11.0.0-experimental.1/compat.umd.min.js'     // react
 
-        set: 'http://127.0.0.1:3000/build/_preact.js',
+        // set: 'http://127.0.0.1:3000/build/_preact.js',
+
+        set: document.location.origin + (~document.location.host.indexOf('3000') ? '/build/_preact.js' : '/static/js/compiler_libs/_preact.js'),
     };
 
 
@@ -4791,13 +4804,18 @@
         // react
         {
             html: '<div id="root"></div>',
-            css: '#root{\n\tcolor: red;\n}',
-            javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+            css: '#root{\n\tcolor: red;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
+            // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+            javascript: "const name = 'world';function App(){\n\tconst [count, setCount] = React.useState(0);" +
+                        "\n\treturn <h1 onClick={()=>setCount(count+1)}>Привет, {name} {count}!</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
         },
     ];
 
     /**
      * initialize global funcs in the sandbox
+     * 
+     * (обработчики событий, назначенных в атрибутах, должны быть глобальными. Назначаем их глобальными здесь)
+     * 
      * @param {*} code 
      * @returns 
      */
@@ -4812,11 +4830,11 @@
     // @ts-check
 
 
-
     const playgroundObject = {
         editors: [],
         iframe: null,
-        curUrl: null
+        curUrl: null,
+        fileStorage:{ _active: 0 }
     };
 
 
@@ -4862,14 +4880,41 @@
 
 
     /**
+     * 
+     * TODO: option {simplestBundler, fileStore}
+     * 
      * @param {string} [prevUrl]
-     * @returns {[HTMLElement, string]}
      * @param {string | any[]} [additionalScripts]
      * @param {string} [scriptType]
+     * @param {object} [options]
+     * @returns {[HTMLElement, string]}
      */
-    function createPage(prevUrl, additionalScripts, scriptType) {
+    function createPage(prevUrl, additionalScripts, scriptType, options) {    
+        
+        if (window['fileStore'] && playgroundObject.editors) {
+            const fileStorage = window['fileStore'];
+            document.querySelector('.tabs .tab.active');
+            // update current tab content:
 
-        let wrapFunc = (/** @type {string} */ code) => {
+            if (fileStorage) {
+                fileStorage[fileStorage.innerText] = playgroundObject.editors[2].getValue();
+            }        
+        }
+        
+        let appCode = (window['fileStore'] || {})['app.js'];
+        // console.log('appCode');
+
+        let wrapFunc = (/** @type {string} */ code) => {        
+
+            if (window['simplestBundler']) {
+                code = window['simplestBundler'].default(code, window['fileStore']);
+                console.log('build...');
+            }
+            else {
+                console.warn('bundler is absent');
+                // alert('Warn/ look logs')
+            }
+
             // 
             let globalReinitializer = generateGlobalInintializer(code);
 
@@ -4877,7 +4922,7 @@
         };
 
         let editors = playgroundObject.editors;
-        let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+        let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(appCode || editors[i].getValue())), acc), {});
 
         let optionalScripts = '';
         if (additionalScripts && additionalScripts.length) {
@@ -4920,7 +4965,9 @@
      * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
      * @param {boolean} jsxMode
      * ///! param {number} compilerMode
-     * @param {string[]} compilerMode
+     * @param {string[]} compilerMode - 
+     * 
+     * TODO: options: {storage (localStorage|sessionStorage), fileStore}
      */
     function webCompile(jsxMode, compilerMode) {
         
@@ -4982,11 +5029,33 @@
             playgroundObject.curUrl = curUrl;
         }
 
-        let compiler = Number.parseInt(localStorage.getItem('mode') || '0');
+        let compiler = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
 
-        localStorage.setItem(compiler + '__html', editors[0].getValue());
-        localStorage.setItem(compiler + '__css', editors[1].getValue());
-        localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+        // just sandbox feature:
+        (commonStorage || localStorage).setItem(compiler + '__html', editors[0].getValue());
+        (commonStorage || localStorage).setItem(compiler + '__css', editors[1].getValue());
+        (commonStorage || localStorage).setItem(compiler + '__javascript', editors[2].getValue());
+        
+        const fileStorage = window['fileStore'];
+        let modulesStore = {};
+
+        //@ts-ignore
+        if (fileStorage) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+
+        if (fileStorage && Object.keys(fileStorage).length > 1) {
+            
+            for (let i = 0; i < Object.keys(fileStorage).length; i++) {
+                const fileName = Object.keys(fileStorage)[i];
+                if (fileName.startsWith('_')) continue;
+                modulesStore[fileName] = fileStorage[fileName];
+            }
+
+            // js multitabs:
+            (commonStorage || localStorage).setItem('_modules', JSON.stringify(modulesStore));
+            console.log('save modules...');
+        }
+
+        // document.getElementById('compiler_mode')
     }
 
     // @ts-check
@@ -5048,25 +5117,35 @@
 
 
     /**
+     * 
+     * TODO: options {
+     *  + fileStore
+     * }
+     * 
      * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
-     * @param {Function} webCompile
+     * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage}} editorOptions
      * @param {string[]} modes
      * @param {string | number} syntax
+     * @param {?[string?, string?, string?]} [values]
      */
-    function initializeEditor(ace, webCompile, modes, syntax) {
+    function initializeEditor(ace, editorOptions, modes, syntax, values) {
+
+        const webCompile = editorOptions.compileFunc;
 
         const Range = ace.require('ace/range').Range;
         const delay = 500;
         const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
 
-        let editors = [].slice.call(document.querySelectorAll('.editor')).map((element, i, arr) =>
+        values = values || [];
+
+        let editors = [].slice.call(document.querySelectorAll('.editor')).map((/** @type {{ id: any; }} */ element, /** @type {number} */ i, /** @type {any[]} */ arr) =>
         {
 
             let editor = ace.edit(element.id);
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/" + modes[i]);
             
-            let value = localStorage.getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];        
+            let value = values[i] || (editorOptions.storage || localStorage).getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];
             if (value) {
                 editor.session.setValue(value);
             }
@@ -5087,17 +5166,23 @@
             
             (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay);
 
-            editor.textInput.getElement().addEventListener('keydown', function (event)
+            editor.textInput.getElement().addEventListener('keydown', function (/** @type {{ ctrlKey: any; keyCode: number; key: string; preventDefault: () => void; }} */ event)
             {
 
                 // console.log(event);
 
                 (event.ctrlKey && event.keyCode === 190) && (arr[i + 1] || arr[0]).querySelector('textarea').focus();
                 (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')});            
-                if ((event.ctrlKey && event.keyCode === 83) || event.key === 'F9')
+                if ( event.key === 'F9')      // ctrl+s
                 {
-                    event.preventDefault();                
-                    webCompile();
+                    event.preventDefault(), webCompile();
+                }
+                else if (event.ctrlKey && event.keyCode === 83) {
+                    
+                    console.log(editorOptions);
+                    // event.preventDefault(), (editorOptions.controlSave || webCompile)();
+
+                    event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
                 }
             });
 
@@ -5157,7 +5242,7 @@
 
                     const colorsCompleter = {                    
                         getCompletions: function (editor, session, pos, prefix, callback) {
-                            let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black'];
+                            let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
                             wordList = wordList.concat(['div', 'input', 'select']);
                             // console.log(pos);                        
                             callback(null, wordList.map(
@@ -5182,7 +5267,7 @@
 
                     editor.completers.push(colorsCompleter);
                 }
-                else {
+                else if(i === 2) {
                     
                     let domFuncs = {
                         style: '',
@@ -5242,6 +5327,12 @@
                         },
                         
 
+                        target: '',
+                        innerText: '',
+
+                        appendChild: '',
+                        insertBefore: '',
+                        createElement: '',
 
                         querySelectorAll: '',
                         querySelector: {
@@ -5291,18 +5382,53 @@
 
                     editor.completers.push(domCompleter);
                 }
-            }
-            
+            }                
             
             return editor;
 
         });
+
+        // read modules:
+
+        //@ts-ignore
+        let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
+        // fileStorage
+        let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+        if (modulesStorage) {
+            let _modules = JSON.parse(modulesStorage);
+            let fileCreate = document.querySelector('.tabs .tab:last-child');
+
+            let i = 0;
+
+            if (fileCreate) {
+                for (const key in _modules) {
+                    if (Object.hasOwnProperty.call(_modules, key)) {
+                        fileStorage[key] = _modules[key];
+                        // create tabs:
+
+                        console.log(key);
+                        //@ts-ignore
+                        if (i++) fileCreate.onclick({ target: fileCreate, file: key });
+                        else {
+                            // set editor value
+                            editors[2].setValue(_modules[key]);
+                        }
+                    }
+                }
+
+                document.querySelector('.tabs .tab.active').classList.toggle('active');
+                document.querySelector('.tabs .tab').classList.add('active');
+            }
+        }    
 
         // initResizers()
 
         return editors;
 
     }
+
+    //@ts-check
+
 
     let hrSplitter = document.querySelector('.h_line');
     let vertSplitter = document.querySelector('.v_line');
@@ -5318,8 +5444,14 @@
     let allSeized = false;
 
     const container = document.querySelector('.md_container');
-    const header = document.querySelector('.header');
-    const headerHeight = header.offsetHeight;
+    document.querySelector('.header');
+
+    // const headerHeight = header.offsetHeight;
+    // const headerHeight = container.offsetTop;
+    const headerHeight = container.getBoundingClientRect().top;
+    const paddingTop = parseFloat(getComputedStyle(container).padding) * 2 || 0;
+    //@ts-ignore
+    window.__debug && console.log(paddingTop);
 
     /**
      * Initialize resize lines
@@ -5341,16 +5473,27 @@
 
         window.addEventListener('resize', function resetSize(event) {
             [hrSplitter, vertSplitter, centerSplitter, htmlEditor, styleEditor, jsEditor, editionView].forEach(el => {
+                //@ts-ignore
                 el.style = null;
             });
         });
-        container.addEventListener('mouseup', function (event) { hoSeized = vertSeized = allSeized = false; });
+        container.addEventListener('mouseup', function (event) {
+            if (hoSeized || allSeized) {
+                //@ts-ignore
+                editors.forEach(function(elem) {
+                    elem.resize();
+                    console.log('resize...');
+                });
+            }
+            hoSeized = vertSeized = allSeized = false;
+            console.log('ok');
+        });
         container.addEventListener('mousemove', function (event) {
 
             if (hoSeized) hTune(event);
             else if (vertSeized) vTune(event);
             else if (allSeized) {
-                hTune(event) || vTune(event);
+                hTune(event) ;
             }
         });
     }
@@ -5358,17 +5501,28 @@
 
 
     function hTune(event) {
-        let marginTop = headerHeight;
-        let prefLine = 10;
+        
+        let marginTop = headerHeight;    
 
-        hrSplitter.style.top = event.clientY - prefLine + 'px';
-        vertSplitter.style.height = event.clientY - prefLine + 'px';
-        centerSplitter.style.top = event.clientY - prefLine + 'px';
+        //@ts-ignore
+        hrSplitter.style.top = event.clientY - paddingTop + 'px';
+        //@ts-ignore
+        vertSplitter.style.height = event.clientY - paddingTop + 'px';
+        //@ts-ignore
+        centerSplitter.style.top = event.clientY - paddingTop + 'px';
+
 
         htmlEditor.style.height = event.clientY - marginTop + 'px';
         styleEditor.style.height = event.clientY - marginTop + 'px';
-        jsEditor.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px';
-        editionView.style.height = container.offsetHeight - event.clientY - prefLine + marginTop + 'px';
+
+        // let lowerHeight = container.offsetHeight - event.clientY - paddingTop - 10 + marginTop + 'px';
+        //@ts-ignore
+        let lowerHeight = container.offsetHeight - event.clientY - (paddingTop || 10) + marginTop + 'px';        
+
+        //@ts-ignore
+        jsEditor.style.height = editionView.style.height = lowerHeight;
+        
+        return true;
     }
 
     function vTune(event) {
@@ -5378,65 +5532,109 @@
         // let pref = 32;
         let post = 0;
 
+        //@ts-ignore
         vertSplitter.style.left = event.clientX - prefLine + 'px';
+        //@ts-ignore
         hrSplitter.style.width = event.clientX - prefLine + 'px';
+        //@ts-ignore
         centerSplitter.style.left = event.clientX - prefLine + 'px';
 
         htmlEditor.style.width = event.clientX - pref + 'px';
         jsEditor.style.width = event.clientX - pref + 'px';
+        //@ts-ignore
         styleEditor.style.width = container.offsetWidth - event.clientX + post + 'px';
+        //@ts-ignore
         editionView.style.width = container.offsetWidth - event.clientX + post + 'px';
     }
+
+    "function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout;
 
     // @ts-check
 
 
-    const modes = ['html', 'css', 'javascript'];
+    const modes = [
+        'html',
+        'css',
+        'javascript',
+        // 'typescript',
+    ];
 
-    let syntaxMode = Number.parseInt(localStorage.getItem('mode') || '0');
-    document.querySelector('select').selectedIndex = syntaxMode;
+    /**
+     * @param {string[]} values
+     * @param {{onControlSave?: Function}?} options
+     * @returns {any[]}
+     */
+    function initialize(values, options) {
 
-    const jsxMode = !!(syntaxMode % 2);
-    const compilerMode = Object.values(compilers)[syntaxMode];
-    // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
-
-    initResizers();
-
-    // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
-    // console.log(mode);
-    // console.log(Object.values(compilers)[mode]);
-
-    // @ts-ignore
-    let editors = playgroundObject.editors = initializeEditor(ace, compileFunc, modes, syntaxMode);
-
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
-
-    playgroundObject.iframe = iframe;
-    playgroundObject.curUrl = curUrl;
-
-
-    document.querySelector('.play').addEventListener('click', compileFunc);
-    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerMode, jsxMode ? babelCompiler.mode : undefined);
-    document.getElementById('compiler_mode').addEventListener('change', function (event) {
+        options = options || {};
         
-        // @ts-ignore
-        localStorage.setItem('mode', event.target.selectedIndex);
+        let syntaxMode = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
+        //@ts-ignore
+        document.getElementById('compiler_mode').selectedIndex = syntaxMode;
 
+        const jsxMode = !!(syntaxMode % 2);
+
+        if (jsxMode) {
+            document.getElementById('jseditor').classList.add('dis_errors');
+        }
+
+        const compilerMode = Object.values(compilers)[syntaxMode];
         // @ts-ignore
-        if (event.target.selectedIndex || true) location.reload();
-        else {
-            for (let i = 0; i < editors.length; i++) {        
-                //@ts-ignore
-                let value = localStorage.getItem(event.target.selectedIndex + '__' + modes[i]) || '';
-                editors[i].session.setValue(value);
+        let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
+
+        initResizers();
+
+        // let compileFunc = mode ? webCompile.bind(null, mode > 1, mode) : webCompile;
+        // console.log(mode);
+        // console.log(Object.values(compilers)[mode]);
+
+        const editorOptions = {
+            compileFunc,
+            controlSave: options.onControlSave,
+            storage: commonStorage
+        };
+        // @ts-ignore
+        let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);
+
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+
+        playgroundObject.iframe = iframe;
+        playgroundObject.curUrl = curUrl;
+
+
+        document.querySelector('.play').addEventListener('click', compileFunc);
+        document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+        document.getElementById('compiler_mode').addEventListener('change', function (event) {
+
+            // @ts-ignore
+            (editorOptions.storage || localStorage).setItem('mode', event.target.selectedIndex);
+
+            // @ts-ignore
+            if (event.target.selectedIndex || true) location.reload();
+            else {
+                for (let i = 0; i < editors.length; i++) {
+                    //@ts-ignore
+                    let value = (editorOptions.storage || localStorage).getItem(event.target.selectedIndex + '__' + modes[i]) || '';
+                    editors[i].session.setValue(value);
+                }
+                // document.querySelector('.play').click();
             }
-            // document.querySelector('.play').click();
-        }    
 
-        // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
-        // console.log(event.target.selectedIndex);
-    });
+            // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
+            // console.log(event.target.selectedIndex);
+        });
 
-})();
+        return editors;
+    }
+
+
+    // export const {editors}
+
+    exports.initialize = initialize;
+
+    Object.defineProperty(exports, '__esModule', { value: true });
+
+    return exports;
+
+})({});
 //# sourceMappingURL=page_builder.js.map

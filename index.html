@@ -8,13 +8,14 @@
     <title>Document</title>
 
     <link rel="stylesheet" href="./static/css/web-pground.css">
+    <link rel="stylesheet" href="./static/css/tabs.css">
 
     <style>
         .md_container{
             padding: .3em 0 0;
         }
         .header{
-            height: 2.5em;            
+            height: 4em;            
             background-color: gray;
         }
 
@@ -28,6 +29,28 @@
             background-color: gray;
             cursor: pointer;            
         }
+
+        .tabs{
+            position: absolute;
+            top: 43.6vh;
+            background-color: transparent;
+            left: 3.5em;
+
+            top: 43.2vh;
+        }
+        .tab{
+            font-size: small;
+            line-height: 1.6em; 
+            padding: 0 0.75em;       
+            margin-right: .9em;    
+        }
+        .tab.active{
+            color: azure;
+        }
+        .tab::before{
+            background-color:#292929;
+        }
+
     </style>
 </head>
 
@@ -54,6 +77,10 @@
         <div class="center_line"></div>
         <div class="v_line"></div>
 
+        <div class="tabs" style="display: none;">
+            <div class="tab" tabindex="0">app.js</div>
+            <div class="tab" onclick="fileAttach(event)">+</div>
+        </div>
         <div class="editor" id="jseditor"></div>
         <div class="view">
             <div class="expand" data-title="Expand"></div>
@@ -62,10 +89,16 @@
 
         <div class="play" title="RUN (press F9)"></div>
     </div>
+
     <hr>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ext-language_tools.min.js"></script> -->
+
+
+    <script src="./static/js/ace.js"></script>
+    <script src="./static/js/ext-language_tools.min.js"></script>
+
 
     <!-- <script src="https://pagecdn.io/lib/ace/1.4.5/ace.js"></script> -->
     
@@ -73,7 +106,76 @@
     <!-- <script src="./build/editor.js"></script> -->
     <!-- <script src="./source/ace_initialize.js"></script> -->
 
-    <script src="./build/page_builder.js"></script>
+    <!-- must have some params for initialization: 1 - preact (and other) relative path, 2 - height for size change line calculation -->
+
+
+    <script>
+
+        var fileStore = { _active: 0 };
+
+        function fileAttach(event) {
+
+            filename = event.file || prompt('Enter file name:');
+            if (!filename) return;
+
+            let title = ~filename.indexOf('.') ? filename : (filename + '.js');
+
+            if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
+                alert('Файл с таким именем уже существует');
+                return;
+            }
+
+            let target = event.target;
+
+            // filename
+            let origTab = target.parentElement.children[0];
+            origTab.onclick = origTab.onclick || function (ev) {
+                let prevTab = document.querySelector('.tab.active');
+                if (prevTab) {
+
+                    prevTab.classList.toggle('active');
+                    fileStore[prevTab.innerText] = editors[2].getValue();
+
+                    const defaultExport = fileStore[prevTab.innerText].match(/export default function (\w+)/);
+                    if (defaultExport) {
+                        // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
+                    }
+                }
+                ev.target.classList.add('active');
+
+                editors[2].setValue(fileStore[ev.target.innerText]);
+
+                console.log('toggle tab...');
+
+                console.log(fileStore[ev.target.innerText].split('\n').length);
+                editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)                
+                editors[2].focus();
+            }
+
+            let newTab = origTab.cloneNode();
+            newTab.innerText = title;
+
+            let prevTab = document.querySelector('.tab.active');
+            prevTab && prevTab.classList.toggle('active');
+            newTab.classList.add('active');
+
+            newTab.style.marginRight = '1.25em';
+            newTab.onclick = origTab.onclick;
+
+            if (!event.file){
+                fileStore[origTab.innerText] = editors[2].getValue();
+                fileStore[newTab.innerText] = '';                   // create new
+                editors[2].setValue(fileStore[newTab.innerText]);
+                
+                editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+            }            
+            
+            target.parentElement.insertBefore(newTab, target);            
+        }        
+    </script>
+
+    <script src="./build/bundler.js"></script>
+    <script src="./build/page_builder.js"></script>    
 
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
@@ -81,6 +183,19 @@
 
     <script>
 
+        let editors = IDE.initialize({ fileStore }, {
+            onControlSave: function(event) {
+                alert(99)
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', function(event) {
+            document.querySelector('.tabs').style.display = 'block'
+            
+            // setTimeout(function() {
+            //     editors[2].session.$mode.$highlightRules.$keywordList.push("from ")
+            // }, 1000)
+        })
     </script>
 </body>
 

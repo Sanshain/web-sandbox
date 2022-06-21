@@ -2,13 +2,17 @@
 
 import { babelCompiler, compilers } from "./features/compiler";
 import { generateGlobalInintializer } from "./utils/page_generator";
+import { commonStorage } from './utils/utils';
 
+
+export { compilers, babelCompiler };
 
 
 export const playgroundObject = {
     editors: [],
     iframe: null,
-    curUrl: null
+    curUrl: null,
+    fileStorage:{ _active: 0 }
 }
 
 
@@ -54,14 +58,41 @@ function createHtml({ body, style, script }, attrs) {
 
 
 /**
+ * 
+ * TODO: option {simplestBundler, fileStore}
+ * 
  * @param {string} [prevUrl]
- * @returns {[HTMLElement, string]}
  * @param {string | any[]} [additionalScripts]
  * @param {string} [scriptType]
+ * @param {object} [options]
+ * @returns {[HTMLElement, string]}
  */
-export function createPage(prevUrl, additionalScripts, scriptType) {
+export function createPage(prevUrl, additionalScripts, scriptType, options) {    
+    
+    if (window['fileStore'] && playgroundObject.editors) {
+        const fileStorage = window['fileStore'];
+        let activeTab = document.querySelector('.tabs .tab.active');
+        // update current tab content:
 
-    let wrapFunc = (/** @type {string} */ code) => {
+        if (fileStorage) {
+            fileStorage[fileStorage.innerText] = playgroundObject.editors[2].getValue()
+        }        
+    }
+    
+    let appCode = (window['fileStore'] || {})['app.js'];
+    // console.log('appCode');
+
+    let wrapFunc = (/** @type {string} */ code) => {        
+
+        if (window['simplestBundler']) {
+            code = window['simplestBundler'].default(code, window['fileStore']);
+            console.log('build...');
+        }
+        else {
+            console.warn('bundler is absent');
+            // alert('Warn/ look logs')
+        }
+
         // 
         let globalReinitializer = generateGlobalInintializer(code)
 
@@ -69,7 +100,7 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
     }
 
     let editors = playgroundObject.editors;
-    let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(editors[i].getValue())), acc), {});
+    let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(appCode || editors[i].getValue())), acc), {});
 
     let optionalScripts = ''
     if (additionalScripts && additionalScripts.length) {
@@ -112,7 +143,9 @@ export function createPage(prevUrl, additionalScripts, scriptType) {
  * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
  * @param {boolean} jsxMode
  * ///! param {number} compilerMode
- * @param {string[]} compilerMode
+ * @param {string[]} compilerMode - 
+ * 
+ * TODO: options: {storage (localStorage|sessionStorage), fileStore}
  */
 export function webCompile(jsxMode, compilerMode) {
     
@@ -174,11 +207,33 @@ export function webCompile(jsxMode, compilerMode) {
         playgroundObject.curUrl = curUrl;
     }
 
-    let compiler = Number.parseInt(localStorage.getItem('mode') || '0');
+    let compiler = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
 
-    localStorage.setItem(compiler + '__html', editors[0].getValue());
-    localStorage.setItem(compiler + '__css', editors[1].getValue());
-    localStorage.setItem(compiler + '__javascript', editors[2].getValue());
+    // just sandbox feature:
+    (commonStorage || localStorage).setItem(compiler + '__html', editors[0].getValue());
+    (commonStorage || localStorage).setItem(compiler + '__css', editors[1].getValue());
+    (commonStorage || localStorage).setItem(compiler + '__javascript', editors[2].getValue());
+    
+    const fileStorage = window['fileStore'];
+    let modulesStore = {};
+
+    //@ts-ignore
+    if (fileStorage) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue()
+
+    if (fileStorage && Object.keys(fileStorage).length > 1) {
+        
+        for (let i = 0; i < Object.keys(fileStorage).length; i++) {
+            const fileName = Object.keys(fileStorage)[i];
+            if (fileName.startsWith('_')) continue;
+            modulesStore[fileName] = fileStorage[fileName];
+        }
+
+        // js multitabs:
+        (commonStorage || localStorage).setItem('_modules', JSON.stringify(modulesStore));
+        console.log('save modules...');
+    }
+
+    // document.getElementById('compiler_mode')
 }
 
 
