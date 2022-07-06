@@ -250,7 +250,7 @@ var simplestBundler = (function (exports, require$$0) {
     var tcpBundler = { build };
 
     /**
-     * 
+     * билдит модули
      * @param {string} content : ;
      * @param {object} store 
      * @return {string}
@@ -261,20 +261,24 @@ var simplestBundler = (function (exports, require$$0) {
 
         // console.log(build);
 
+        
         let bb = tcpBundler.build;
-        console.log(bb);
+        globalThis.__debug && console.log(bb);
+
 
         let result = tcpBundler.build(content, '.', {
             getContent: function (fileName) {
 
                 // fileName = path.normalize(this.dirPath + '/' + fileName)
 
+                //! один файл можно импотрировать только один раз !//
+
                 if (~exportedFiles.indexOf(fileName)) { console.warn(`attempting to re-import '${fileName}' into 'base.ts' has been rejected`); return ''; }
                 else {
                     exportedFiles.push(fileName);
                 }
 
-                let content = store[fileName];          // var content = fs.readFileSync(fileName).toString()
+                let content = store['app.js'] || store[fileName];          // var content = fs.readFileSync(fileName).toString()
 
                 return content;
             }
@@ -295,6 +299,13 @@ var simplestBundler = (function (exports, require$$0) {
 
     const splitAt = (x, index) => [x.slice(0, index), x.slice(index)];
 
+    /**
+     * Функция для нативного импорта
+     * 
+     * (не используется?)
+     * @param {string} content : ;
+     * @param {*} store 
+     */
     function thisBuild(content, store){
 
         function createModule(match, classNames, fileName, offset, source) {

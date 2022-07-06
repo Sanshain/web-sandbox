@@ -218,6 +218,11 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                         }
                     },
                     
+                    // Array and string methods: 
+                    indexOf: '',
+                    from: '',
+
+                    // DOM:
 
                     target: '',
                     innerText: '',
@@ -225,8 +230,13 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     appendChild: '',
                     insertBefore: '',
                     createElement: '',
+                    
 
                     querySelectorAll: '',
+                    getElementById: {
+                        desc: 'Найти элемент по его ID',
+                        'return': 'HTMLElement?'
+                    },
                     querySelector: {
                         desc: 'get element by selector',
                         sign: {
@@ -236,7 +246,20 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                             }
                         },
                         'return': 'HTMLElement'
-                    }
+                    },
+
+                    // Events: 
+                    
+                    addEventListener: '',
+                    onclick: '',
+                    oninput: '',
+                    onkeydown: '',
+                    onchange: '',
+
+                    onmousedown: '',
+                    onmousemove: '',
+                    onmouseover: '',
+                    onmouseout: '',
                 }
 
                 const domCompleter = {

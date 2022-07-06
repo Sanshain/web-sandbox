@@ -5326,6 +5326,11 @@ var IDE = (function (exports) {
                             }
                         },
                         
+                        // Array and string methods: 
+                        indexOf: '',
+                        from: '',
+
+                        // DOM:
 
                         target: '',
                         innerText: '',
@@ -5333,8 +5338,13 @@ var IDE = (function (exports) {
                         appendChild: '',
                         insertBefore: '',
                         createElement: '',
+                        
 
                         querySelectorAll: '',
+                        getElementById: {
+                            desc: 'Найти элемент по его ID',
+                            'return': 'HTMLElement?'
+                        },
                         querySelector: {
                             desc: 'get element by selector',
                             sign: {
@@ -5344,7 +5354,20 @@ var IDE = (function (exports) {
                                 }
                             },
                             'return': 'HTMLElement'
-                        }
+                        },
+
+                        // Events: 
+                        
+                        addEventListener: '',
+                        onclick: '',
+                        oninput: '',
+                        onkeydown: '',
+                        onchange: '',
+
+                        onmousedown: '',
+                        onmousemove: '',
+                        onmouseover: '',
+                        onmouseout: '',
                     };
 
                     const domCompleter = {
