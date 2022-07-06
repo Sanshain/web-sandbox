@@ -250,7 +250,7 @@ var simplestBundler = (function (exports, require$$0) {
     var tcpBundler = { build };
 
     /**
-     * билдит модули
+     * билдит модули (пока тож не используется нигде, вроде)
      * @param {string} content : ;
      * @param {object} store 
      * @return {string}

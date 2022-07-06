@@ -162,8 +162,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             else if(i === 2) {
                 
                 let domFuncs = {
-                    style: '',
-                    color: '',
+                    style: null,
+                    color: null,
 
                     // ReactDOM: {
                     //     desc: 'only for react lib namespace',
@@ -219,22 +219,30 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     },
                     
                     // Array and string methods: 
+
                     indexOf: '',
                     from: '',
+                    slice: '',
+
 
                     // DOM:
 
-                    target: '',
+                    target: null,
+                    classList: '',
+                    offsetHeight: '',
+                    offsetWidth: '',
+                    getComputedStyle: '',
+
                     innerText: '',
 
                     appendChild: '',
                     insertBefore: '',
                     createElement: '',
                     
-
+                    closest: '',
                     querySelectorAll: '',
                     getElementById: {
-                        desc: 'Найти элемент по его ID',
+                        desc: '',  //  'Найти элемент по его ID',
                         'return': 'HTMLElement?'
                     },
                     querySelector: {
@@ -249,8 +257,18 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     },
 
                     // Events: 
-                    
-                    addEventListener: '',
+
+                    addEventListener: {
+                        desc: '',
+                        sign: {
+                            'selector': {
+                                type: 'string',
+                                desc: 'element selector'
+                            }
+                        },
+                    },
+
+                    onload: '',
                     onclick: '',
                     oninput: '',
                     onkeydown: '',
@@ -268,16 +286,29 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                         // prefix !== '.' ? [] :
                         callback(null, wordList.map(
                             function (word) {
+                                const metaInfo = domFuncs[word];
                                 return {
                                     caption: word,
-                                    value: word,
-                                    meta: "static"
+                                    value: word + (undefined ? '' : '()'),  // для методов без параметров (таких-то и не могу даже вспомнить)
+                                    // meta: "local",
+                                    // meta: "static",
+
+                                    // snippet: 'This2(${1})',
+
+                                    // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
+                                    snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : (word + '(${1})')) : undefined,
+
+                                    type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
+                                    meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
+
+                                    // inputParameters: { 1: '?' },
                                 };
                             }
                         ));
                     },
-                    getDocTooltip: function (item) {
-                        if (!item.docHTML) {                            
+                    getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
+                        // item['type'] === 'snippet'
+                        if (!item.docHTML || (item['meta'] === 'function' && domFuncs[item.caption] && domFuncs[item.caption].sign)) {
                             let hint = domFuncs[item.caption];
                             if (hint) {
                                 let args = Object.keys(hint.sign || {}).map(item => item + ': ' + hint.sign[item].type).join(', ');

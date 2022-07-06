@@ -1,7 +1,7 @@
 import { build } from 'tcp-bundler';
 
 /**
- * билдит модули
+ * билдит модули (пока тож не используется нигде, вроде)
  * @param {string} content : ;
  * @param {object} store 
  * @return {string}

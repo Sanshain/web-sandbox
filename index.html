@@ -51,6 +51,32 @@
             background-color:#292929;
         }
 
+        /* meta position */
+        .ace_completion-meta{
+            color: gray;
+        }
+        .ace_completion-meta{
+            right: 0;
+            position: absolute;
+            top: -.9em;            
+            margin-right: 2em;   
+        }
+        .ace_line{
+            width: 300px;
+        }
+        /* margin-right: 0.5em;  */
+
+
+        /*  */
+
+        .ace_tooltip.ace_doc-tooltip h5{
+            margin: 1em 2em;
+        }
+        .ace_tooltip.ace_doc-tooltip p{
+            margin-left: 1em;
+            text-transform: capitalize;
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -112,8 +138,10 @@
     <script>
 
         var fileStore = { _active: 0 };
-
+        
         function fileAttach(event) {
+
+            //! Проверяем имя файла на валидность:
 
             filename = event.file || prompt('Enter file name:');
             if (!filename) return;
@@ -127,7 +155,8 @@
 
             let target = event.target;
 
-            // filename
+            //! Настройка переключения между табами:
+
             let origTab = target.parentElement.children[0];
             origTab.onclick = origTab.onclick || function (ev) {
                 let prevTab = document.querySelector('.tab.active');
@@ -152,6 +181,8 @@
                 editors[2].focus();
             }
 
+            // создание нового таба:
+
             let newTab = origTab.cloneNode();
             newTab.innerText = title;
 
@@ -167,7 +198,9 @@
                 fileStore[newTab.innerText] = '';                   // create new
                 editors[2].setValue(fileStore[newTab.innerText]);
                 
+                // добавление нового ключевого слова:
                 editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+                editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
             }            
             
             target.parentElement.insertBefore(newTab, target);            
