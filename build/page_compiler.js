@@ -139,8 +139,8 @@ var pageBuilder = (function (exports) {
      */
     function createPage(prevUrl, additionalScripts, scriptType, options) {    
         
-        if (window['fileStore'] && playgroundObject.editors) {
-            const fileStorage = window['fileStore'];
+        if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
+            const fileStorage = playgroundObject.fileStorage || window['fileStore'];
             document.querySelector('.tabs .tab.active');
             // update current tab content:
 
@@ -149,13 +149,13 @@ var pageBuilder = (function (exports) {
             }        
         }
         
-        let appCode = (window['fileStore'] || {})['app.js'];
+        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
         // console.log('appCode');
 
         let wrapFunc = (/** @type {string} */ code) => {        
 
             if (window['simplestBundler']) {
-                code = window['simplestBundler'].default(code, window['fileStore']);
+                code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
                 console.log('build...');
             }
             else {
@@ -224,8 +224,17 @@ var pageBuilder = (function (exports) {
         // [iframe, curUrl] = createPage(curUrl);
         // console.log(iframe);
 
-        let iframe = playgroundObject.iframe;
-        let editors = playgroundObject.editors;
+
+
+        let iframe = playgroundObject.iframe,
+            editors = playgroundObject.editors;
+
+        const fileStorage = playgroundObject.fileStorage || window['fileStore'];
+        //@ts-ignore
+        if (Object.keys(fileStorage || {}).length) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+
+
+
 
         if (iframe.contentDocument && !jsxMode) {
 
@@ -259,7 +268,7 @@ var pageBuilder = (function (exports) {
                 script.type = "text/babel";
             }
 
-            let code = editors[2].getValue();
+            let code = playgroundObject.fileStorage['app.js'] || editors[2].getValue();
 
             let globalReinitializer = generateGlobalInintializer(code);
 
@@ -277,6 +286,9 @@ var pageBuilder = (function (exports) {
             playgroundObject.curUrl = curUrl;
         }
 
+
+
+
         let compiler = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
 
         // just sandbox feature:
@@ -284,11 +296,10 @@ var pageBuilder = (function (exports) {
         (commonStorage || localStorage).setItem(compiler + '__css', editors[1].getValue());
         (commonStorage || localStorage).setItem(compiler + '__javascript', editors[2].getValue());
         
-        const fileStorage = window['fileStore'];
+
+
         let modulesStore = {};
 
-        //@ts-ignore
-        if (fileStorage) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
 
         if (fileStorage && Object.keys(fileStorage).length > 1) {
             

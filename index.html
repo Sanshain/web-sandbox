@@ -36,7 +36,7 @@
             background-color: transparent;
             left: 3.5em;
 
-            top: 43.2vh;
+            top: 43.4vh;
         }
         .tab{
             font-size: small;
@@ -67,7 +67,7 @@
         /* margin-right: 0.5em;  */
 
 
-        /*  */
+        /*  */        
 
         .ace_tooltip.ace_doc-tooltip h5{
             margin: 1em 2em;
@@ -105,7 +105,8 @@
 
         <div class="tabs" style="display: none;">
             <div class="tab" tabindex="0">app.js</div>
-            <div class="tab" onclick="fileAttach(event)">+</div>
+            <div class="tab">+</div>
+            <!-- onclick="fileAttach(event) -->
         </div>
         <div class="editor" id="jseditor"></div>
         <div class="view">
@@ -137,74 +138,81 @@
 
     <script>
 
-        var fileStore = { _active: 0 };
+        // var fileStore = { _active: 0 };
         
-        function fileAttach(event) {
+        // function fileAttach(event) {
 
-            //! Проверяем имя файла на валидность:
+        //     //! Проверяем имя файла на валидность:
 
-            filename = event.file || prompt('Enter file name:');
-            if (!filename) return;
+        //     filename = event.file || prompt('Enter file name:');
+        //     if (!filename) return;
 
-            let title = ~filename.indexOf('.') ? filename : (filename + '.js');
+        //     let title = ~filename.indexOf('.') ? filename : (filename + '.js');
 
-            if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
-                alert('Файл с таким именем уже существует');
-                return;
-            }
+        //     if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
+        //         alert('Файл с таким именем уже существует');
+        //         return;
+        //     }
 
-            let target = event.target;
+        //     let target = event.target;
 
-            //! Настройка переключения между табами:
+        //     //! Настройка переключения между табами:
 
-            let origTab = target.parentElement.children[0];
-            origTab.onclick = origTab.onclick || function (ev) {
-                let prevTab = document.querySelector('.tab.active');
-                if (prevTab) {
+        //     let origTab = target.parentElement.children[0];
+        //     origTab.onclick = origTab.onclick || function (ev) {
+        //         let prevTab = document.querySelector('.tab.active');
+        //         if (prevTab) {
 
-                    prevTab.classList.toggle('active');
-                    fileStore[prevTab.innerText] = editors[2].getValue();
+        //             prevTab.classList.toggle('active');
+        //             fileStore[prevTab.innerText] = editors[2].getValue();
 
-                    const defaultExport = fileStore[prevTab.innerText].match(/export default function (\w+)/);
-                    if (defaultExport) {
-                        // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
-                    }
-                }
-                ev.target.classList.add('active');
+        //             const defaultExport = fileStore[prevTab.innerText].match(/export default function (\w+)/);
+        //             if (defaultExport) {
+        //                 // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
+        //             }
+        //         }
+        //         ev.target.classList.add('active');
 
-                editors[2].setValue(fileStore[ev.target.innerText]);
+        //         editors[2].setValue(fileStore[ev.target.innerText]);
 
-                console.log('toggle tab...');
+        //         console.log('toggle tab...');
 
-                console.log(fileStore[ev.target.innerText].split('\n').length);
-                editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)                
-                editors[2].focus();
-            }
+        //         console.log(fileStore[ev.target.innerText].split('\n').length);
+        //         editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)                
+        //         editors[2].focus();
+        //     }
 
-            // создание нового таба:
+        //     // создание нового таба:
 
-            let newTab = origTab.cloneNode();
-            newTab.innerText = title;
+        //     let newTab = origTab.cloneNode();
+        //     newTab.innerText = title;
 
-            let prevTab = document.querySelector('.tab.active');
-            prevTab && prevTab.classList.toggle('active');
-            newTab.classList.add('active');
+        //     let prevTab = document.querySelector('.tab.active');
+        //     prevTab && prevTab.classList.toggle('active');
+        //     newTab.classList.add('active');
 
-            newTab.style.marginRight = '1.25em';
-            newTab.onclick = origTab.onclick;
+        //     newTab.style.marginRight = '1.25em';
+        //     newTab.onclick = origTab.onclick;
 
-            if (!event.file){
-                fileStore[origTab.innerText] = editors[2].getValue();
-                fileStore[newTab.innerText] = '';                   // create new
-                editors[2].setValue(fileStore[newTab.innerText]);
+        //     if (!event.file){
+        //         fileStore[origTab.innerText] = editors[2].getValue();
+        //         fileStore[newTab.innerText] = '';                   // create new
+        //         editors[2].setValue(fileStore[newTab.innerText]);
                 
-                // добавление нового ключевого слова:
-                editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
-                editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
-            }            
+        //         // добавление нового ключевого слова:
+        //         editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+        //         // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
+                
+        //         let moduleName = newTab.innerText.split('.')[0];
+        //         moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
+        //         editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
+
+                
+        //     }            
             
-            target.parentElement.insertBefore(newTab, target);            
-        }        
+        //     target.parentElement.insertBefore(newTab, target);            
+        // }        
+
     </script>
 
     <script src="./build/bundler.js"></script>
@@ -216,11 +224,13 @@
 
     <script>
 
-        let editors = IDE.initialize({ fileStore }, {
+        let editors = IDE.initialize([], {
+            tabAttachSelector: '.tab:last-child',
             onControlSave: function(event) {
                 // alert(99)
             }
         });
+
 
         window.addEventListener('DOMContentLoaded', function(event) {
             document.querySelector('.tabs').style.display = 'block'

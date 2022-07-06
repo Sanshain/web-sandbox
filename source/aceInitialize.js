@@ -5,6 +5,7 @@ import { default as extend } from 'emmet';
 import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
 import { defaultValues } from './features/compiler';
+import { domFuncs, keyWords } from './utils/autocompletion';
 
 
 
@@ -160,151 +161,12 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                 editor.completers.push(colorsCompleter)
             }
             else if(i === 2) {
-                
-                let domFuncs = {
-                    style: null,
-                    color: null,
-
-                    // ReactDOM: {
-                    //     desc: 'only for react lib namespace',
-                    //     return: 'namespace'
-                    // },
-                    render: {
-                        desc: 'render preact/react component to html DOM',
-                        sign: {
-                            'component': {
-                                desc: 'react/preact component',
-                                type: 'VNode<any>'
-                            },
-                            parent: {
-                                desc: 'app root inside DOM tree',
-                                type: 'HTMLElement'
-                            }
-                        },
-                        return: 'HTMLElement'
-                    },
-                    
-
-                    useRef: {
-                        desc: 'get a reference to a DOM node inside a functional components',
-                        sign: {
-                            initialValue: {
-                                desc: 'initial value'
-                            }
-                        },
-                        'return': 'Ref<T>'
-                    },
-                    useState: {
-                        desc: 'assigns the starting state value, and returns an array of two elements',
-                        sign: {
-                            initialState: {
-                                type: '<T>(initialState: T | (() => T))',
-                                desc: 'initial state'
-                            }
-                        },
-                        'return': '[T, StateUpdater<T>]'
-                    },
-                    useEffect: {
-                        desc: '',
-                        sign: {
-                            effect: {
-                                type: 'EffectCallback',
-                                desc: 'callback function'
-                            },
-                            inputs: {
-                                type: 'Inputs?',
-                                desc: ''
-                            }
-                        }
-                    },
-                    
-                    // Array and string methods: 
-
-                    indexOf: '',
-                    from: '',
-                    slice: '',
-
-
-                    // DOM:
-
-                    target: null,
-                    classList: '',
-                    offsetHeight: '',
-                    offsetWidth: '',
-                    getComputedStyle: '',
-
-                    innerText: '',
-
-                    appendChild: '',
-                    insertBefore: '',
-                    createElement: '',
-                    
-                    closest: '',
-                    querySelectorAll: '',
-                    getElementById: {
-                        desc: '',  //  'Найти элемент по его ID',
-                        'return': 'HTMLElement?'
-                    },
-                    querySelector: {
-                        desc: 'get element by selector',
-                        sign: {
-                            'selector': {
-                                type: 'string',
-                                desc: 'element selector'
-                            }
-                        },
-                        'return': 'HTMLElement'
-                    },
-
-                    // Events: 
-
-                    addEventListener: {
-                        desc: '',
-                        sign: {
-                            'selector': {
-                                type: 'string',
-                                desc: 'element selector'
-                            }
-                        },
-                    },
-
-                    onload: '',
-                    onclick: '',
-                    oninput: '',
-                    onkeydown: '',
-                    onchange: '',
-
-                    onmousedown: '',
-                    onmousemove: '',
-                    onmouseover: '',
-                    onmouseout: '',
-                }
+            
 
                 const domCompleter = {
-                    getCompletions: function (editor, session, pos, prefix, callback) {
-                        let wordList = Object.keys(domFuncs);
+                    getCompletions: function (editor, session, pos, prefix, callback) {                        
                         // prefix !== '.' ? [] :
-                        callback(null, wordList.map(
-                            function (word) {
-                                const metaInfo = domFuncs[word];
-                                return {
-                                    caption: word,
-                                    value: word + (undefined ? '' : '()'),  // для методов без параметров (таких-то и не могу даже вспомнить)
-                                    // meta: "local",
-                                    // meta: "static",
-
-                                    // snippet: 'This2(${1})',
-
-                                    // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
-                                    snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : (word + '(${1})')) : undefined,
-
-                                    type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
-                                    meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
-
-                                    // inputParameters: { 1: '?' },
-                                };
-                            }
-                        ));
+                        callback(null, keyWords);
                     },
                     getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
                         // item['type'] === 'snippet'
@@ -341,6 +203,9 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
     // fileStorage
     let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
     if (modulesStorage) {
+
+        // create tabs:
+
         let _modules = JSON.parse(modulesStorage);
         let fileCreate = document.querySelector('.tabs .tab:last-child');
 
@@ -349,20 +214,22 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
         if (fileCreate) {
             for (const key in _modules) {
                 if (Object.hasOwnProperty.call(_modules, key)) {
-                    fileStorage[key] = _modules[key];
-                    // create tabs:
-
-                    console.log(key);
-                    //@ts-ignore
-                    if (i++) fileCreate.onclick({ target: fileCreate, file: key });
-                    else {
-                        // set editor value
-                        editors[2].setValue(_modules[key])
+                    fileStorage[key] = _modules[key];                    
+                    
+                    if (i++) {
+                        console.log(fileCreate);
+                        //@ts-ignore
+                        fileCreate.click({ target: fileCreate, file: key });
+                    }
+                    else {                        
+                        editors[2].setValue(_modules[key]);                                     // set editor value
                     }
                 }
             }
 
-            document.querySelector('.tabs .tab.active').classList.toggle('active');
+            let activeTab = document.querySelector('.tabs .tab.active');
+            activeTab && activeTab.classList.toggle('active');
+            
             document.querySelector('.tabs .tab').classList.add('active');
         }
     }    

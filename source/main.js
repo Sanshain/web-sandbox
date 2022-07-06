@@ -8,6 +8,7 @@ import { initResizers } from "./features/resizing";
 import { babelCompiler, compilers } from "./features/compiler";
 import { options } from 'preact';
 import { commonStorage } from "./utils/utils";
+import { fileAttach } from "./features/tabs";
 
 
 const modes = [
@@ -19,7 +20,7 @@ const modes = [
 
 /**
  * @param {string[]} values
- * @param {{onControlSave?: Function}?} options
+ * @param {{onControlSave?: Function, tabAttachSelector?: string}?} options
  * @returns {any[]}
  */
 export function initialize(values, options) {
@@ -81,6 +82,14 @@ export function initialize(values, options) {
         // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
         // console.log(event.target.selectedIndex);
     });
+
+
+    
+    options.tabAttachSelector && document.querySelector(options.tabAttachSelector).addEventListener('click', function (e) {
+        e['editors'] = editors;
+        fileAttach(e);
+    });
+
 
     return editors;
 }

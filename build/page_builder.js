@@ -4891,8 +4891,8 @@ var IDE = (function (exports) {
      */
     function createPage(prevUrl, additionalScripts, scriptType, options) {    
         
-        if (window['fileStore'] && playgroundObject.editors) {
-            const fileStorage = window['fileStore'];
+        if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
+            const fileStorage = playgroundObject.fileStorage || window['fileStore'];
             document.querySelector('.tabs .tab.active');
             // update current tab content:
 
@@ -4901,13 +4901,13 @@ var IDE = (function (exports) {
             }        
         }
         
-        let appCode = (window['fileStore'] || {})['app.js'];
+        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
         // console.log('appCode');
 
         let wrapFunc = (/** @type {string} */ code) => {        
 
             if (window['simplestBundler']) {
-                code = window['simplestBundler'].default(code, window['fileStore']);
+                code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
                 console.log('build...');
             }
             else {
@@ -4976,8 +4976,17 @@ var IDE = (function (exports) {
         // [iframe, curUrl] = createPage(curUrl);
         // console.log(iframe);
 
-        let iframe = playgroundObject.iframe;
-        let editors = playgroundObject.editors;
+
+
+        let iframe = playgroundObject.iframe,
+            editors = playgroundObject.editors;
+
+        const fileStorage = playgroundObject.fileStorage || window['fileStore'];
+        //@ts-ignore
+        if (Object.keys(fileStorage || {}).length) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+
+
+
 
         if (iframe.contentDocument && !jsxMode) {
 
@@ -5011,7 +5020,7 @@ var IDE = (function (exports) {
                 script.type = "text/babel";
             }
 
-            let code = editors[2].getValue();
+            let code = playgroundObject.fileStorage['app.js'] || editors[2].getValue();
 
             let globalReinitializer = generateGlobalInintializer(code);
 
@@ -5029,6 +5038,9 @@ var IDE = (function (exports) {
             playgroundObject.curUrl = curUrl;
         }
 
+
+
+
         let compiler = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
 
         // just sandbox feature:
@@ -5036,11 +5048,10 @@ var IDE = (function (exports) {
         (commonStorage || localStorage).setItem(compiler + '__css', editors[1].getValue());
         (commonStorage || localStorage).setItem(compiler + '__javascript', editors[2].getValue());
         
-        const fileStorage = window['fileStore'];
+
+
         let modulesStore = {};
 
-        //@ts-ignore
-        if (fileStorage) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
 
         if (fileStorage && Object.keys(fileStorage).length > 1) {
             
@@ -5111,6 +5122,249 @@ var IDE = (function (exports) {
             wrapper.style.display = 'none';
         };
     }
+
+    // https://stackoverflow.com/questions/58377763/how-do-i-programmatically-add-a-snippet-in-ace-editor
+    // https://prog.world/implementing-code-completion-in-ace-editor/
+
+    //@ts-check
+
+
+
+    let domFuncs = {
+        style: null,
+        color: null,
+
+        // ReactDOM: {
+        //     desc: 'only for react lib namespace',
+        //     return: 'namespace'
+        // },
+        render: {
+            desc: 'render preact/react component to html DOM',
+            sign: {
+                'component': {
+                    desc: 'react/preact component',
+                    type: 'VNode<any>'
+                },
+                parent: {
+                    desc: 'app root inside DOM tree',
+                    type: 'HTMLElement'
+                }
+            },
+            return: 'HTMLElement'
+        },
+
+
+        useRef: {
+            desc: 'get a reference to a DOM node inside a functional components',
+            sign: {
+                initialValue: {
+                    desc: 'initial value'
+                }
+            },
+            'return': 'Ref<T>'
+        },
+        useState: {
+            desc: 'assigns the starting state value, and returns an array of two elements',
+            sign: {
+                initialState: {
+                    type: '<T>(initialState: T | (() => T))',
+                    desc: 'initial state'
+                }
+            },
+            'return': '[T, StateUpdater<T>]'
+        },
+        useEffect: {
+            desc: '',
+            sign: {
+                effect: {
+                    type: 'EffectCallback',
+                    desc: 'callback function'
+                },
+                inputs: {
+                    type: 'Inputs?',
+                    desc: ''
+                }
+            }
+        },
+
+        // Array and string methods: 
+
+        indexOf: '',
+        from: '',
+        slice: '',
+
+
+        // DOM:
+
+        target: null,
+        classList: '',
+        offsetHeight: '',
+        offsetWidth: '',
+        getComputedStyle: '',
+
+        innerText: '',
+
+        appendChild: '',
+        insertBefore: '',
+        createElement: '',
+
+        closest: '',
+        querySelectorAll: '',
+        getElementById: {
+            desc: '',  //  'Найти элемент по его ID',
+            'return': 'HTMLElement?'
+        },
+        querySelector: {
+            desc: 'get element by selector',
+            sign: {
+                'selector': {
+                    type: 'string',
+                    desc: 'element selector'
+                }
+            },
+            'return': 'HTMLElement'
+        },
+
+        // Events: 
+
+        addEventListener: {
+            desc: '',
+            sign: {
+                'selector': {
+                    type: 'string',
+                    desc: 'element selector'
+                }
+            },
+        },
+
+        onload: '',
+        onclick: '',
+        oninput: '',
+        onkeydown: '',
+        onchange: '',
+
+        onmousedown: '',
+        onmousemove: '',
+        onmouseover: '',
+        onmouseout: '',
+    };
+
+
+    let wordList = Object.keys(domFuncs);
+
+    let keyWords = wordList.map(
+        function (word) {
+            const metaInfo = domFuncs[word];
+            return {
+                caption: word,
+                value: word + (''),  // для методов без параметров (таких-то и не могу даже вспомнить)
+                // meta: "local",
+                // meta: "static",
+
+                // snippet: 'This2(${1})',
+
+                // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
+                snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : (word + '(${1})')) : undefined,
+
+                type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
+                meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
+
+                // inputParameters: { 1: '?' },
+            };
+        }
+    );
+
+
+
+    /**
+     * @param {{
+     *  completers: { 
+     *      getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => void;
+     *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
+     *   }[];
+     * }} editor : ace editor instanse
+     * @param {{ hint?: {desc: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
+     */
+    function autocompleteExpand(editor, keyWordInfo) {
+            
+        let hint = keyWordInfo.hint;
+        
+        editor.completers.push({
+            getCompletions: function (editor, session, pos, prefix, callback) {
+                // prefix !== '.' ? [] :
+                callback(null, [{
+                    caption: keyWordInfo.name,
+                    value: keyWordInfo.name,
+                    snippet: keyWordInfo.template,
+                    meta: keyWordInfo.meta || '',
+                }]);
+            },
+            getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
+
+                if (hint) {
+                    let args = Object.keys(hint.sign || {}).map(arg => arg + ': ' + hint.sign[arg].type).join(', ');
+                    item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>';
+                    let argsDesc = '';
+                    for (const key in hint.sign) {
+                        argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].description;
+                    }
+                    item.docHTML += '<ul>' + argsDesc + '</ul>';
+                }
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //! не используется !//
+
+
+
+    // динамическое добавление сниппетов:
+
+
+    // var ace = window['ace'];
+
+    // export const registerSnippets = function (editor, session, mode, snippetText) {
+    //     editor.setOptions({
+    //         enableBasicAutocompletion: true,
+    //         enableSnippets: true,
+    //     })
+
+    //     var snippetManager = ace.require('ace/snippets').snippetManager
+
+    //     var id = session.$mode.$id || ''
+    //     var m = snippetManager.files[id]
+
+    //     m.scope = mode
+    //     m.snippetText = snippetText
+    //     m.snippet = snippetManager.parseSnippetFile(snippetText, m.scope)
+
+    //     snippetManager.register(m.snippet, m.scope)
+    // }
+
+    // export const createSnippets = snippets =>
+    //     (Array.isArray(snippets) ? snippets : [snippets])
+    //         .map(({ name, code }) =>
+    //             [
+    //                 'snippet ' + name,
+    //                 code
+    //                     .split('\n')
+    //                     .map(c => '\t' + c)
+    //                     .join('\n'),
+    //             ].join('\n')
+    //         )
+    //         .join('\n')
 
     // @ts-check
 
@@ -5268,151 +5522,12 @@ var IDE = (function (exports) {
                     editor.completers.push(colorsCompleter);
                 }
                 else if(i === 2) {
-                    
-                    let domFuncs = {
-                        style: null,
-                        color: null,
-
-                        // ReactDOM: {
-                        //     desc: 'only for react lib namespace',
-                        //     return: 'namespace'
-                        // },
-                        render: {
-                            desc: 'render preact/react component to html DOM',
-                            sign: {
-                                'component': {
-                                    desc: 'react/preact component',
-                                    type: 'VNode<any>'
-                                },
-                                parent: {
-                                    desc: 'app root inside DOM tree',
-                                    type: 'HTMLElement'
-                                }
-                            },
-                            return: 'HTMLElement'
-                        },
-                        
-
-                        useRef: {
-                            desc: 'get a reference to a DOM node inside a functional components',
-                            sign: {
-                                initialValue: {
-                                    desc: 'initial value'
-                                }
-                            },
-                            'return': 'Ref<T>'
-                        },
-                        useState: {
-                            desc: 'assigns the starting state value, and returns an array of two elements',
-                            sign: {
-                                initialState: {
-                                    type: '<T>(initialState: T | (() => T))',
-                                    desc: 'initial state'
-                                }
-                            },
-                            'return': '[T, StateUpdater<T>]'
-                        },
-                        useEffect: {
-                            desc: '',
-                            sign: {
-                                effect: {
-                                    type: 'EffectCallback',
-                                    desc: 'callback function'
-                                },
-                                inputs: {
-                                    type: 'Inputs?',
-                                    desc: ''
-                                }
-                            }
-                        },
-                        
-                        // Array and string methods: 
-
-                        indexOf: '',
-                        from: '',
-                        slice: '',
-
-
-                        // DOM:
-
-                        target: null,
-                        classList: '',
-                        offsetHeight: '',
-                        offsetWidth: '',
-                        getComputedStyle: '',
-
-                        innerText: '',
-
-                        appendChild: '',
-                        insertBefore: '',
-                        createElement: '',
-                        
-                        closest: '',
-                        querySelectorAll: '',
-                        getElementById: {
-                            desc: '',  //  'Найти элемент по его ID',
-                            'return': 'HTMLElement?'
-                        },
-                        querySelector: {
-                            desc: 'get element by selector',
-                            sign: {
-                                'selector': {
-                                    type: 'string',
-                                    desc: 'element selector'
-                                }
-                            },
-                            'return': 'HTMLElement'
-                        },
-
-                        // Events: 
-
-                        addEventListener: {
-                            desc: '',
-                            sign: {
-                                'selector': {
-                                    type: 'string',
-                                    desc: 'element selector'
-                                }
-                            },
-                        },
-
-                        onload: '',
-                        onclick: '',
-                        oninput: '',
-                        onkeydown: '',
-                        onchange: '',
-
-                        onmousedown: '',
-                        onmousemove: '',
-                        onmouseover: '',
-                        onmouseout: '',
-                    };
+                
 
                     const domCompleter = {
-                        getCompletions: function (editor, session, pos, prefix, callback) {
-                            let wordList = Object.keys(domFuncs);
+                        getCompletions: function (editor, session, pos, prefix, callback) {                        
                             // prefix !== '.' ? [] :
-                            callback(null, wordList.map(
-                                function (word) {
-                                    const metaInfo = domFuncs[word];
-                                    return {
-                                        caption: word,
-                                        value: word + ('()'),  // для методов без параметров (таких-то и не могу даже вспомнить)
-                                        // meta: "local",
-                                        // meta: "static",
-
-                                        // snippet: 'This2(${1})',
-
-                                        // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
-                                        snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : (word + '(${1})')) : undefined,
-
-                                        type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
-                                        meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
-
-                                        // inputParameters: { 1: '?' },
-                                    };
-                                }
-                            ));
+                            callback(null, keyWords);
                         },
                         getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
                             // item['type'] === 'snippet'
@@ -5449,6 +5564,9 @@ var IDE = (function (exports) {
         // fileStorage
         let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
         if (modulesStorage) {
+
+            // create tabs:
+
             let _modules = JSON.parse(modulesStorage);
             let fileCreate = document.querySelector('.tabs .tab:last-child');
 
@@ -5457,20 +5575,22 @@ var IDE = (function (exports) {
             if (fileCreate) {
                 for (const key in _modules) {
                     if (Object.hasOwnProperty.call(_modules, key)) {
-                        fileStorage[key] = _modules[key];
-                        // create tabs:
-
-                        console.log(key);
-                        //@ts-ignore
-                        if (i++) fileCreate.onclick({ target: fileCreate, file: key });
-                        else {
-                            // set editor value
-                            editors[2].setValue(_modules[key]);
+                        fileStorage[key] = _modules[key];                    
+                        
+                        if (i++) {
+                            console.log(fileCreate);
+                            //@ts-ignore
+                            fileCreate.click({ target: fileCreate, file: key });
+                        }
+                        else {                        
+                            editors[2].setValue(_modules[key]);                                     // set editor value
                         }
                     }
                 }
 
-                document.querySelector('.tabs .tab.active').classList.toggle('active');
+                let activeTab = document.querySelector('.tabs .tab.active');
+                activeTab && activeTab.classList.toggle('active');
+                
                 document.querySelector('.tabs .tab').classList.add('active');
             }
         }    
@@ -5603,6 +5723,95 @@ var IDE = (function (exports) {
 
     "function"==typeof Promise?Promise.prototype.then.bind(Promise.resolve()):setTimeout;
 
+    //@ts-check
+
+
+    // var fileStore = { _active: 0 };
+
+    /**
+     * @param {{ file?: string; target: any; }} event
+     */
+    function fileAttach(event) {
+
+        var fileStore = playgroundObject.fileStorage;
+
+        //! Проверяем имя файла на валидность:
+
+        var editors = event['editors'] || window['editors'];
+        var filename = event.file || prompt('Enter file name:');
+
+        if (!filename) return;
+
+        let title = ~filename.indexOf('.') ? filename : (filename + '.js');
+
+        if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
+            alert('Файл с таким именем уже существует');
+            return;
+        }
+
+        let target = event.target;
+
+        //! Настройка переключения между табами:
+
+        let origTab = target.parentElement.children[0];
+        origTab.onclick = origTab.onclick || function (ev) {
+            let prevTab = document.querySelector('.tab.active');
+            if (prevTab) {
+
+                const prevTabName = prevTab['innerText'];
+
+                prevTab.classList.toggle('active');
+
+                fileStore[prevTabName] = editors[2].getValue();
+
+                fileStore[prevTabName].match(/export default function (\w+)/);
+            }
+            ev.target.classList.add('active');
+
+            editors[2].setValue(fileStore[ev.target.innerText]);
+
+            console.log('toggle tab...');
+
+            console.log(fileStore[ev.target.innerText].split('\n').length);
+            editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1);
+            editors[2].focus();
+        };
+
+        // создание нового таба:
+
+        let newTab = origTab.cloneNode();
+        newTab.innerText = title;
+
+        let prevTab = document.querySelector('.tab.active');
+        prevTab && prevTab.classList.toggle('active');
+        newTab.classList.add('active');
+
+        newTab.style.marginRight = '1.25em';
+        newTab.onclick = origTab.onclick;
+
+        if (!event.file) {
+            fileStore[origTab.innerText] = editors[2].getValue();
+            fileStore[newTab.innerText] = '';                   // create new
+            editors[2].setValue(fileStore[newTab.innerText]);
+
+            // добавление нового ключевого слова:
+            editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+            // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
+
+
+            // let moduleName = newTab.innerText.split('.')[0];
+            // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
+            // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
+
+            autocompleteExpand(editors[2], {
+                name: "import {*} from './" + newTab.innerText + "'",
+                template: "import { ${1} } from './" + newTab.innerText + "'"
+            });
+        }
+
+        target.parentElement.insertBefore(newTab, target);
+    }
+
     // @ts-check
 
 
@@ -5615,7 +5824,7 @@ var IDE = (function (exports) {
 
     /**
      * @param {string[]} values
-     * @param {{onControlSave?: Function}?} options
+     * @param {{onControlSave?: Function, tabAttachSelector?: string}?} options
      * @returns {any[]}
      */
     function initialize(values, options) {
@@ -5677,6 +5886,14 @@ var IDE = (function (exports) {
             // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
             // console.log(event.target.selectedIndex);
         });
+
+
+        
+        options.tabAttachSelector && document.querySelector(options.tabAttachSelector).addEventListener('click', function (e) {
+            e['editors'] = editors;
+            fileAttach(e);
+        });
+
 
         return editors;
     }
