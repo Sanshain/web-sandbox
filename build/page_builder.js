@@ -5445,36 +5445,49 @@ var IDE = (function (exports) {
                 }
             });
 
-            if (i === 0 && window.outerWidth > 600) editor.commands.addCommand(
-                {
-                    name: "extend",
-                    exec: function () {
-                        let cursor = editor.getCursorPosition();
-                        let row = cursor.row;
-                        if (cursor.column == editor.session.getLine(row).length) {
+            if (i === 0 && window.outerWidth > 600) {
 
-                            let line = editor.session.getLine(row);
+                editor.setOptions(
+                    {
+                        enableBasicAutocompletion: true,
+                        enableSnippets: true,
+                        enableLiveAutocompletion: true,
+                        // placeholder: "Enter your " + modes[i] + " Code",
+                        // enableEmmet: true        
+                    }
+                );
 
-                            let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
-                            let endChar = cursor.column;
-                            let range = new Range(row, startChar, row, endChar);
+                editor.commands.addCommand(
+                    {
+                        name: "extend",
+                        exec: function () {
+                            let cursor = editor.getCursorPosition();
+                            let row = cursor.row;
+                            if (cursor.column == editor.session.getLine(row).length) {
 
-                            let textRange = line.slice(startChar, endChar);
-                            let code = expandAbbreviation(textRange);
-                            // let text = editor.session.getValue();
-                            editor.session.replace(range, code);
+                                let line = editor.session.getLine(row);
 
-                            editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#'))
-                                ? startChar + code.length - textRange.length - 3
-                                : startChar + code.length - 6
-                            );
+                                let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
+                                let endChar = cursor.column;
+                                let range = new Range(row, startChar, row, endChar);
 
-                            return;
-                        }
-                        editor.indent();
-                    },
-                    bindKey: { win: 'Tab' }
-            });
+                                let textRange = line.slice(startChar, endChar);
+                                let code = expandAbbreviation(textRange);
+                                // let text = editor.session.getValue();
+                                editor.session.replace(range, code);
+
+                                editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#'))
+                                    ? startChar + code.length - textRange.length - 3
+                                    : startChar + code.length - 6
+                                );
+
+                                return;
+                            }
+                            editor.indent();
+                        },
+                        bindKey: { win: 'Tab' }
+                    });
+            }
             else {  //  if (i)
 
                 editor.setOptions(
@@ -5567,6 +5580,10 @@ var IDE = (function (exports) {
                     const domCompleter = {
                         getCompletions: function jsCompleter (editor, session, pos, prefix, callback) {                        
                             // prefix !== '.' ? [] :
+                            console.log(pos);
+                            // editors[2].session.getLine(2).slice(0, 9).match(/([\w\d]+)\.\w+$/m)[1]
+                            // get object for autocompletion
+
                             callback(null, keyWords);
                         },
                         getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
