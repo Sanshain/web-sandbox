@@ -1,7 +1,7 @@
 //@ts-check
 
 import { playgroundObject } from "../pageBuilder";
-import { autocompleteExpand } from "../utils/autocompletion";
+import { autocompleteExpand, keyWords } from "../utils/autocompletion";
 
 
 // var fileStore = { _active: 0 };
@@ -32,7 +32,7 @@ export function fileAttach(event) {
     //! Настройка переключения между табами:
 
     let origTab = target.parentElement.children[0];
-    origTab.onclick = origTab.onclick || function (ev) {
+    origTab.onclick = origTab.onclick || function (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
         let prevTab = document.querySelector('.tab.active');
         if (prevTab) {
 
@@ -42,10 +42,38 @@ export function fileAttach(event) {
 
             fileStore[prevTabName] = editors[2].getValue();
 
+            
+
+            
+            const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
             const defaultExport = fileStore[prevTabName].match(/export default function (\w+)/);
-            if (defaultExport) {
-                // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
-            }
+            
+            // optional add to complete
+
+            // exports.forEach((/** @type {string} */ ex) => {
+            //     let exprWords = ex.split(' ');
+            //     let caption = exprWords.pop();
+            //     let meta = exprWords.pop()
+            //     keyWords.push({
+            //         caption,
+            //         value: caption,
+            //         meta,
+            //         type: '',
+            //         snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
+            //     })
+            // })
+
+            // if (defaultExport) {
+            //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
+            //     keyWords.push({
+            //         caption: defaultExport[1],
+            //         value: defaultExport[1],
+            //         meta: 'function',
+            //         type: '',
+            //         snippet: undefined,  // (defaultExport[1] + '({$1})')
+            //     })
+            // }
+
         }
         ev.target.classList.add('active');
 
@@ -85,8 +113,8 @@ export function fileAttach(event) {
         // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
 
         autocompleteExpand(editors[2], {
-            name: "import {*} from './" + newTab.innerText + "'",
-            template: "import { ${1} } from './" + newTab.innerText + "'"
+            name: "import { * } from './" + newTab.innerText + "'",
+            template: "import { ${1:*} } from './" + newTab.innerText + "'"
         })
     }
 

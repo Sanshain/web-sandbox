@@ -31,10 +31,15 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
     values = values || [];
 
+
+    let cssKeyWords = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
+    // cssKeyWords = cssKeyWords.concat(['div', 'input', 'select'])
+
+
     let editors = [].slice.call(document.querySelectorAll('.editor')).map((/** @type {{ id: any; }} */ element, /** @type {number} */ i, /** @type {any[]} */ arr) =>
     {
 
-        let editor = ace.edit(element.id);
+        let editor = ace.edit(element.id);        
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/" + modes[i]);
         
@@ -57,7 +62,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
         editor.commands.addCommand(allCommands.copylinesdown);
         
         
-        (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay)
+        (i < 2) && editor.textInput.getElement().addEventListener('input', autoPlay);
 
         editor.textInput.getElement().addEventListener('keydown', function (/** @type {{ ctrlKey: any; keyCode: number; key: string; preventDefault: () => void; }} */ event)
         {
@@ -120,8 +125,44 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     // enableEmmet: true        
                 }
             );
+
+            // html (on width < 600)
+            if (!i) {
+                editor.completers = editor.completers.slice();
+                editor.completers.push({
+                    getCompletions: function htmlCompleter (editor, session, pos, prefix, callback) {                        
+                        callback(null,
+                            ['fill'].concat(cssKeyWords)
+                                .map(w => {
+                                    // editors[i].session.$mode.$highlightRules.$keywordList.push(w);
+                                    return {
+                                        caption: w,
+                                        value: w,
+                                        // snippet: '<' + w + '>',
+                                        meta: "attribute"
+                                    }
+                                })
+                                .concat(['svg', 'select', 'option'].map(w => {
+                                    return {
+                                        caption: '<' + w + '>',
+                                        value: w,
+                                        snippet: '<' + w + '>${1}</' + w + '>',
+                                        meta: "tag"
+                                    }
+                                })).concat(['input'].map(w => {
+                                    return {
+                                        caption: '<' + w + '>',
+                                        value: w,
+                                        snippet: '<' + w + '/>',
+                                        meta: "tag"
+                                    }
+                                }))
+                        )
+                    }
+                })                
+            }
             // style
-            if (i === +!!i) {
+            else if (i === +!!i) {
 
                 editor.commands.on("afterExec", function (e) {
                     console.log(e.command.name);
@@ -134,11 +175,9 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                 })
 
                 const colorsCompleter = {                    
-                    getCompletions: function (editor, session, pos, prefix, callback) {
-                        let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
-                        wordList = wordList.concat(['div', 'input', 'select'])
+                    getCompletions: function cssCompleter (editor, session, pos, prefix, callback) {
                         // console.log(pos);                        
-                        callback(null, wordList.map(
+                        callback(null, cssKeyWords.concat(['div', 'input', 'select']).map(
                             function (word) {
                                 return {
                                     caption: word,
@@ -158,13 +197,14 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     // }
                 };
 
+                editor.completers = editor.completers.slice();
                 editor.completers.push(colorsCompleter)
             }
             else if(i === 2) {
             
 
                 const domCompleter = {
-                    getCompletions: function (editor, session, pos, prefix, callback) {                        
+                    getCompletions: function jsCompleter (editor, session, pos, prefix, callback) {                        
                         // prefix !== '.' ? [] :
                         callback(null, keyWords);
                     },
@@ -229,7 +269,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
             let activeTab = document.querySelector('.tabs .tab.active');
             activeTab && activeTab.classList.toggle('active');
-            
+
             document.querySelector('.tabs .tab').classList.add('active');
         }
     }    

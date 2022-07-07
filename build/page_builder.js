@@ -5392,10 +5392,15 @@ var IDE = (function (exports) {
 
         values = values || [];
 
+
+        let cssKeyWords = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
+        // cssKeyWords = cssKeyWords.concat(['div', 'input', 'select'])
+
+
         let editors = [].slice.call(document.querySelectorAll('.editor')).map((/** @type {{ id: any; }} */ element, /** @type {number} */ i, /** @type {any[]} */ arr) =>
         {
 
-            let editor = ace.edit(element.id);
+            let editor = ace.edit(element.id);        
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/" + modes[i]);
             
@@ -5481,8 +5486,44 @@ var IDE = (function (exports) {
                         // enableEmmet: true        
                     }
                 );
+
+                // html (on width < 600)
+                if (!i) {
+                    editor.completers = editor.completers.slice();
+                    editor.completers.push({
+                        getCompletions: function htmlCompleter (editor, session, pos, prefix, callback) {                        
+                            callback(null,
+                                ['fill'].concat(cssKeyWords)
+                                    .map(w => {
+                                        // editors[i].session.$mode.$highlightRules.$keywordList.push(w);
+                                        return {
+                                            caption: w,
+                                            value: w,
+                                            // snippet: '<' + w + '>',
+                                            meta: "attribute"
+                                        }
+                                    })
+                                    .concat(['svg', 'select', 'option'].map(w => {
+                                        return {
+                                            caption: '<' + w + '>',
+                                            value: w,
+                                            snippet: '<' + w + '>${1}</' + w + '>',
+                                            meta: "tag"
+                                        }
+                                    })).concat(['input'].map(w => {
+                                        return {
+                                            caption: '<' + w + '>',
+                                            value: w,
+                                            snippet: '<' + w + '/>',
+                                            meta: "tag"
+                                        }
+                                    }))
+                            );
+                        }
+                    });                
+                }
                 // style
-                if (i === +!!i) {
+                else if (i === +!!i) {
 
                     editor.commands.on("afterExec", function (e) {
                         console.log(e.command.name);
@@ -5495,11 +5536,9 @@ var IDE = (function (exports) {
                     });
 
                     const colorsCompleter = {                    
-                        getCompletions: function (editor, session, pos, prefix, callback) {
-                            let wordList = ["red", "green", "blue", 'gray', 'lightgray', 'lightblue', 'orange', 'white', 'black', 'none'];
-                            wordList = wordList.concat(['div', 'input', 'select']);
+                        getCompletions: function cssCompleter (editor, session, pos, prefix, callback) {
                             // console.log(pos);                        
-                            callback(null, wordList.map(
+                            callback(null, cssKeyWords.concat(['div', 'input', 'select']).map(
                                 function (word) {
                                     return {
                                         caption: word,
@@ -5519,13 +5558,14 @@ var IDE = (function (exports) {
                         // }
                     };
 
+                    editor.completers = editor.completers.slice();
                     editor.completers.push(colorsCompleter);
                 }
                 else if(i === 2) {
                 
 
                     const domCompleter = {
-                        getCompletions: function (editor, session, pos, prefix, callback) {                        
+                        getCompletions: function jsCompleter (editor, session, pos, prefix, callback) {                        
                             // prefix !== '.' ? [] :
                             callback(null, keyWords);
                         },
@@ -5590,7 +5630,7 @@ var IDE = (function (exports) {
 
                 let activeTab = document.querySelector('.tabs .tab.active');
                 activeTab && activeTab.classList.toggle('active');
-                
+
                 document.querySelector('.tabs .tab').classList.add('active');
             }
         }    
@@ -5754,7 +5794,7 @@ var IDE = (function (exports) {
         //! Настройка переключения между табами:
 
         let origTab = target.parentElement.children[0];
-        origTab.onclick = origTab.onclick || function (ev) {
+        origTab.onclick = origTab.onclick || function (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
             let prevTab = document.querySelector('.tab.active');
             if (prevTab) {
 
@@ -5764,7 +5804,38 @@ var IDE = (function (exports) {
 
                 fileStore[prevTabName] = editors[2].getValue();
 
+                
+
+                
+                fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
                 fileStore[prevTabName].match(/export default function (\w+)/);
+                
+                // optional add to complete
+
+                // exports.forEach((/** @type {string} */ ex) => {
+                //     let exprWords = ex.split(' ');
+                //     let caption = exprWords.pop();
+                //     let meta = exprWords.pop()
+                //     keyWords.push({
+                //         caption,
+                //         value: caption,
+                //         meta,
+                //         type: '',
+                //         snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
+                //     })
+                // })
+
+                // if (defaultExport) {
+                //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
+                //     keyWords.push({
+                //         caption: defaultExport[1],
+                //         value: defaultExport[1],
+                //         meta: 'function',
+                //         type: '',
+                //         snippet: undefined,  // (defaultExport[1] + '({$1})')
+                //     })
+                // }
+
             }
             ev.target.classList.add('active');
 
@@ -5804,8 +5875,8 @@ var IDE = (function (exports) {
             // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
 
             autocompleteExpand(editors[2], {
-                name: "import {*} from './" + newTab.innerText + "'",
-                template: "import { ${1} } from './" + newTab.innerText + "'"
+                name: "import { * } from './" + newTab.innerText + "'",
+                template: "import { ${1:*} } from './" + newTab.innerText + "'"
             });
         }
 
