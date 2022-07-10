@@ -78,6 +78,21 @@
             font-weight: 600;
         }
 
+        .settings{
+            position: absolute;
+            top: .5em;
+            right: .5em;
+            width: 1.5em;
+            height: 1.5em;
+            opacity: .6;
+            cursor: pointer;  
+            background: url(static/images/settings.svg) no-repeat;
+            background-size: contain;          
+        }
+        .expand{
+            display: none;
+        }
+
         @media screen and (max-width: 600px) {
             .tabs {
                 display: none;
@@ -101,7 +116,7 @@
     </div>
 
     <div class="md_container">
-
+        
         <div class="editor" id="htmleditor"></div>
         <div class="editor" id="csseditor"></div>
 
@@ -115,7 +130,7 @@
             <!-- onclick="fileAttach(event) -->
         </div>
         <div class="editor" id="jseditor"></div>
-        <div class="view">
+        <div class="view">            
             <div class="expand" data-title="Expand"></div>
         </div>
 
@@ -142,87 +157,74 @@
     <!-- must have some params for initialization: 1 - preact (and other) relative path, 2 - height for size change line calculation -->
 
 
-    <script>
-
-        // var fileStore = { _active: 0 };
-        
-        // function fileAttach(event) {
-
-        //     //! Проверяем имя файла на валидность:
-
-        //     filename = event.file || prompt('Enter file name:');
-        //     if (!filename) return;
-
-        //     let title = ~filename.indexOf('.') ? filename : (filename + '.js');
-
-        //     if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
-        //         alert('Файл с таким именем уже существует');
-        //         return;
-        //     }
-
-        //     let target = event.target;
-
-        //     //! Настройка переключения между табами:
-
-        //     let origTab = target.parentElement.children[0];
-        //     origTab.onclick = origTab.onclick || function (ev) {
-        //         let prevTab = document.querySelector('.tab.active');
-        //         if (prevTab) {
-
-        //             prevTab.classList.toggle('active');
-        //             fileStore[prevTab.innerText] = editors[2].getValue();
-
-        //             const defaultExport = fileStore[prevTab.innerText].match(/export default function (\w+)/);
-        //             if (defaultExport) {
-        //                 // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");                        
-        //             }
-        //         }
-        //         ev.target.classList.add('active');
-
-        //         editors[2].setValue(fileStore[ev.target.innerText]);
-
-        //         console.log('toggle tab...');
-
-        //         console.log(fileStore[ev.target.innerText].split('\n').length);
-        //         editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)                
-        //         editors[2].focus();
-        //     }
-
-        //     // создание нового таба:
-
-        //     let newTab = origTab.cloneNode();
-        //     newTab.innerText = title;
-
-        //     let prevTab = document.querySelector('.tab.active');
-        //     prevTab && prevTab.classList.toggle('active');
-        //     newTab.classList.add('active');
-
-        //     newTab.style.marginRight = '1.25em';
-        //     newTab.onclick = origTab.onclick;
-
-        //     if (!event.file){
-        //         fileStore[origTab.innerText] = editors[2].getValue();
-        //         fileStore[newTab.innerText] = '';                   // create new
-        //         editors[2].setValue(fileStore[newTab.innerText]);
-                
-        //         // добавление нового ключевого слова:
-        //         editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
-        //         // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
-                
-        //         let moduleName = newTab.innerText.split('.')[0];
-        //         moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
-        //         editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
-
-                
-        //     }            
-            
-        //     target.parentElement.insertBefore(newTab, target);            
-        // }        
-
-    </script>
 
     <script src="./build/bundler.js"></script>
     <script src="./build/page_builder.js"></script>    
+
+
+
+    <template id="choice-menu">
+        <style>
+            /* slotted need be styled inline */
+            ::slotted(li), 
+            li {
+                color: white;
+                background-color: #666;
+                padding: 0.1em 1em 0.1em 2em;
+                margin-top: 1px;  
+                position: relative;              
+            }
+
+            ::slotted(ul), ul{
+                margin: 0;
+                position: absolute;
+                top: 100%;
+                right: .1em;
+                width: max-content;
+                list-style-type: none;  
+                display: none;              
+            }
+            
+            /* стили применяемые к самому  my-paragraph*/
+            :host {
+                margin: 0em;
+                /* margin-right: 2em; */
+                position: relative;
+            }
+
+            ::slotted(.active), .active{
+                display: block !important;
+            }
+
+            .selected::after, .checked{
+                content: '';
+                background: url(static/images/check_mark.svg) no-repeat;
+                background-size: contain;
+                width: 1em;
+                height: 2em;
+                position: absolute;
+                left: .5em;
+                top: 0.15em;
+            }
+
+            .checked{
+                left: auto;
+                display: none;
+                z-index: 5;
+            }
+        </style>
+
+        <!-- <slot name="text">My default text</slot> -->
+        <div class="checked"></div>
+        <slot>
+            <ul>
+                <li class="selected">item 1</li>
+                <li>item 2</li>
+            </ul>
+        </slot>
+    </template>
+
+
 
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
@@ -245,6 +247,113 @@
             //     editors[2].session.$mode.$highlightRules.$keywordList.push("from ")
             // }, 1000)
         })
+
+
+
+        customElements.define('choice-menu',
+            class extends HTMLElement {
+
+                selectedElement = null;                
+                checkedElement = false;
+                rootElement = null;
+
+                // get rootElement() { return this._rootElement; };
+                // set rootElement(v) {
+                //     console.log(v);
+                //     this._rootElement = v;
+                // }
+
+                constructor() 
+                {
+                    super();
+
+                          
+                    const rootElement = document.getElementById('choice-menu').content.cloneNode(true);
+                    const shadowRoot = this.attachShadow({ mode: 'open' }).appendChild(rootElement);
+
+                    let menuElement = this.rootElement = this.shadowRoot.querySelector('ul');
+                    const self = this;
+
+                    this.shadowRoot.addEventListener("slotchange", function (event) 
+                    {
+
+                        [menuElement] = [self.rootElement] = event.target.assignedElements();
+                        self.checkedElement = self.shadowRoot.querySelector('.checked');                          
+
+                        Array.prototype.slice.call(self.rootElement.querySelectorAll('li')).forEach(function(el) 
+                        {                            
+                            el.onclick = (e) => self.selectedChanged(e);
+                            el.style = ' \
+                                color: white; \
+                                background-color: #666; \
+                                padding: 0.1em 1em 0.1em 2em; \
+                                margin-top: 1px; \
+                                position: relative; \
+                            '
+                        })
+
+                    });
+                    
+                    this.onclick = () => {
+                        setTimeout(() => 
+                        {
+                            menuElement.classList.toggle('active');
+                            self.checkedElement && self.checkedElement.classList.toggle('active')
+
+                        }, menuElement.classList.contains('active') * 150);
+                    }
+
+                    this.rootElement.onclick = this.selectedChanged;
+
+                }
+
+                selectedChanged(e) {
+                    if (e.target.tagName === 'li'.toUpperCase()) {
+
+                        if (this.checkedElement){
+                            // let checked = this.selectedElement.querySelector('.checked');
+                            // if (checked) this.selectedElement.removeChild(checked)
+
+                            this.checkedElement.style.top = event.target.offsetTop + this.offsetHeight + 'px'                                                    
+                            this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ?
+                        }
+                        else{
+                            (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
+                            (this.selectedElement = e.target).classList.add('selected');
+                        }
+                        
+
+                        this.dispatchEvent(new CustomEvent("selected_changed", {
+                            detail: {
+                                id: e.target.id,
+                                metaId: e.target.dataset.id,
+                                value: e.target.innerText,
+                            }
+                        }))
+                    }
+                }
+
+            }
+        );
+
+
+        editors.forEach(element => {
+            // element.container.appendChild(document.createElement('div')).className = 'settings';
+            
+            const settingsElement = element.container.appendChild(document.createElement('choice-menu'));
+            settingsElement.className = 'settings';
+            settingsElement.addEventListener('selected_changed', e => {
+                console.log(e.detail);
+            })
+            
+            let items = [1,2,3]
+            const list = settingsElement.appendChild(document.createElement('ul'));
+            items.forEach(point => {
+                let itemElement = list.appendChild(document.createElement('li'));
+                itemElement.innerText = point;
+            })
+        }); 
+
     </script>
 </body>
 

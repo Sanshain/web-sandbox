@@ -28,6 +28,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
     const Range = ace.require('ace/range').Range;
     const delay = 500;
     const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
+    const fontSize = '.9em';
 
     values = values || [];
 
@@ -86,16 +87,19 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
         if (i === 0 && window.outerWidth > 600) {
 
+            
             editor.setOptions(
                 {
                     enableBasicAutocompletion: true,
                     enableSnippets: true,
                     enableLiveAutocompletion: true,
+                    fontSize,
                     // placeholder: "Enter your " + modes[i] + " Code",
-                    // enableEmmet: true        
+                    // enableEmmet: true,   //                       don't work   
                 }
             );
 
+            editor.completers = editor.completers.slice();
             editor.commands.addCommand(
                 {
                     name: "extend",
@@ -125,7 +129,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                         editor.indent();
                     },
                     bindKey: { win: 'Tab' }
-                });
+                });            
+
         }
         else {  //  if (i)
 
@@ -134,6 +139,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     enableBasicAutocompletion: true,
                     enableSnippets: true,
                     enableLiveAutocompletion: true,
+                    fontSize,
                     // placeholder: "Enter your " + modes[i] + " Code",
                     // enableEmmet: true        
                 }
@@ -245,6 +251,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     }
                 };
 
+                // editor.completers = editor.completers.slice();
                 editor.completers.push(domCompleter)
             }
         }                
