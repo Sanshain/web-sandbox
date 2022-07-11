@@ -100,36 +100,55 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             );
 
             editor.completers = editor.completers.slice();
-            editor.commands.addCommand(
-                {
-                    name: "extend",
-                    exec: function () {
-                        let cursor = editor.getCursorPosition();
-                        let row = cursor.row;
-                        if (cursor.column == editor.session.getLine(row).length) {
 
-                            let line = editor.session.getLine(row);
 
-                            let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
-                            let endChar = cursor.column;
-                            let range = new Range(row, startChar, row, endChar);
+            const cursorText = editor.container.querySelector('textarea')
+            cursorText.addEventListener('keydown', function tabHandler(/** @type {{ key: string; }} */ e) {
+                if (e.key === 'Tab'){
+                    if (editor.completer) {
+                        editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab);
+                        cursorText.removeEventListener('keydown', tabHandler)
+                        console.log('removing tab hot key from autocomplete popup');
+                    }
+                }
+            })
 
-                            let textRange = line.slice(startChar, endChar);
-                            let code = extend(textRange)
-                            // let text = editor.session.getValue();
-                            editor.session.replace(range, code)
+            editor.commands.addCommand(  // [ indent,
+                
+                    {
+                        name: "extend",
+                        exec: function () {
+                            let cursor = editor.getCursorPosition();
+                            let row = cursor.row;
 
-                            editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#'))
-                                ? startChar + code.length - textRange.length - 3
-                                : startChar + code.length - 6
-                            )
+                            // editor.completer && editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab)
 
-                            return;
-                        }
-                        editor.indent();
-                    },
-                    bindKey: { win: 'Tab' }
-                });            
+                            if (cursor.column == editor.session.getLine(row).length) {
+                                
+                                let line = editor.session.getLine(row);
+                                
+                                let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
+                                let endChar = cursor.column;
+                                let range = new Range(row, startChar, row, endChar);
+
+                                let textRange = line.slice(startChar, endChar);
+                                let code = extend(textRange)
+                                // let text = editor.session.getValue();
+                                editor.session.replace(range, code)
+
+                                editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#'))
+                                    ? startChar + code.length - textRange.length - 3
+                                    : startChar + code.length - 6
+                                )
+
+                                return;
+                            }
+                            editor.indent();
+                        },
+                        bindKey: { win: 'Tab' }
+                    }, //  expandSnippet ]
+                
+            );
 
         }
         else {  //  if (i)
@@ -140,6 +159,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     enableSnippets: true,
                     enableLiveAutocompletion: true,
                     fontSize,
+                    // maxSize: Infinity
+                    
                     // placeholder: "Enter your " + modes[i] + " Code",
                     // enableEmmet: true        
                 }
