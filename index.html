@@ -250,12 +250,29 @@
 
 
 
-        customElements.define('choice-menu',
+        customElements.define('choice-menu',        
             class extends HTMLElement {
 
-                selectedElement = null;                
-                checkedElement = false;
+                itemStyle = ' \
+                    color: white; \
+                    background-color: #666; \
+                    padding: 0.1em 1em 0.1em 2em; \
+                    margin-top: 1px; \
+                    text-align: right; \
+                    position: relative; '
+
+
+                /// selected element
+                selectedElement = null; 
+                /// checked mark /* only for external slot */
+                checkedElement = null;
+                /// ul
                 rootElement = null;
+                /// selected info
+                checkInfo = null;
+
+                /// 
+                itemInitialize = (el) => ((el.onclick = (e) => this.selectedChanged(e)), el.style = this.itemStyle)
 
                 // get rootElement() { return this._rootElement; };
                 // set rootElement(v) {
@@ -263,68 +280,89 @@
                 //     this._rootElement = v;
                 // }
 
-                constructor() 
-                {
-                    super();
 
-                          
+                constructor() 
+                { super();
+
+                    // base vars
                     const rootElement = document.getElementById('choice-menu').content.cloneNode(true);
                     const shadowRoot = this.attachShadow({ mode: 'open' }).appendChild(rootElement);
 
-                    let menuElement = this.rootElement = this.shadowRoot.querySelector('ul');
-                    const self = this;
-
-                    this.shadowRoot.addEventListener("slotchange", function (event) 
-                    {
-
-                        [menuElement] = [self.rootElement] = event.target.assignedElements();
-                        self.checkedElement = self.shadowRoot.querySelector('.checked');                          
-
-                        Array.prototype.slice.call(self.rootElement.querySelectorAll('li')).forEach(function(el) 
-                        {                            
-                            el.onclick = (e) => self.selectedChanged(e);
-                            el.style = ' \
-                                color: white; \
-                                background-color: #666; \
-                                padding: 0.1em 1em 0.1em 2em; \
-                                margin-top: 1px; \
-                                position: relative; \
-                            '
-                        })
-
-                    });
                     
-                    this.onclick = () => {
-                        setTimeout(() => 
-                        {
-                            menuElement.classList.toggle('active');
-                            self.checkedElement && self.checkedElement.classList.toggle('active')
+                    // tactic vars
+                    let menuElement = this.rootElement = this.shadowRoot.querySelector('ul');
 
-                        }, menuElement.classList.contains('active') * 150);
-                    }
+                    
+                    // initialization event
+                    const self = this; this.shadowRoot.addEventListener("slotchange", function (event) 
+                    {
+                        [menuElement] = [self.rootElement] = event.target.assignedElements();
+                        self.checkedElement = self.shadowRoot.querySelector('.checked');
+                        [].slice.call(self.rootElement.querySelectorAll('li')).forEach(self.itemInitialize);
+                    });
 
-                    this.rootElement.onclick = this.selectedChanged;
 
+                    // other events:                    
+                    this.addEventListener('opened', () => this.pickItem(this.selectedElement))
+                    this.addEventListener('click', this.visibleChanged);
+
+                    
+                    /// only default slot:
+                    this.rootElement.addEventListener('click', this.selectedChanged)
                 }
 
+
+                ///
+                visibleChanged(){
+                                        
+                    const self = this;
+                    const opened = this.rootElement.classList.contains('active');
+
+                    setTimeout(
+                        () => {
+                            self.rootElement.classList.toggle('active'); 
+                            self.checkedElement && self.checkedElement.classList.toggle('active')
+                        },
+                        opened * 150
+                    );
+
+                    this.dispatchEvent(new CustomEvent(opened ? 'closed' : 'opened', { detail: null }))                    
+                }
+
+
+                ///
+                pickItem(element){
+                    setTimeout(() => {
+                        // console.log(this.checkedElement);
+
+                        this.checkedElement.style.top = element.offsetTop + this.offsetHeight + 'px'
+                        this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ? 
+                    })
+                }
+
+
+                ///
                 selectedChanged(e) {
                     if (e.target.tagName === 'li'.toUpperCase()) {
 
-                        if (this.checkedElement){
+                        
+                        (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
+                        (this.selectedElement = e.target).classList.add('selected');
+
+
+                        if (this.checkedElement){ this.pickItem(event.target)
                             // let checked = this.selectedElement.querySelector('.checked');
                             // if (checked) this.selectedElement.removeChild(checked)
 
-                            this.checkedElement.style.top = event.target.offsetTop + this.offsetHeight + 'px'                                                    
-                            this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ?
-                        }
-                        else{
-                            (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
-                            (this.selectedElement = e.target).classList.add('selected');
-                        }
+                            
+
+                            // this.checkedElement.style.top = event.target.offsetTop + this.offsetHeight + 'px'                                                    
+                            // this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ?
+                        }                                         
                         
 
                         this.dispatchEvent(new CustomEvent("selected_changed", {
-                            detail: {
+                            detail: this.checkInfo = {
                                 id: e.target.id,
                                 metaId: e.target.dataset.id,
                                 value: e.target.innerText,
@@ -346,11 +384,12 @@
                 console.log(e.detail);
             })
             
-            let items = [1,2,3]
+            let items = ['css','less','stylus']
             const list = settingsElement.appendChild(document.createElement('ul'));
-            items.forEach(point => {
+            items.forEach((point, i) => {
                 let itemElement = list.appendChild(document.createElement('li'));
                 itemElement.innerText = point;
+                if (!i) settingsElement.selectedElement = itemElement;
             })
         }); 
 
