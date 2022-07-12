@@ -13,7 +13,7 @@ let modules = [
     //     outputName: 'extend',
     // },
     {
-        inputFile: './source/libs/Preact.js',
+        inputFile: './source/libs/preact.js',
         outputFile: '_preact.js',
 
         outputName: '_preact',

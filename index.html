@@ -84,11 +84,16 @@
             right: .5em;
             width: 1.5em;
             height: 1.5em;
-            opacity: .6;
+            opacity: .3;
             cursor: pointer;  
             background: url(static/images/settings.svg) no-repeat;
             background-size: contain;          
+            transition: .5s;            
         }
+        .settings:hover{
+            opacity: .6;
+        }
+
         .expand{
             display: none;
         }
@@ -163,69 +168,7 @@
 
 
 
-    <template id="choice-menu">
-        <style>
-            /* slotted need be styled inline */
-            ::slotted(li), 
-            li {
-                color: white;
-                background-color: #666;
-                padding: 0.1em 1em 0.1em 2em;
-                margin-top: 1px;  
-                position: relative;              
-            }
-
-            ::slotted(ul), ul{
-                margin: 0;
-                position: absolute;
-                top: 100%;
-                right: .1em;
-                width: max-content;
-                list-style-type: none;  
-                display: none;              
-            }
-            
-            /* стили применяемые к самому  my-paragraph*/
-            :host {
-                margin: 0em;
-                /* margin-right: 2em; */
-                position: relative;
-            }
-
-            ::slotted(.active), .active{
-                display: block !important;
-            }
-
-            .selected::after, .checked{
-                content: '';
-                background: url(static/images/check_mark.svg) no-repeat;
-                background-size: contain;
-                width: 1em;
-                height: 2em;
-                position: absolute;
-                left: .5em;
-                top: 0.15em;
-            }
-
-            .checked{
-                left: auto;
-                display: none;
-                z-index: 5;
-            }
-        </style>
-
-        <!-- <slot name="text">My default text</slot> -->
-        <div class="checked"></div>
-        <slot>
-            <ul>
-                <li class="selected">item 1</li>
-                <li>item 2</li>
-            </ul>
-        </slot>
-    </template>
-
-
-
+    
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
@@ -233,10 +176,26 @@
     <script>
 
         let editors = IDE.initialize([], {
+            // tabAttachSelector: '.tab:last-child',
             tabAttachSelector: '.tab:last-child',
-            onControlSave: function(event) {
+            // multitab: {
+            //     selector: '.tab:last-child'
+            // },
+            modes: [
+                {
+                    html: null,
+                },
+                {
+                    css: null,
+                    less: 'static/js/preproc/less.min.js'
+                },
+                {
+                    javascript: null,
+                }                
+            ],
+            onControlSave: function (event) {
                 // alert(99)
-            }
+            },            
         });
 
 
@@ -248,152 +207,8 @@
             // }, 1000)
         })
 
-
-
-        customElements.define('choice-menu',        
-            class extends HTMLElement {
-
-                itemStyle = ' \
-                    color: white; \
-                    background-color: #666; \
-                    padding: 0.1em 1em 0.1em 2em; \
-                    margin-top: 1px; \
-                    text-align: right; \
-                    position: relative; '
-
-
-                /// selected element
-                selectedElement = null; 
-                /// checked mark /* only for external slot */
-                checkedElement = null;
-                /// ul
-                rootElement = null;
-                /// selected info
-                checkInfo = null;
-
-                /// 
-                itemInitialize = (el) => ((el.onclick = (e) => this.selectedChanged(e)), el.style = this.itemStyle)
-
-                // get rootElement() { return this._rootElement; };
-                // set rootElement(v) {
-                //     console.log(v);
-                //     this._rootElement = v;
-                // }
-
-
-                constructor() 
-                { super();
-
-                    // base vars
-                    const rootElement = document.getElementById('choice-menu').content.cloneNode(true);
-                    const shadowRoot = this.attachShadow({ mode: 'open' }).appendChild(rootElement);
-
-                    
-                    // tactic vars
-                    let menuElement = this.rootElement = this.shadowRoot.querySelector('ul');
-
-                    
-                    // initialization event
-                    const self = this; this.shadowRoot.addEventListener("slotchange", function (event) 
-                    {
-                        [menuElement] = [self.rootElement] = event.target.assignedElements();
-                        self.checkedElement = self.shadowRoot.querySelector('.checked');
-                        [].slice.call(self.rootElement.querySelectorAll('li')).forEach(self.itemInitialize);
-                    });
-
-
-                    // other events:                    
-                    this.addEventListener('opened', () => this.pickItem(this.selectedElement))
-                    this.addEventListener('click', this.visibleChanged);
-
-                    
-                    /// only default slot:
-                    this.rootElement.addEventListener('click', this.selectedChanged)
-                }
-
-
-                ///
-                visibleChanged(){
-                                        
-                    const self = this;
-                    const opened = this.rootElement.classList.contains('active');
-
-                    setTimeout(
-                        () => {
-                            self.rootElement.classList.toggle('active'); 
-                            self.checkedElement && self.checkedElement.classList.toggle('active')
-                        },
-                        opened * 150
-                    );
-
-                    this.dispatchEvent(new CustomEvent(opened ? 'closed' : 'opened', { detail: null }))                    
-                }
-
-
-                ///
-                pickItem(element){
-                    setTimeout(() => {
-                        // console.log(this.checkedElement);
-
-                        this.checkedElement.style.top = element.offsetTop + this.offsetHeight + 'px'
-                        this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ? 
-                    })
-                }
-
-
-                ///
-                selectedChanged(e) {
-                    if (e.target.tagName === 'li'.toUpperCase()) {
-
-                        
-                        (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
-                        (this.selectedElement = e.target).classList.add('selected');
-
-
-                        if (this.checkedElement){ this.pickItem(event.target)
-                            // let checked = this.selectedElement.querySelector('.checked');
-                            // if (checked) this.selectedElement.removeChild(checked)
-
-                            
-
-                            // this.checkedElement.style.top = event.target.offsetTop + this.offsetHeight + 'px'                                                    
-                            // this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ?
-                        }                                         
-                        
-
-                        this.dispatchEvent(new CustomEvent("selected_changed", {
-                            detail: this.checkInfo = {
-                                id: e.target.id,
-                                metaId: e.target.dataset.id,
-                                value: e.target.innerText,
-                            }
-                        }))
-                    }
-                }
-
-            }
-        );
-
-
-        editors.forEach(element => {
-            // element.container.appendChild(document.createElement('div')).className = 'settings';
-            
-            const settingsElement = element.container.appendChild(document.createElement('choice-menu'));
-            settingsElement.className = 'settings';
-            settingsElement.addEventListener('selected_changed', e => {
-                console.log(e.detail);
-            })
-            
-            let items = ['css','less','stylus']
-            const list = settingsElement.appendChild(document.createElement('ul'));
-            items.forEach((point, i) => {
-                let itemElement = list.appendChild(document.createElement('li'));
-                itemElement.innerText = point;
-                if (!i) settingsElement.selectedElement = itemElement;
-            })
-        }); 
-
     </script>
+
 </body>
 
 </html>

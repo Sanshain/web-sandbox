@@ -16,7 +16,7 @@ import { domFuncs, keyWords } from './utils/autocompletion';
  * }
  * 
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
- * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage}} editorOptions
+ * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage, modes?: object[]}} editorOptions
  * @param {string[]} modes
  * @param {string | number} syntax
  * @param {?[string?, string?, string?]} [values]
@@ -317,7 +317,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
             document.querySelector('.tabs .tab').classList.add('active');
         }
-    }    
+    }      
+
 
     // initResizers()
 

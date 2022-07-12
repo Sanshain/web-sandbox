@@ -6,9 +6,10 @@ import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
 import { babelCompiler, compilers } from "./features/compiler";
-import { options } from 'preact';
 import { commonStorage } from "./utils/utils";
 import { fileAttach } from "./features/tabs";
+
+import { ChoiceMenu } from "./ui/ChoiceMenu";
 
 
 const modes = [
@@ -20,7 +21,7 @@ const modes = [
 
 /**
  * @param {string[]} values
- * @param {{onControlSave?: Function, tabAttachSelector?: string}?} options
+ * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: object[]}?} options
  * @returns {any[]}
  */
 export function initialize(values, options) {
@@ -54,6 +55,38 @@ export function initialize(values, options) {
     }
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
+
+    
+    
+    if (options.modes) {
+        customElements.define('choice-menu', ChoiceMenu);
+        options.modes.forEach(function (mode, i) {
+
+            let items = [];  // ['css','less','stylus']
+
+            if (mode && (items = Object.keys(mode)).length > 1) {
+                
+                const settingsElement = editors[i].container.appendChild(document.createElement('choice-menu'));
+                settingsElement.className = 'settings';
+                settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent } */ e) => {
+                    console.log(e.detail);
+
+                    const link = modes[i][e.detail.value];
+                    // upload to frame;
+                })
+                
+                const list = settingsElement.appendChild(document.createElement('ul'));
+                items.forEach((point, i) => {
+                    let itemElement = list.appendChild(document.createElement('li'));
+                    itemElement.innerText = point;
+                    if (!i) settingsElement.selectedElement = itemElement;
+                })
+
+            }
+        })
+    }
+
+
 
     let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined, editorOptions)
 

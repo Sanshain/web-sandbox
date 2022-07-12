@@ -1,0 +1,1 @@
+export const html = (/** @type {ReadonlyArray<string>} */ text, /** @type {any[]} */ ...args) => text.reduce((p, n, i) => p + args[i - 1] + n);
