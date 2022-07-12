@@ -45,6 +45,28 @@ export class ChoiceMenu extends HTMLElement {
     //     this._rootElement = v;
     // }
 
+    
+    /** 
+     * @deprecated
+     * @type number
+     */
+    // @ts-ignore    
+    get selectedIndex() {
+        let index = [].slice.call(this.rootElement.querySelectorAll('li')).indexOf(this.rootElement.querySelector('.selected'));
+        return index;
+    };
+    
+
+    /**
+     * @type string
+     */
+    // @ts-ignore
+    get selectedItem() {
+        //@ts-ignore
+        // return (this.rootElement.querySelector('.selected') || {}).innerText
+        return this.selectedElement.innerText;
+    };
+
 
     constructor() {
         super();

@@ -1,25 +1,32 @@
 // @ts-check
 
 import { babelCompiler, compilers } from "./features/compiler";
-import { generateGlobalInintializer } from "./utils/page_generator";
+import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
 import { commonStorage } from './utils/utils';
+
+// TODO REMOVE:
+import { ChoiceMenu } from "./ui/ChoiceMenu";
+import { modes as baseModes } from "./features/base";
 
 
 export { compilers, babelCompiler };
 
-
+/**
+ * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?]}}
+ */
 export const playgroundObject = {
     editors: [],
     iframe: null,
     curUrl: null,
-    fileStorage:{ _active: 0 }
+    fileStorage: { _active: 0 },
+    modes: null
 }
 
 
 /**
  * @param {{ [x: string]: string; }} [attrs]
  */
-function createHtml({ body, style, script }, attrs) {
+function createHtml({ body, style, script, link }, attrs) {
 
     // console.log(arguments);
 
@@ -27,14 +34,15 @@ function createHtml({ body, style, script }, attrs) {
         html: {
             head: {
                 style,
-                script
+                script,
+                link
             },
             body
         }
     }
 
     /**
-     * @param {{ [x: string]: any; html?: { head: { style: any; script: any; }; body: any; }; }} nodeStruct
+     * @param {{ [x: string]: any; html?: { head: { [x: string]: string; script: string; }; body: any; }; }} nodeStruct
      */
     function nodeCreate(nodeStruct) {
 
@@ -44,9 +52,11 @@ function createHtml({ body, style, script }, attrs) {
             let _attrs = attrs[key] || '';
             let content = typeof nodeStruct[key] === typeof nodeStruct
                 ? nodeCreate(nodeStruct[key])
-                : nodeStruct[key];
+                : (nodeStruct[key] || '');
 
-            html += '<' + key + _attrs + '>' + content + '</' + key + '>';
+            html += content !== null
+                ? ('<' + key + _attrs + '>' + content + '</' + key + '>')
+                : ('<' + key + _attrs + '/>');
 
         }
         return html;
@@ -62,13 +72,14 @@ function createHtml({ body, style, script }, attrs) {
  * TODO: option {simplestBundler, fileStore}
  * 
  * @param {string} [prevUrl]
- * @param {string | any[]} [additionalScripts]
+ * @param {string[]} [additionalScripts]
  * @param {string} [scriptType]
  * @param {object} [options]
  * @returns {[HTMLElement, string]}
  */
 export function createPage(prevUrl, additionalScripts, scriptType, options) {    
     
+    // alert(99)
     if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
         const fileStorage = playgroundObject.fileStorage || window['fileStore'];
         let activeTab = document.querySelector('.tabs .tab.active');
@@ -82,7 +93,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
     // console.log('appCode');
 
-    let wrapFunc = (/** @type {string} */ code) => {        
+    let buildJS = (/** @type {string} */ code) => {        
 
         if (window['simplestBundler']) {
             code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
@@ -99,8 +110,58 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         return 'window.addEventListener("DOMContentLoaded", function(){' + code + '\n\n' + globalReinitializer + '\n});';
     }
 
-    let editors = playgroundObject.editors;
-    let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(appCode || editors[i].getValue())), acc), {});
+
+    // при concat все равно скопируется
+    // additionalScripts = additionalScripts.slice()
+    
+    
+    const editors = playgroundObject.editors;
+    const baseTags = ['body', 'style', 'script'];
+    const attrs = {
+        script: scriptType
+    }
+
+
+    
+    // compilerModes дополняем:
+    if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
+
+        /**
+         * @type ChoiceMenu
+         */
+        let modeMenu = editor.container.querySelector('choice-menu');
+        if (modeMenu) {
+            /**
+             * @type {{src: string|string[], target?: {tag: string, attributes: string, outline?: true}}}
+             */
+            let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
+            if (actualMode) {                
+                additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src)
+            }
+            
+            if (actualMode && actualMode.target) {
+                if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
+                if (actualMode.target.outline) {
+                    // create link
+                    let blob = new Blob([editors[i].getValue()], { type: 'text/' + baseModes[i] });
+                    let link = URL.createObjectURL(blob);
+                    actualMode.target.attributes = actualMode.target.attributes.replace('{}', link)
+                }
+                if (actualMode.target.attributes) attrs[baseTags[i]] = actualMode.target.attributes;
+            }
+        }
+    })
+
+    
+    
+    let htmlContent = baseTags.reduce((acc, el, i, arr) => (
+        (
+            acc[el] = i < 2
+                ? isPaired(el) ? editors[i].getValue() : null
+                : buildJS(appCode || editors[i].getValue())
+        ), acc),
+        {}
+    );
 
     let optionalScripts = ''
     if (additionalScripts && additionalScripts.length) {
@@ -111,11 +172,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     }
     // console.log(htmlContent);    
 
-    const attrs = {
-        script: scriptType
-    }
 
     // @ts-ignore
+    console.log('html');
     let html = createHtml(htmlContent, attrs);
 
     console.log(optionalScripts);
@@ -143,12 +202,12 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
  * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
  * @param {boolean} jsxMode
  * ///! param {number} compilerMode
- * @param {string[]} compilerMode - 
+ * @param {string[]} compilerModes - 
  * 
  * TODO: options: {storage (localStorage|sessionStorage), fileStore}
  */
-export function webCompile(jsxMode, compilerMode) {
-    
+export function webCompile(jsxMode, compilerModes) {
+
     console.log('compile');
 
     // [iframe, curUrl] = createPage(curUrl);
@@ -167,7 +226,7 @@ export function webCompile(jsxMode, compilerMode) {
 
 
     if (iframe.contentDocument && !jsxMode) {
-
+        
         iframe.contentDocument.body.innerHTML = editors[0].getValue()
         iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()
 
@@ -183,7 +242,7 @@ export function webCompile(jsxMode, compilerMode) {
         let script = iframe.contentDocument.createElement('script');
         
         console.log(jsxMode)
-        console.log(compilerMode);
+        console.log(compilerModes);
 
         if (jsxMode) {
             
@@ -211,7 +270,7 @@ export function webCompile(jsxMode, compilerMode) {
         // console.log(compilerMode);
         // console.log(Object.values(compilers)[compilerMode]);
         // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined);
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;
     }

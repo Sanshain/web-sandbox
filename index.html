@@ -130,7 +130,7 @@
         <div class="v_line"></div>
 
         <div class="tabs" style="display: none;">
-            <div class="tab" tabindex="0">app.js</div>
+            <div class="tab active" tabindex="0">app.js</div>
             <div class="tab">+</div>
             <!-- onclick="fileAttach(event) -->
         </div>
@@ -168,7 +168,7 @@
 
 
 
-    
+
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
@@ -187,7 +187,14 @@
                 },
                 {
                     css: null,
-                    less: 'static/js/preproc/less.min.js'
+                    less: {
+                        src: 'static/js/preproc/less.min.js',
+                        target: {
+                            outline: true,                                                         // 'outline'|'external'
+                            tag: 'link',
+                            attributes: ' rel="stylesheet/less" type="text/css" href="{}" '
+                        }
+                    }
                 },
                 {
                     javascript: null,

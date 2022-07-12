@@ -10,18 +10,14 @@ import { commonStorage } from "./utils/utils";
 import { fileAttach } from "./features/tabs";
 
 import { ChoiceMenu } from "./ui/ChoiceMenu";
+import { modes } from "./features/base";
 
 
-const modes = [
-    'html',
-    'css',
-    'javascript',
-    // 'typescript',
-]
+
 
 /**
  * @param {string[]} values
- * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: object[]}?} options
+ * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?]}?} options
  * @returns {any[]}
  */
 export function initialize(values, options) {
@@ -32,15 +28,17 @@ export function initialize(values, options) {
     //@ts-ignore
     document.getElementById('compiler_mode').selectedIndex = syntaxMode;
 
+    // js mode:
     const jsxMode = !!(syntaxMode % 2);
-
     if (jsxMode) {
         document.getElementById('jseditor').classList.add('dis_errors');
     }
 
-    const compilerMode = Object.values(compilers)[syntaxMode];
+    playgroundObject.modes = options.modes;
+    const compilerModes = Object.values(compilers)[syntaxMode];
+    
     // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerMode) : webCompile;
+    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerModes) : webCompile;
 
     initResizers()
 
@@ -88,14 +86,16 @@ export function initialize(values, options) {
 
 
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined, editorOptions)
+
+
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined, editorOptions)
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 
 
-    document.querySelector('.play').addEventListener('click', compileFunc);
-    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+    document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, compilerModes));
+    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerModes, jsxMode ? babelCompiler.mode : undefined);
     document.getElementById('compiler_mode').addEventListener('change', function (event) {
 
         // @ts-ignore

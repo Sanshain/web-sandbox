@@ -13,3 +13,6 @@ export function generateGlobalInintializer(code) {
 
     return globalInit;
 }
+
+
+export const isPaired = (/** @type {string} */ tag) => !~['link'].indexOf(tag);

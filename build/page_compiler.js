@@ -71,25 +71,277 @@ var pageBuilder = (function (exports) {
         return globalInit;
     }
 
+
+    const isPaired = (/** @type {string} */ tag) => !~['link'].indexOf(tag);
+
     //@ts-check
 
     const commonStorage = sessionStorage;
 
+    const html = (/** @type {ReadonlyArray<string>} */ text, /** @type {any[]} */ ...args) => text.reduce((p, n, i) => p + args[i - 1] + n);
+
+    //@ts-check
+
+
+    // HTMLElement
+    class ChoiceMenu extends HTMLElement {
+
+        itemStyle = ' \
+        color: white; \
+        background-color: #666; \
+        padding: 0.1em 1em 0.1em 2em; \
+        margin-top: 1px; \
+        text-align: right; \
+        position: relative; '
+
+
+        /** selected element
+         * @type {HTMLElement}
+         */
+        selectedElement = null;
+
+        /** checked mark // only for external slot //
+         * @type {HTMLElement}
+         */
+        checkedElement = null;
+
+        /** ul
+         * @type {HTMLUListElement}
+         */
+        rootElement = null;
+
+        /** selected info
+         * @type {{id: string, metaId: string, value: string}}
+         */
+        checkInfo = null;
+
+        /// 
+        //@ts-ignore
+        itemInitialize = (/** @type {HTMLLIElement} */ el) => ((el.onclick = (/** @type {Event} */ e) => this.selectedChanged(e)), el.style = this.itemStyle)
+
+        // get rootElement() { return this._rootElement; };
+        // set rootElement(v) {
+        //     console.log(v);
+        //     this._rootElement = v;
+        // }
+
+        
+        /** 
+         * @deprecated
+         * @type number
+         */
+        // @ts-ignore    
+        get selectedIndex() {
+            let index = [].slice.call(this.rootElement.querySelectorAll('li')).indexOf(this.rootElement.querySelector('.selected'));
+            return index;
+        };
+        
+
+        /**
+         * @type string
+         */
+        // @ts-ignore
+        get selectedItem() {
+            //@ts-ignore
+            // return (this.rootElement.querySelector('.selected') || {}).innerText
+            return this.selectedElement.innerText;
+        };
+
+
+        constructor() {
+            super();
+
+            /// base vars
+
+            //@ts-ignore
+            const rootElement = document.getElementById('choice-menu').content.cloneNode(true);
+            this.attachShadow({ mode: 'open' }).appendChild(rootElement);
+
+
+            // tactic vars
+
+            //
+            this.rootElement = this.shadowRoot.querySelector('ul');
+
+
+            // initialization event
+            const self = this; this.shadowRoot.addEventListener("slotchange", function (event) {
+                //@ts-ignore
+                [self.rootElement] = event.target.assignedElements();
+                self.checkedElement = self.shadowRoot.querySelector('.checked');
+                [].slice.call(self.rootElement.querySelectorAll('li')).forEach(self.itemInitialize);
+            });
+
+
+            // other events:                    
+            this.addEventListener('opened', () => this.pickItem(this.selectedElement));
+            this.addEventListener('click', this.visibleChanged);
+
+
+            /// only default slot:
+            this.rootElement.addEventListener('click', this.selectedChanged);
+        }
+
+
+        ///
+        visibleChanged() {
+
+            const self = this;
+            const opened = this.rootElement.classList.contains('active');
+
+            setTimeout(
+                () => {
+                    self.rootElement.classList.toggle('active');
+                    self.checkedElement && self.checkedElement.classList.toggle('active');
+                },
+                +opened * 150
+            );
+
+            this.dispatchEvent(new CustomEvent(opened ? 'closed' : 'opened', { detail: null }));
+        }
+
+
+        /**
+         * 
+         * @param {HTMLElement} element 
+         */
+        pickItem(element) {
+            setTimeout(() => {
+                // console.log(this.checkedElement);
+
+                this.checkedElement.style.top = element.offsetTop + this.offsetHeight + 2 + 'px';
+                this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ? 
+            });
+        }
+
+
+        /**
+         * 
+         * @param {Event} e 
+         */
+        selectedChanged(e) {
+            //@ts-expect-error
+            if (e.target.tagName === 'li'.toUpperCase()) {
+                
+                (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
+                //@ts-expect-error
+                (this.selectedElement = e.target).classList.add('selected');
+
+                //@ts-expect-error
+                this.checkedElement && this.pickItem(e.target);
+
+                this.dispatchEvent(new CustomEvent("selected_changed", {
+                    detail: this.checkInfo = {
+                        //@ts-expect-error
+                        id: e.target.id,
+                        //@ts-expect-error
+                        metaId: e.target.dataset.id,
+                        //@ts-expect-error
+                        value: e.target.innerText,
+                    }
+                }));
+            }
+        }
+
+        /**
+         * static constructor
+         */
+        static __contructor = (function () {
+            
+            document.body.insertAdjacentHTML('afterbegin', html`
+            <template id="choice-menu">
+                <style>
+                    /* slotted need be styled inline */
+                    ::slotted(li),
+                    li {                
+                        color: white;
+                        background-color: #666;
+                        padding: 0.1em 1em 0.1em 2em;
+                        margin-top: 1px;
+                        position: relative;
+                    }
+
+                    ::slotted(ul), ul{
+                        margin: 0;
+                        position: absolute;
+                        top: 100%;
+                        right: .1em;
+                        width: max-content;
+                        list-style-type: none;
+                        display: none;
+                    }
+
+                    /* стили применяемые к самому  my-paragraph*/
+                    :host {
+                        margin: 0em;
+                        /* margin-right: 2em; */
+                        position: relative;
+                    }
+
+                    ::slotted(.active), .active{
+                        display: block !important;
+                    }
+
+                    .selected::after, .checked{
+                        content: '';
+                        background: url(static/images/check_mark.svg) no-repeat;
+                        background-size: contain;
+                        width: 1em;
+                        height: 2em;
+                        position: absolute;
+                        left: .5em;
+                        top: 0.15em;
+                    }
+
+                    .checked{
+                        left: auto;
+                        display: none;
+                        z-index: 5;
+                    }
+
+                </style>
+
+                <!-- <slot name="text">My default text</slot> -->
+                <div class="checked"></div>
+                <slot>
+                    <ul>
+                        <li class="selected">item 1</li>
+                        <li>item 2</li>
+                    </ul>
+                </slot>
+
+            </template>
+        `);
+
+        })()
+
+    }
+
+    const modes = [
+        'html',
+        'css',
+        'javascript',
+        // 'typescript',
+    ];
+
     // @ts-check
 
-
+    /**
+     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?]}}
+     */
     const playgroundObject = {
         editors: [],
         iframe: null,
         curUrl: null,
-        fileStorage:{ _active: 0 }
+        fileStorage: { _active: 0 },
+        modes: null
     };
 
 
     /**
      * @param {{ [x: string]: string; }} [attrs]
      */
-    function createHtml({ body, style, script }, attrs) {
+    function createHtml({ body, style, script, link }, attrs) {
 
         // console.log(arguments);
 
@@ -97,14 +349,15 @@ var pageBuilder = (function (exports) {
             html: {
                 head: {
                     style,
-                    script
+                    script,
+                    link
                 },
                 body
             }
         };
 
         /**
-         * @param {{ [x: string]: any; html?: { head: { style: any; script: any; }; body: any; }; }} nodeStruct
+         * @param {{ [x: string]: any; html?: { head: { [x: string]: string; script: string; }; body: any; }; }} nodeStruct
          */
         function nodeCreate(nodeStruct) {
 
@@ -114,9 +367,11 @@ var pageBuilder = (function (exports) {
                 let _attrs = attrs[key] || '';
                 let content = typeof nodeStruct[key] === typeof nodeStruct
                     ? nodeCreate(nodeStruct[key])
-                    : nodeStruct[key];
+                    : (nodeStruct[key] || '');
 
-                html += '<' + key + _attrs + '>' + content + '</' + key + '>';
+                html += content !== null
+                    ? ('<' + key + _attrs + '>' + content + '</' + key + '>')
+                    : ('<' + key + _attrs + '/>');
 
             }
             return html;
@@ -132,13 +387,14 @@ var pageBuilder = (function (exports) {
      * TODO: option {simplestBundler, fileStore}
      * 
      * @param {string} [prevUrl]
-     * @param {string | any[]} [additionalScripts]
+     * @param {string[]} [additionalScripts]
      * @param {string} [scriptType]
      * @param {object} [options]
      * @returns {[HTMLElement, string]}
      */
     function createPage(prevUrl, additionalScripts, scriptType, options) {    
         
+        // alert(99)
         if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
             const fileStorage = playgroundObject.fileStorage || window['fileStore'];
             document.querySelector('.tabs .tab.active');
@@ -152,7 +408,7 @@ var pageBuilder = (function (exports) {
         let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
         // console.log('appCode');
 
-        let wrapFunc = (/** @type {string} */ code) => {        
+        let buildJS = (/** @type {string} */ code) => {        
 
             if (window['simplestBundler']) {
                 code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
@@ -169,8 +425,58 @@ var pageBuilder = (function (exports) {
             return 'window.addEventListener("DOMContentLoaded", function(){' + code + '\n\n' + globalReinitializer + '\n});';
         };
 
-        let editors = playgroundObject.editors;
-        let htmlContent = ['body', 'style', 'script'].reduce((acc, el, i, arr) => ((acc[el] = i < 2 ? editors[i].getValue() : wrapFunc(appCode || editors[i].getValue())), acc), {});
+
+        // при concat все равно скопируется
+        // additionalScripts = additionalScripts.slice()
+        
+        
+        const editors = playgroundObject.editors;
+        const baseTags = ['body', 'style', 'script'];
+        const attrs = {
+            script: scriptType
+        };
+
+
+        
+        // compilerModes дополняем:
+        if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
+
+            /**
+             * @type ChoiceMenu
+             */
+            let modeMenu = editor.container.querySelector('choice-menu');
+            if (modeMenu) {
+                /**
+                 * @type {{src: string|string[], target?: {tag: string, attributes: string, outline?: true}}}
+                 */
+                let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText];
+                if (actualMode) {                
+                    additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
+                }
+                
+                if (actualMode && actualMode.target) {
+                    if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
+                    if (actualMode.target.outline) {
+                        // create link
+                        let blob = new Blob([editors[i].getValue()], { type: 'text/' + modes[i] });
+                        let link = URL.createObjectURL(blob);
+                        actualMode.target.attributes = actualMode.target.attributes.replace('{}', link);
+                    }
+                    if (actualMode.target.attributes) attrs[baseTags[i]] = actualMode.target.attributes;
+                }
+            }
+        });
+
+        
+        
+        let htmlContent = baseTags.reduce((acc, el, i, arr) => (
+            (
+                acc[el] = i < 2
+                    ? isPaired(el) ? editors[i].getValue() : null
+                    : buildJS(appCode || editors[i].getValue())
+            ), acc),
+            {}
+        );
 
         let optionalScripts = '';
         if (additionalScripts && additionalScripts.length) {
@@ -181,11 +487,9 @@ var pageBuilder = (function (exports) {
         }
         // console.log(htmlContent);    
 
-        const attrs = {
-            script: scriptType
-        };
 
         // @ts-ignore
+        console.log('html');
         let html = createHtml(htmlContent, attrs);
 
         console.log(optionalScripts);
@@ -213,12 +517,12 @@ var pageBuilder = (function (exports) {
      * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
      * @param {boolean} jsxMode
      * ///! param {number} compilerMode
-     * @param {string[]} compilerMode - 
+     * @param {string[]} compilerModes - 
      * 
      * TODO: options: {storage (localStorage|sessionStorage), fileStore}
      */
-    function webCompile(jsxMode, compilerMode) {
-        
+    function webCompile(jsxMode, compilerModes) {
+
         console.log('compile');
 
         // [iframe, curUrl] = createPage(curUrl);
@@ -237,7 +541,7 @@ var pageBuilder = (function (exports) {
 
 
         if (iframe.contentDocument && !jsxMode) {
-
+            
             iframe.contentDocument.body.innerHTML = editors[0].getValue();
             iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue();
 
@@ -253,7 +557,7 @@ var pageBuilder = (function (exports) {
             let script = iframe.contentDocument.createElement('script');
             
             console.log(jsxMode);
-            console.log(compilerMode);
+            console.log(compilerModes);
 
             if (jsxMode) {
                 
@@ -281,7 +585,7 @@ var pageBuilder = (function (exports) {
             // console.log(compilerMode);
             // console.log(Object.values(compilers)[compilerMode]);
             // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
-            let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerMode, jsxMode ? babelCompiler.mode : undefined);
+            let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined);
             playgroundObject.iframe = iframe;
             playgroundObject.curUrl = curUrl;
         }
