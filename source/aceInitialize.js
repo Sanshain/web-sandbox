@@ -250,6 +250,11 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                         // editors[2].session.getLine(2).slice(0, 9).match(/([\w\d]+)\.\w+$/m)[1]
                         // get object for autocompletion
 
+                        // let token = editor.session.getTokenAt(pos.row, pos.column)
+                        // if (token.type == 'string') {
+                        //     console.log('string token');
+                        // }
+                        
                         callback(null, keyWords);
                     },
                     getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
@@ -258,6 +263,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                             let hint = domFuncs[item.caption];
                             if (hint) {
                                 let args = Object.keys(hint.sign || {}).map(item => item + ': ' + hint.sign[item].type).join(', ');
+                                // item.docHTML = '<h5>' + (hint.value || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
                                 item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
                                 item.docHTML += '<p>' + hint.desc + '</p>'
                                 let argsDesc = ''

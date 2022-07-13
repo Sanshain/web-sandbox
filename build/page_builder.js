@@ -5491,6 +5491,8 @@ var IDE = (function (exports) {
             }
         },
 
+
+
         // Array and string methods: 
 
         indexOf: '',
@@ -5518,6 +5520,17 @@ var IDE = (function (exports) {
             desc: '',  //  'Найти элемент по его ID',
             'return': 'HTMLElement?'
         },
+        
+        log: {
+            desc: '',
+            value: 'console.log',
+            sign: {
+                message: {
+                    type: 'string',
+                }
+            }
+        },
+        
         querySelector: {
             desc: 'get element by selector',
             sign: {
@@ -5568,10 +5581,16 @@ var IDE = (function (exports) {
                 // snippet: 'This2(${1})',
 
                 // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
-                snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : (word + '(${1})')) : undefined,
+                snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})')) : undefined,
 
                 type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
                 meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
+
+                // completer: {
+                //     insertMatch: function (editor, data) {
+                //         editor.completer.insertMatch({ value: data.value })
+                //     }
+                // }
 
                 // inputParameters: { 1: '?' },
             };
@@ -5604,7 +5623,7 @@ var IDE = (function (exports) {
                 }]);
             },
             getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
-
+                
                 if (hint) {
                     let args = Object.keys(hint.sign || {}).map(arg => arg + ': ' + hint.sign[arg].type).join(', ');
                     item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>';
@@ -5915,6 +5934,11 @@ var IDE = (function (exports) {
                             // editors[2].session.getLine(2).slice(0, 9).match(/([\w\d]+)\.\w+$/m)[1]
                             // get object for autocompletion
 
+                            // let token = editor.session.getTokenAt(pos.row, pos.column)
+                            // if (token.type == 'string') {
+                            //     console.log('string token');
+                            // }
+                            
                             callback(null, keyWords);
                         },
                         getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
@@ -5923,6 +5947,7 @@ var IDE = (function (exports) {
                                 let hint = domFuncs[item.caption];
                                 if (hint) {
                                     let args = Object.keys(hint.sign || {}).map(item => item + ': ' + hint.sign[item].type).join(', ');
+                                    // item.docHTML = '<h5>' + (hint.value || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
                                     item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>';
                                     item.docHTML += '<p>' + hint.desc + '</p>';
                                     let argsDesc = '';
