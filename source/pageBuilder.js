@@ -178,7 +178,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     let html = createHtml(htmlContent, attrs);
 
     console.log(optionalScripts);
-    html = html.replace('<head>', '<head>' + optionalScripts);
+    html = html.replace('</head>', optionalScripts + '</head>');
     html = html.replace('<head>', '<head><meta charset="UTF-8">');
 
     let file = new Blob([html], { type: 'text/html' });
@@ -225,7 +225,7 @@ export function webCompile(jsxMode, compilerModes) {
 
 
 
-    if (iframe.contentDocument && !jsxMode) {
+    if (iframe.contentDocument && !jsxMode && false) {
         
         iframe.contentDocument.body.innerHTML = editors[0].getValue()
         iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()

@@ -5245,7 +5245,7 @@ var IDE = (function (exports) {
         let html = createHtml(htmlContent, attrs);
 
         console.log(optionalScripts);
-        html = html.replace('<head>', '<head>' + optionalScripts);
+        html = html.replace('</head>', optionalScripts + '</head>');
         html = html.replace('<head>', '<head><meta charset="UTF-8">');
 
         let file = new Blob([html], { type: 'text/html' });
@@ -5292,7 +5292,7 @@ var IDE = (function (exports) {
 
 
 
-        if (iframe.contentDocument && !jsxMode) {
+        if (iframe.contentDocument && !jsxMode && false) {
             
             iframe.contentDocument.body.innerHTML = editors[0].getValue();
             iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue();

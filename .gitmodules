@@ -1,0 +1,3 @@
+[submodule "static/js/preproc/less-lerna"]
+	path = static/js/preproc/less-lerna
+	url = git@github.com:Sanshain/less.js.git
