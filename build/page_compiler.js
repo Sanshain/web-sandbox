@@ -215,29 +215,29 @@ var pageBuilder = (function (exports) {
         }
 
 
+
         /**
-         * 
-         * @param {Event} e 
+         * @param {Event} event
          */
-        selectedChanged(e) {
+        selectedChanged(event) {
             //@ts-expect-error
-            if (e.target.tagName === 'li'.toUpperCase()) {
+            if (event.target.tagName === 'li'.toUpperCase()) {
                 
                 (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
                 //@ts-expect-error
-                (this.selectedElement = e.target).classList.add('selected');
+                (this.selectedElement = event.target).classList.add('selected');
 
                 //@ts-expect-error
-                this.checkedElement && this.pickItem(e.target);
+                this.checkedElement && this.pickItem(event.target);
 
                 this.dispatchEvent(new CustomEvent("selected_changed", {
                     detail: this.checkInfo = {
                         //@ts-expect-error
-                        id: e.target.id,
+                        id: event.target.id,
                         //@ts-expect-error
-                        metaId: e.target.dataset.id,
+                        metaId: event.target.dataset.id,
                         //@ts-expect-error
-                        value: e.target.innerText,
+                        value: event.target.innerText,
                     }
                 }));
             }

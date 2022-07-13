@@ -4967,29 +4967,29 @@ var IDE = (function (exports) {
         }
 
 
+
         /**
-         * 
-         * @param {Event} e 
+         * @param {Event} event
          */
-        selectedChanged(e) {
+        selectedChanged(event) {
             //@ts-expect-error
-            if (e.target.tagName === 'li'.toUpperCase()) {
+            if (event.target.tagName === 'li'.toUpperCase()) {
                 
                 (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
                 //@ts-expect-error
-                (this.selectedElement = e.target).classList.add('selected');
+                (this.selectedElement = event.target).classList.add('selected');
 
                 //@ts-expect-error
-                this.checkedElement && this.pickItem(e.target);
+                this.checkedElement && this.pickItem(event.target);
 
                 this.dispatchEvent(new CustomEvent("selected_changed", {
                     detail: this.checkInfo = {
                         //@ts-expect-error
-                        id: e.target.id,
+                        id: event.target.id,
                         //@ts-expect-error
-                        metaId: e.target.dataset.id,
+                        metaId: event.target.dataset.id,
                         //@ts-expect-error
-                        value: e.target.innerText,
+                        value: event.target.innerText,
                     }
                 }));
             }
@@ -6290,15 +6290,48 @@ var IDE = (function (exports) {
                     settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent } */ e) => {
                         console.log(e.detail);
 
-                        modes[i][e.detail.value];
-                        // upload to frame;
+                        // const link = options.modes[i][e.detail.value];
+                        // console.log(link)
+
+                        // upload to frame will in pageBuilder, here just is highlight change
+                        editors[i].session.setMode("ace/mode/" + e.detail.value);
+
+                        //@ts-ignore
+                        var Range = ace.require("ace/range").Range;
+                        
+                        let markLine = editors[i].session.getLine(0);
+                        const markValue = "/* " + e.detail.value + " */";
+
+                        if (markLine.startsWith('/*')) {
+                            editors[i].session.replace(new Range(0, 0, 0, markLine.length), markValue);
+                        }
+                        else {
+                            editors[i].session.insert({ row: 0, column: 0 }, markValue + '\n');
+                        }                    
+
                     });
+
+                    // const value = editors[i].getValue()
+                    const markLine = editors[i].session.getLine(0);
                     
                     const list = settingsElement.appendChild(document.createElement('ul'));
-                    items.forEach((point, i) => {
+                    items.forEach((point, j) => {
                         let itemElement = list.appendChild(document.createElement('li'));
                         itemElement.innerText = point;
-                        if (!i) settingsElement.selectedElement = itemElement;
+                        
+                        let mark = markLine.match(new RegExp('/\\\* (' + point + ') \\\*/'));
+                        
+                        if (!j) settingsElement.selectedElement = itemElement;
+                        else if (mark) {
+                            // mark[1]
+                            settingsElement.selectedElement = itemElement;
+                            settingsElement.dispatchEvent(new CustomEvent('selected_changed', {
+                                detail: {
+                                    // id: itemElement.id,
+                                    value: point
+                                }
+                            }));
+                        }                    
                     });
 
                 }
