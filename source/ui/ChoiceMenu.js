@@ -112,7 +112,7 @@ export class ChoiceMenu extends HTMLElement {
         setTimeout(
             () => {
                 self.rootElement.classList.toggle('active');
-                self.checkedElement && self.checkedElement.classList.toggle('active')
+                setTimeout(() => self.checkedElement && self.checkedElement.classList.toggle('active'), +!opened * 200)
             },
             +opened * 150
         );
@@ -188,7 +188,11 @@ export class ChoiceMenu extends HTMLElement {
                         right: .1em;
                         width: max-content;
                         list-style-type: none;
-                        display: none;
+                        transition: .3s;
+                        /* display: none; */
+                        
+                        overflow: hidden;
+                        height: 0;
                     }
 
                     /* стили применяемые к самому  my-paragraph*/
@@ -199,6 +203,9 @@ export class ChoiceMenu extends HTMLElement {
                     }
 
                     ::slotted(.active), .active{
+                        /*display: block !important;*/
+
+                        height: 3em;                        
                         display: block !important;
                     }
 
@@ -215,7 +222,9 @@ export class ChoiceMenu extends HTMLElement {
 
                     .checked{
                         left: auto;
-                        display: none;
+                        /* opacity: 0; */
+                        /* transition: opacity .3s ease .3s; */
+                        display: none; 
                         z-index: 5;
                     }
 
