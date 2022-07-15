@@ -30,13 +30,29 @@
             cursor: pointer;            
         }
 
+        :root{
+            --perspective: 300px;
+        }
+
+        .tabs.enabled{
+            /* display: block; */
+
+            /* opacity: 1;                  */
+            transform: perspective(var(--perspective)) rotateX(0);            
+        }
         .tabs{
             position: absolute;
             top: 43.6vh;
             background-color: transparent;
             left: 3.5em;
-
             top: 43.4vh;
+            /* display: none; */
+
+            transition: 1s linear;
+            /* opacity: 0; */
+            transform: perspective(var(--perspective)) rotateX(90deg);  
+            transform-origin: 50% 100%;            
+            margin-left: 2em;            
         }
         .tab{
             font-size: small;
@@ -63,6 +79,13 @@
         }
         .ace_line{
             width: 300px;
+        }
+        /* .ace-monokai .ace_entity.ace_name.ace_tag,  */
+        .ace-monokai .ace_meta.ace_tag
+        /* , .ace-monokai .ace_keyword, .ace-monokai .ace_meta.ace_tag, .ace-monokai .ace_storage */
+        {
+            color: #26d2f9;
+            /* color: red; */
         }
         /* margin-right: 0.5em;  */
 
@@ -131,7 +154,7 @@
         <div class="center_line"></div>
         <div class="v_line"></div>
 
-        <div class="tabs" style="display: none;">
+        <div class="tabs">
             <div class="tab active" tabindex="0">app.js</div>
             <div class="tab">+</div>
             <!-- onclick="fileAttach(event) -->
@@ -200,6 +223,10 @@
                 },
                 {
                     javascript: null,
+                    'ES модули': {                    
+                        tabs: true,
+                        mode: 'javascript'
+                    }
                 }                
             ],
             onControlSave: function (event) {
@@ -209,7 +236,7 @@
 
 
         window.addEventListener('DOMContentLoaded', function(event) {
-            document.querySelector('.tabs').style.display = 'block'
+            // document.querySelector('.tabs').style.display = 'block'
             
             // setTimeout(function() {
             //     editors[2].session.$mode.$highlightRules.$keywordList.push("from ")

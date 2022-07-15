@@ -1,5 +1,5 @@
 {
-  "name": "code-open",
+  "name": "code-sandbox",
   "version": "1.0.0",
   "description": "",
   "main": "ace.js",
@@ -7,8 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Sanshain",
+  "license": "MIT",
   "dependencies": {
     "emmet": "^2.3.6",
     "preact": "^10.7.2",

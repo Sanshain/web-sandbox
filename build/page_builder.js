@@ -5924,6 +5924,7 @@ var IDE = (function (exports) {
                     editor.completers = editor.completers.slice();
                     editor.completers.push(colorsCompleter);
                 }
+                // javascript:
                 else if(i === 2) {
                 
 
@@ -5971,6 +5972,7 @@ var IDE = (function (exports) {
 
         });
 
+        
         // read modules:
 
         //@ts-ignore
@@ -5998,6 +6000,8 @@ var IDE = (function (exports) {
                         }
                         else {                        
                             editors[2].setValue(_modules[key]);                                     // set editor value
+                            // clear selection
+                            editors[2].session.selection.setRange(new Range(0, 0, 0, 0));
                         }
                     }
                 }
@@ -6304,22 +6308,37 @@ var IDE = (function (exports) {
         
         if (options.modes) {
             customElements.define('choice-menu', ChoiceMenu);
-            options.modes.forEach(function (mode, i) {
+            console.log(options.modes);
+            options.modes.forEach(function (/** @type { {tabs?: true, src?: string, target? : object } } */ mode, i) {
 
                 let items = [];  // ['css','less','stylus']
 
-                if (mode && (items = Object.keys(mode)).length > 1) {
-                    
+                if (mode && (items = Object.keys(mode)).length > 1) {                            
+
                     const settingsElement = editors[i].container.appendChild(document.createElement('choice-menu'));
                     settingsElement.className = 'settings';
                     settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent } */ e) => {
                         console.log(e.detail);
+                        console.log(mode);
 
+                        /**
+                         * @type {{src?: string, tabs?: true, mode: 'html'|'css'|'javascript'}}
+                         */
+                        const modeOptions = mode[e.detail.value];
                         // const link = options.modes[i][e.detail.value];
                         // console.log(link)
 
+
+                        // multitabs mode:
+                        // if (mode[e.detail.value].tabs)
+                        {
+                            const multitabs = modeOptions && modeOptions.tabs;
+                            const tabs = document.querySelector('.tabs' + (multitabs ? '' : '.enabled'));
+                            tabs && tabs.classList.toggle('enabled');
+                        }
+                        
                         // upload to frame will in pageBuilder, here just is highlight change
-                        editors[i].session.setMode("ace/mode/" + e.detail.value);
+                        editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
 
                         //@ts-ignore
                         var Range = ace.require("ace/range").Range;
@@ -6331,9 +6350,8 @@ var IDE = (function (exports) {
                             editors[i].session.replace(new Range(0, 0, 0, markLine.length), markValue);
                         }
                         else {
-                            editors[i].session.insert({ row: 0, column: 0 }, markValue + '\n');
+                            editors[i].session.insert({ row: 0, column: 0 }, markValue + '\n\n');
                         }                    
-
                     });
 
                     // const value = editors[i].getValue()

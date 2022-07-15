@@ -240,6 +240,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                 editor.completers = editor.completers.slice();
                 editor.completers.push(colorsCompleter)
             }
+            // javascript:
             else if(i === 2) {
             
 
@@ -287,6 +288,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
     });
 
+    
     // read modules:
 
     //@ts-ignore
@@ -314,6 +316,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     }
                     else {                        
                         editors[2].setValue(_modules[key]);                                     // set editor value
+                        // clear selection
+                        editors[2].session.selection.setRange(new Range(0, 0, 0, 0))
                     }
                 }
             }
