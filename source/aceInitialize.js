@@ -6,6 +6,7 @@ import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
 import { defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
+import { playgroundObject } from './pageBuilder';
 
 
 
@@ -103,7 +104,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
 
             const cursorText = editor.container.querySelector('textarea')
-            cursorText.addEventListener('keydown', function tabHandler(/** @type {{ key: string; }} */ e) {
+            cursorText.addEventListener('keydown', function tabHandler(/** @type {{ key: string; }} */ e) {                
                 if (e.key === 'Tab'){
                     if (editor.completer) {
                         editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab);
@@ -115,38 +116,39 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
             editor.commands.addCommand(  // [ indent,
                 
-                    {
-                        name: "extend",
-                        exec: function () {
-                            let cursor = editor.getCursorPosition();
-                            let row = cursor.row;
+                {
+                    name: "extend",
+                    exec: function () {
+                        let cursor = editor.getCursorPosition();
+                        let row = cursor.row;
 
-                            // editor.completer && editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab)
+                        // editor.completer && editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab)
 
-                            if (cursor.column == editor.session.getLine(row).length) {
-                                
-                                let line = editor.session.getLine(row);
-                                
-                                let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
-                                let endChar = cursor.column;
-                                let range = new Range(row, startChar, row, endChar);
+                        if (cursor.column == editor.session.getLine(row).length) {
+                            
+                            let line = editor.session.getLine(row);
+                            
+                            let startChar = Math.max(line.lastIndexOf(' ') + 1, 0);
+                            let endChar = cursor.column;
+                            let range = new Range(row, startChar, row, endChar);
 
-                                let textRange = line.slice(startChar, endChar);
-                                let code = extend(textRange)
-                                // let text = editor.session.getValue();
-                                editor.session.replace(range, code)
+                            let textRange = line.slice(startChar, endChar);
+                            let code = extend(textRange)
+                            // let text = editor.session.getValue();
+                            editor.session.replace(range, code)
 
-                                editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#'))
-                                    ? startChar + code.length - textRange.length - 3
-                                    : startChar + code.length - 6
-                                )
+                            editor.moveCursorTo(row, !(textRange.startsWith('.') || textRange.startsWith('#'))
+                                ? startChar + code.length - textRange.length - 3
+                                : startChar + code.length - 6
+                            )
 
-                                return;
-                            }
-                            editor.indent();
-                        },
-                        bindKey: { win: 'Tab' }
-                    }, //  expandSnippet ]
+                            return;
+                        }
+                        editor.indent();
+                    },
+                    bindKey: { win: 'Tab' }
+                }, //  expandSnippet ]
+                    
                 
             );
 
@@ -280,7 +282,120 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                 };
 
                 // editor.completers = editor.completers.slice();
-                editor.completers.push(domCompleter)
+                editor.completers.push(domCompleter);
+
+                editor.commands.addCommand(
+                    {
+                        name: "rename",
+                        exec: function () {
+                            var position = editor.getCursorPosition();
+                            var token = editor.session.getTokenAt(position.row, position.column);
+                            if (token.type == "identifier") {
+                                let newValue = prompt('', token.value)
+                                if (newValue !== token.value) {
+                                    if (newValue && newValue.match(/^[\w_][\w_\d]*$/m)) {
+                                        let range = null;
+                                        let options = {
+                                            // backwards: true,
+                                            wrap: true,
+                                            // caseSensitive: true,
+                                            // range: null,
+                                            wholeWord: true,
+                                            // regExp: false
+                                        }
+                                        let threshold = editor.findAll(token.value);
+                                        if (threshold) {
+                                            const pattern = 'import \\\{[\w\d_\\\. ,]*' + token.value + '[\w\d_\\\. ,]*\\\} from [\'"]\\\./([\\\w\\\d_\\\.]+)';
+                                            editor.find(new RegExp(pattern), { regExp: true })
+                                            const match = editor.getSelectedText().match(pattern)
+                                            if (match) {
+                                                let storeName = match[1];
+                                                let module = playgroundObject.fileStorage[storeName];
+                                                if (!module) alert('Связанный модуль ' + storeName + ' не найден')
+                                                else {
+                                                    let replacePattern = '(^' + token.value + ')|( ' + token.value + ')|(' + token.value + ' )';
+                                                    console.log(replacePattern);
+                                                    playgroundObject.fileStorage[storeName] = module.replace(new RegExp(replacePattern, 'm'), function(substring, args) {
+                                                        console.log(arguments);
+                                                        return substring.replace(token.value, newValue);
+                                                    })
+                                                }
+                                            }
+                                        }
+                                        while ((range = editor.find(token.value, options)) && threshold--) {
+                                            console.log('replace...');
+                                            editor.session.replace(range, newValue);                                            
+                                        }
+                                    }
+                                    else if(newValue !== null) {
+                                        alert('Введите корректное имя для идентификатора');
+                                    }
+                                }
+                            }
+                        },
+                        bindKey: { win: 'F2' }
+                        // insted of expand/collapse
+                    }
+                )
+
+                // move to definition: 
+                editor.container.addEventListener('click', function (/** @type {{ ctrlKey: boolean; }} */ e) {
+                    
+                    var position = editor.getCursorPosition();
+                    var token = editor.session.getTokenAt(position.row, position.column);
+                    if (e.ctrlKey && token.type == "identifier") {
+                        
+                        console.log(token);
+                        let code = editor.session.getValue();
+
+                        const pattern = new RegExp('(var|let|const|function|class|import \{ ?) ?' + token.value)
+                        const match = editor.session.getValue().match(pattern);
+
+                        if (match) {
+                            
+                            let linesCount = code.slice(0, match.index).split('\n').length - 1;
+                            if (linesCount === position.row) {
+                                // нашел себя же (ту же строку)
+                                // => ищем дальше (//TODO//)
+                            }
+                            else {
+                                let line = editor.session.getLine(2);
+                                if (line.startsWith('import')) {
+                                    let r = line.match(new RegExp("from ['\"]\\\./([\\\w\\\d_\\\.]+)'"))
+                                    if (r) {
+                                        let filename = r[1];
+                                        // find inside filename: 
+                                        let module = playgroundObject.fileStorage[filename];
+                                        if (!module) {
+                                            editor.removeSelectionMarkers(editor.session.$selectionMarkers);
+                                            alert('Отсутвует модуль ' + filename)
+                                            return;
+                                        }
+                                        let submatch = module.match(pattern);
+                                        if (submatch) {
+                                            // переключаемся на эту вкладку
+                                            // let tabIndex = Object.keys(playgroundObject.fileStorage).indexOf(filename)
+                                            const tabs = document.querySelector('.tabs').children;
+                                            let activeTab = [].slice.call(tabs).filter(f => f.innerText == filename).pop()
+                                            //@ts-ignore
+                                            activeTab.click()
+
+                                            console.log(submatch);
+                                            // переходим к определению
+                                            linesCount = module.slice(0, match.index).split('\n').length - 1;
+                                            editor.moveCursorTo(linesCount, 8 + submatch[1].length);
+                                        }
+                                    }
+                                }
+                                else {
+                                    editor.moveCursorTo(linesCount, 0)
+                                }                                
+                            }
+                        }
+                        editor.removeSelectionMarkers(editor.session.$selectionMarkers)
+                    }
+                })
+
             }
         }                
         

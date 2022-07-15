@@ -162,8 +162,7 @@ export function initialize(values, options) {
         // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
         // console.log(event.target.selectedIndex);
     });
-
-
+    
     
     options.tabAttachSelector && document.querySelector(options.tabAttachSelector).addEventListener('click', function (e) {
         e['editors'] = editors;

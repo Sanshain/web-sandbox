@@ -64,8 +64,9 @@ var pageBuilder = (function (exports) {
      * @returns 
      */
     function generateGlobalInintializer(code) {
-        let globalInit = (code.match(/^function ([\w\d_]+) ?\(/gm) || [])
-            .map(it => it.split(' ').pop().slice(0, -1).trim())
+
+        let globalInit = (code.match(/function ([\w\d_]+)\s?\(/gm) || [])
+            .map(it => it.split(' ')[1].replace('(', '').trim())
             .map(it => 'globalThis.' + it + ' = ' + it).join(';\n');
 
         return globalInit;

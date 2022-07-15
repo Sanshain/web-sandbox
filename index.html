@@ -48,7 +48,7 @@
             top: 43.4vh;
             /* display: none; */
 
-            transition: 1s linear;
+            transition: .7s linear;
             /* opacity: 0; */
             transform: perspective(var(--perspective)) rotateX(90deg);  
             transform-origin: 50% 100%;            
@@ -101,6 +101,32 @@
             font-weight: 600;
         }
 
+        /* function calling */
+        .ace-monokai .ace_string{
+            color: #E6DB74;            
+            color: rgb(247, 157, 55);
+            color: brown;
+            color: #dbb47b;
+        }        
+        span.ace_identifier{
+            color: blueviolet;
+            color: darkcyan;
+            color: cadetblue;
+            color: #f7c334;
+            color: rgb(255, 217, 0);
+            color: yellowgreen;
+            color: rgb(215, 181, 247);
+            color: #E6DB74;            
+        }
+        span.ace_identifier:hover{
+            cursor: pointer !important;
+        }
+        .ace-monokai .ace_keyword {
+            color: #F92672;
+            color: #ac82ee;
+        }        
+
+
         .settings{
             position: absolute;
             top: .5em;
@@ -111,10 +137,15 @@
             cursor: pointer;  
             background: url(static/images/settings.svg) no-repeat;
             background-size: contain;          
-            transition: .5s;            
+            transition: .5s;       
+            z-index: 5;     
         }
         .settings:hover{
             opacity: .6;
+        }
+        .settings ul{
+            font-family: 'Courier New', Courier, monospace;            
+            /* font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; */
         }
 
         .expand{
@@ -223,7 +254,7 @@
                 },
                 {
                     javascript: null,
-                    'ES модули': {                    
+                    'es модули': {                    
                         tabs: true,
                         mode: 'javascript'
                     }

@@ -119,4 +119,10 @@ export function fileAttach(event) {
     }
 
     target.parentElement.insertBefore(newTab, target);
+    editors[2].focus();
+
+    //@ts-ignore
+    const snippetManager = ace.require('ace/snippets').snippetManager;    
+    snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
+    
 }
