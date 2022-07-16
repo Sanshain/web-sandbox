@@ -27,12 +27,20 @@ export function fileAttach(event) {
         return;
     }
 
+
+    let importSnippet = {
+        name: "import { * } from './" + title + "'",
+        template: "import { ${1} } from './" + title + "'"
+    }
+
+
+
     let target = event.target;
 
     //! Настройка переключения между табами:
 
     let origTab = target.parentElement.children[0];
-    origTab.onclick = origTab.onclick || function (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
+    origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
         let prevTab = document.querySelector('.tab.active');
         if (prevTab) {
 
@@ -48,20 +56,28 @@ export function fileAttach(event) {
             const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
             const defaultExport = fileStore[prevTabName].match(/export default function (\w+)/);
             
-            // optional add to complete
+            // atocomplete update:
 
-            // exports.forEach((/** @type {string} */ ex) => {
-            //     let exprWords = ex.split(' ');
-            //     let caption = exprWords.pop();
-            //     let meta = exprWords.pop()
-            //     keyWords.push({
-            //         caption,
-            //         value: caption,
-            //         meta,
-            //         type: '',
-            //         snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
-            //     })
-            // })
+            exports.forEach((/** @type {string} */ ex) => {
+                let exprWords = ex.split(' ');
+                let caption = exprWords.pop();
+                let meta = exprWords.pop()
+                keyWords.push({
+                    caption,
+                    value: caption,
+                    meta,
+                    type: '',
+                    snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
+                })
+            })
+
+            let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
+            importSnippet.template = importSnippet.template.replace(
+                new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [[\w\d_, ]*] \\\})'), '{ ' + newComplete + ' }'
+            );
+
+            console.log('{ ' + newComplete + ' }');
+            console.log(importSnippet.template);
 
             // if (defaultExport) {
             //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
@@ -79,11 +95,11 @@ export function fileAttach(event) {
 
         editors[2].setValue(fileStore[ev.target.innerText]);
 
-        console.log('toggle tab...');
+        console.log('toggle tab...');    
 
         console.log(fileStore[ev.target.innerText].split('\n').length);
         editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)
-        editors[2].focus();
+        editors[2].focus();        
     }
 
     // создание нового таба:
@@ -104,7 +120,7 @@ export function fileAttach(event) {
         editors[2].setValue(fileStore[newTab.innerText]);
 
         // добавление нового ключевого слова:
-        editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+        // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
         // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
 
 
@@ -112,10 +128,7 @@ export function fileAttach(event) {
         // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
         // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
 
-        autocompleteExpand(editors[2], {
-            name: "import { * } from './" + newTab.innerText + "'",
-            template: "import { ${1:*} } from './" + newTab.innerText + "'"
-        })
+        autocompleteExpand(editors[2], importSnippet)
     }
 
     target.parentElement.insertBefore(newTab, target);

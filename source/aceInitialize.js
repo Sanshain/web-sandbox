@@ -246,6 +246,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             else if(i === 2) {
             
 
+                // AUTO COMPLETION:
+
                 const domCompleter = {
                     getCompletions: function jsCompleter (editor, session, pos, prefix, callback) {                        
                         // prefix !== '.' ? [] :
@@ -267,8 +269,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                             if (hint) {
                                 let args = Object.keys(hint.sign || {}).map(item => item + ': ' + hint.sign[item].type).join(', ');
                                 // item.docHTML = '<h5>' + (hint.value || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
-                                item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
-                                item.docHTML += '<p>' + hint.desc + '</p>'
+                                item.docHTML = '<h5>' + (hint.origin || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
+                                item.docHTML += '<p>' + (hint.desc || hint.value) + '</p>'
                                 let argsDesc = ''
                                 for (const key in hint.sign) {
                                     argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].desc
@@ -283,6 +285,34 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
                 // editor.completers = editor.completers.slice();
                 editor.completers.push(domCompleter);
+
+
+
+                // REMOVE TAB AUTO COMPLETION IN STRING:                
+
+                const cursorText = editor.container.querySelector('textarea')
+                cursorText.addEventListener('keydown', function tabHandler(/** @type {{ key: string; }} */ e) {
+                    if (e.key === 'Tab') {
+                        if (editor.completer) {
+
+                            editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab);
+                            cursorText.removeEventListener('keydown', tabHandler)
+                            console.log('removing tab hot key from autocompletion');
+
+                            // var position = editor.getCursorPosition();
+                            // var token = editor.session.getTokenAt(position.row, position.column);
+                            // if (token.type === 'string') {
+                            //     editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab);
+                            //     cursorText.removeEventListener('keydown', tabHandler)                                
+                            //     console.log('removing tab hot key from autocompletion');
+                            // }
+                        }
+                    }
+                })
+
+
+
+                //AUTO RENAME:
 
                 editor.commands.addCommand(
                     {
@@ -338,7 +368,9 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     }
                 )
 
-                // move to definition: 
+
+                // GO TO DEFINITION:
+                
                 editor.container.addEventListener('click', function (/** @type {{ ctrlKey: boolean; }} */ e) {
                     
                     var position = editor.getCursorPosition();
@@ -389,12 +421,12 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                                 }
                                 else {
                                     editor.moveCursorTo(linesCount, 0)
-                                }                                
+                                }
                             }
                         }
                         editor.removeSelectionMarkers(editor.session.$selectionMarkers)
                     }
-                })
+                });
 
             }
         }                

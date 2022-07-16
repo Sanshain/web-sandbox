@@ -5510,15 +5510,55 @@ var IDE = (function (exports) {
         slice: '',
 
 
+        // snippets:
+
+        qf: {
+            desc: '',
+            value: '[].slice.call(document.querySelector(${1:selector})).forEach((${2:elem}) => {\n\t${3}\n})'
+        },
+        qm: {
+            desc: '',
+            value: '[].slice.call(document.querySelector(${1:selector})).map(elem => {\n\t${2}\n})'
+        },
+
+        // qff: {
+        //     desc: '',
+        //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2:innerText} == ${3}).forEach(elem => {\n\t${4}\n})'
+        // },
+        // qfm: {
+        //     desc: '',
+        //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2}).map(elem => {\n\t${3}\n})'
+        // },
+
+        fore: {
+            desc: 'forEach',
+            origin: 'forEach',
+            value: 'forEach((${1:elem}, ${2:i}, ${3:array}) => {\n\t${4}\n})',
+            sign: {
+                callback: { type: ' (elem, i, array) => void', desc: 'функция обратного вызова' },
+                context: { type: ' this?', desc: 'контекст' }
+            }
+        },
+        log: {
+            desc: 'console.log',
+            value: 'console.log(${1})',
+            sign: {
+                message: {
+                    type: 'string',
+                }
+            }
+        },
+
+
         // DOM:
 
         target: null,
-        classList: '',
-        offsetHeight: '',
-        offsetWidth: '',
+        classList: null,
+        offsetHeight: null,
+        offsetWidth: null,
         getComputedStyle: '',
 
-        innerText: '',
+        innerText: null,
 
         appendChild: '',
         insertBefore: '',
@@ -5529,16 +5569,6 @@ var IDE = (function (exports) {
         getElementById: {
             desc: '',  //  'Найти элемент по его ID',
             'return': 'HTMLElement?'
-        },
-        
-        log: {
-            desc: '',
-            value: 'console.log',
-            sign: {
-                message: {
-                    type: 'string',
-                }
-            }
         },
         
         querySelector: {
@@ -5591,10 +5621,10 @@ var IDE = (function (exports) {
                 // snippet: 'This2(${1})',
 
                 // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
-                snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})')) : undefined,
+                snippet: metaInfo !== null ? (metaInfo.value || (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})'))) : undefined,
 
                 type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
-                meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
+                meta: (metaInfo !== null && !word.startsWith('on')) ? (metaInfo.value ? 'function' : 'function') : 'prop',
 
                 // completer: {
                 //     insertMatch: function (editor, data) {
@@ -5616,7 +5646,7 @@ var IDE = (function (exports) {
      *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
      *   }[];
      * }} editor : ace editor instanse
-     * @param {{ hint?: {desc: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
+     * @param {{ hint?: {desc: string, origin?: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
      */
     function autocompleteExpand(editor, keyWordInfo) {
             
@@ -5636,7 +5666,7 @@ var IDE = (function (exports) {
                 
                 if (hint) {
                     let args = Object.keys(hint.sign || {}).map(arg => arg + ': ' + hint.sign[arg].type).join(', ');
-                    item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>';
+                    item.docHTML = '<h5>' + (hint.origin || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>';
                     let argsDesc = '';
                     for (const key in hint.sign) {
                         argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].description;
@@ -5939,6 +5969,8 @@ var IDE = (function (exports) {
                 else if(i === 2) {
                 
 
+                    // AUTO COMPLETION:
+
                     const domCompleter = {
                         getCompletions: function jsCompleter (editor, session, pos, prefix, callback) {                        
                             // prefix !== '.' ? [] :
@@ -5960,8 +5992,8 @@ var IDE = (function (exports) {
                                 if (hint) {
                                     let args = Object.keys(hint.sign || {}).map(item => item + ': ' + hint.sign[item].type).join(', ');
                                     // item.docHTML = '<h5>' + (hint.value || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>'
-                                    item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>';
-                                    item.docHTML += '<p>' + hint.desc + '</p>';
+                                    item.docHTML = '<h5>' + (hint.origin || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>';
+                                    item.docHTML += '<p>' + (hint.desc || hint.value) + '</p>';
                                     let argsDesc = '';
                                     for (const key in hint.sign) {
                                         argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].desc;
@@ -5976,6 +6008,34 @@ var IDE = (function (exports) {
 
                     // editor.completers = editor.completers.slice();
                     editor.completers.push(domCompleter);
+
+
+
+                    // REMOVE TAB AUTO COMPLETION IN STRING:                
+
+                    const cursorText = editor.container.querySelector('textarea');
+                    cursorText.addEventListener('keydown', function tabHandler(/** @type {{ key: string; }} */ e) {
+                        if (e.key === 'Tab') {
+                            if (editor.completer) {
+
+                                editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab);
+                                cursorText.removeEventListener('keydown', tabHandler);
+                                console.log('removing tab hot key from autocompletion');
+
+                                // var position = editor.getCursorPosition();
+                                // var token = editor.session.getTokenAt(position.row, position.column);
+                                // if (token.type === 'string') {
+                                //     editor.completer.keyboardHandler.removeCommand(editor.completer.keyboardHandler.commands.Tab);
+                                //     cursorText.removeEventListener('keydown', tabHandler)                                
+                                //     console.log('removing tab hot key from autocompletion');
+                                // }
+                            }
+                        }
+                    });
+
+
+
+                    //AUTO RENAME:
 
                     editor.commands.addCommand(
                         {
@@ -6031,7 +6091,9 @@ var IDE = (function (exports) {
                         }
                     );
 
-                    // move to definition: 
+
+                    // GO TO DEFINITION:
+                    
                     editor.container.addEventListener('click', function (/** @type {{ ctrlKey: boolean; }} */ e) {
                         
                         var position = editor.getCursorPosition();
@@ -6079,7 +6141,7 @@ var IDE = (function (exports) {
                                     }
                                     else {
                                         editor.moveCursorTo(linesCount, 0);
-                                    }                                
+                                    }
                                 }
                             }
                             editor.removeSelectionMarkers(editor.session.$selectionMarkers);
@@ -6287,12 +6349,20 @@ var IDE = (function (exports) {
             return;
         }
 
+
+        let importSnippet = {
+            name: "import { * } from './" + title + "'",
+            template: "import { ${1} } from './" + title + "'"
+        };
+
+
+
         let target = event.target;
 
         //! Настройка переключения между табами:
 
         let origTab = target.parentElement.children[0];
-        origTab.onclick = origTab.onclick || function (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
+        origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
             let prevTab = document.querySelector('.tab.active');
             if (prevTab) {
 
@@ -6305,23 +6375,31 @@ var IDE = (function (exports) {
                 
 
                 
-                fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
+                const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
                 fileStore[prevTabName].match(/export default function (\w+)/);
                 
-                // optional add to complete
+                // atocomplete update:
 
-                // exports.forEach((/** @type {string} */ ex) => {
-                //     let exprWords = ex.split(' ');
-                //     let caption = exprWords.pop();
-                //     let meta = exprWords.pop()
-                //     keyWords.push({
-                //         caption,
-                //         value: caption,
-                //         meta,
-                //         type: '',
-                //         snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
-                //     })
-                // })
+                exports.forEach((/** @type {string} */ ex) => {
+                    let exprWords = ex.split(' ');
+                    let caption = exprWords.pop();
+                    let meta = exprWords.pop();
+                    keyWords.push({
+                        caption,
+                        value: caption,
+                        meta,
+                        type: '',
+                        snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
+                    });
+                });
+
+                let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
+                importSnippet.template = importSnippet.template.replace(
+                    new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [[\w\d_, ]*] \\\})'), '{ ' + newComplete + ' }'
+                );
+
+                console.log('{ ' + newComplete + ' }');
+                console.log(importSnippet.template);
 
                 // if (defaultExport) {
                 //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
@@ -6339,11 +6417,11 @@ var IDE = (function (exports) {
 
             editors[2].setValue(fileStore[ev.target.innerText]);
 
-            console.log('toggle tab...');
+            console.log('toggle tab...');    
 
             console.log(fileStore[ev.target.innerText].split('\n').length);
             editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1);
-            editors[2].focus();
+            editors[2].focus();        
         };
 
         // создание нового таба:
@@ -6364,7 +6442,7 @@ var IDE = (function (exports) {
             editors[2].setValue(fileStore[newTab.innerText]);
 
             // добавление нового ключевого слова:
-            editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+            // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
             // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
 
 
@@ -6372,10 +6450,7 @@ var IDE = (function (exports) {
             // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
             // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
 
-            autocompleteExpand(editors[2], {
-                name: "import { * } from './" + newTab.innerText + "'",
-                template: "import { ${1:*} } from './" + newTab.innerText + "'"
-            });
+            autocompleteExpand(editors[2], importSnippet);
         }
 
         target.parentElement.insertBefore(newTab, target);

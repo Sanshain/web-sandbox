@@ -71,15 +71,55 @@ export let domFuncs = {
     slice: '',
 
 
+    // snippets:
+
+    qf: {
+        desc: '',
+        value: '[].slice.call(document.querySelector(${1:selector})).forEach((${2:elem}) => {\n\t${3}\n})'
+    },
+    qm: {
+        desc: '',
+        value: '[].slice.call(document.querySelector(${1:selector})).map(elem => {\n\t${2}\n})'
+    },
+
+    // qff: {
+    //     desc: '',
+    //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2:innerText} == ${3}).forEach(elem => {\n\t${4}\n})'
+    // },
+    // qfm: {
+    //     desc: '',
+    //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2}).map(elem => {\n\t${3}\n})'
+    // },
+
+    fore: {
+        desc: 'forEach',
+        origin: 'forEach',
+        value: 'forEach((${1:elem}, ${2:i}, ${3:array}) => {\n\t${4}\n})',
+        sign: {
+            callback: { type: ' (elem, i, array) => void', desc: 'функция обратного вызова' },
+            context: { type: ' this?', desc: 'контекст' }
+        }
+    },
+    log: {
+        desc: 'console.log',
+        value: 'console.log(${1})',
+        sign: {
+            message: {
+                type: 'string',
+            }
+        }
+    },
+
+
     // DOM:
 
     target: null,
-    classList: '',
-    offsetHeight: '',
-    offsetWidth: '',
+    classList: null,
+    offsetHeight: null,
+    offsetWidth: null,
     getComputedStyle: '',
 
-    innerText: '',
+    innerText: null,
 
     appendChild: '',
     insertBefore: '',
@@ -90,16 +130,6 @@ export let domFuncs = {
     getElementById: {
         desc: '',  //  'Найти элемент по его ID',
         'return': 'HTMLElement?'
-    },
-    
-    log: {
-        desc: '',
-        value: 'console.log',
-        sign: {
-            message: {
-                type: 'string',
-            }
-        }
     },
     
     querySelector: {
@@ -152,10 +182,10 @@ export let keyWords = wordList.map(
             // snippet: 'This2(${1})',
 
             // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
-            snippet: metaInfo !== null ? (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})')) : undefined,
+            snippet: metaInfo !== null ? (metaInfo.value || (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})'))) : undefined,
 
             type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
-            meta: (metaInfo !== null && !word.startsWith('on')) ? 'function' : 'prop',
+            meta: (metaInfo !== null && !word.startsWith('on')) ? (metaInfo.value ? 'function' : 'function') : 'prop',
 
             // completer: {
             //     insertMatch: function (editor, data) {
@@ -177,7 +207,7 @@ export let keyWords = wordList.map(
  *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
  *   }[];
  * }} editor : ace editor instanse
- * @param {{ hint?: {desc: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
+ * @param {{ hint?: {desc: string, origin?: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
  */
 export function autocompleteExpand(editor, keyWordInfo) {
         
@@ -197,7 +227,7 @@ export function autocompleteExpand(editor, keyWordInfo) {
             
             if (hint) {
                 let args = Object.keys(hint.sign || {}).map(arg => arg + ': ' + hint.sign[arg].type).join(', ');
-                item.docHTML = '<h5>' + item.caption + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>'
+                item.docHTML = '<h5>' + (hint.origin || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>'
                 let argsDesc = ''
                 for (const key in hint.sign) {
                     argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].description
