@@ -4727,6 +4727,21 @@ var IDE = (function (exports) {
         };
     }
 
+
+
+    /**
+     * @param {string} code
+     * @returns {string|null}
+     */
+    function getLangMode(code)
+    {
+        let langModeMatch = code.match(/\/\* ([\w \n]+) \*\//);
+
+        return langModeMatch
+            ? langModeMatch.pop()
+            : null;
+    }
+
     //@ts-check
 
 
@@ -5038,7 +5053,7 @@ var IDE = (function (exports) {
                     ::slotted(.active), .active{
                         /*display: block !important;*/
 
-                        height: 3em;                        
+                        height: 6em;                        
                         display: block !important;
                     }
 
@@ -5140,7 +5155,6 @@ var IDE = (function (exports) {
         }
 
         return nodeCreate(htmlStruct);
-
     }
 
 
@@ -5167,10 +5181,42 @@ var IDE = (function (exports) {
             }        
         }
         
-        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
+        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'] || playgroundObject.fileStorage[undefined + ''];
         // console.log('appCode');
 
+
+        const langMode = getLangMode(appCode);
+        if (langMode) {
+
+            var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
+
+            if (currentLang.src && currentLang.target === 'self') {
+                let scriptID = currentLang.src.split('/').pop().split('.').shift();
+                let originScript = document.getElementById(scriptID);
+                if (!originScript) {
+                    originScript = document.createElement('script');
+                    //@ts-ignore
+                    originScript.src = currentLang.src;
+                    originScript.onload = () => {
+
+                        // createPage(prevUrl, additionalScripts, scriptType, options);
+                        waiting.parentElement.removeChild(waiting);
+                    };
+                    document.head.appendChild(originScript);
+                    let waiting = document.querySelector('.view').appendChild(document.createElement('div'));
+                    waiting.innerText = 'Ожидание...';
+                    waiting.id = 'view__waiting';                
+                    // return;
+                }
+            }
+        }
+
+
+
         let buildJS = (/** @type {string} */ code) => {        
+
+            // convert to js:   
+
 
             if (window['simplestBundler']) {
                 code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
@@ -5179,6 +5225,11 @@ var IDE = (function (exports) {
             else {
                 console.warn('bundler is absent');
                 // alert('Warn/ look logs')
+            }        
+
+            // ts transpilation:
+            if (currentLang) {
+                code = currentLang.compileFunc(code);
             }
 
             // 
@@ -5199,8 +5250,9 @@ var IDE = (function (exports) {
         };
 
 
-        
-        // compilerModes дополняем:
+        console.log(777777777777777789);
+
+        // compilerSubModes дополняем:
         if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
 
             /**
@@ -5649,7 +5701,7 @@ var IDE = (function (exports) {
      * @param {{ hint?: {desc: string, origin?: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
      */
     function autocompleteExpand(editor, keyWordInfo) {
-            
+
         let hint = keyWordInfo.hint;
         
         editor.completers.push({
@@ -6393,13 +6445,13 @@ var IDE = (function (exports) {
                     });
                 });
 
-                let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
-                importSnippet.template = importSnippet.template.replace(
-                    new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [[\w\d_, ]*] \\\})'), '{ ' + newComplete + ' }'
-                );
+                // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
+                // importSnippet.name = importSnippet.template = importSnippet.template.replace(
+                //     new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [\\\w\\\d_, ]* \\\})'), '{ ' + newComplete + ' }'
+                // );
 
-                console.log('{ ' + newComplete + ' }');
-                console.log(importSnippet.template);
+                // console.log('{ ' + newComplete + ' }');
+                // console.log(importSnippet.template);
 
                 // if (defaultExport) {
                 //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
@@ -6424,6 +6476,8 @@ var IDE = (function (exports) {
             editors[2].focus();        
         };
 
+
+
         // создание нового таба:
 
         let newTab = origTab.cloneNode();
@@ -6435,6 +6489,7 @@ var IDE = (function (exports) {
 
         newTab.style.marginRight = '1.25em';
         newTab.onclick = origTab.onclick;
+        newTab.ondblclick = origTab.ondblclick;
 
         if (!event.file) {
             fileStore[origTab.innerText] = editors[2].getValue();
@@ -6487,10 +6542,10 @@ var IDE = (function (exports) {
         }
 
         playgroundObject.modes = options.modes;
-        const compilerModes = Object.values(compilers)[syntaxMode];
+        const frameworkEnvironment = Object.values(compilers)[syntaxMode];
         
         // @ts-ignore
-        let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerModes) : webCompile;
+        let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, frameworkEnvironment) : webCompile;
 
         initResizers();
 
@@ -6587,14 +6642,14 @@ var IDE = (function (exports) {
 
 
 
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined);
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
 
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;
 
 
-        document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, compilerModes));
-        document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerModes, jsxMode ? babelCompiler.mode : undefined);
+        document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, frameworkEnvironment));
+        document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
         document.getElementById('compiler_mode').addEventListener('change', function (event) {
 
             // @ts-ignore

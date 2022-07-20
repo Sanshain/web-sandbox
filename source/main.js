@@ -35,10 +35,10 @@ export function initialize(values, options) {
     }
 
     playgroundObject.modes = options.modes;
-    const compilerModes = Object.values(compilers)[syntaxMode];
+    const frameworkEnvironment = Object.values(compilers)[syntaxMode];
     
     // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, compilerModes) : webCompile;
+    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, frameworkEnvironment) : webCompile;
 
     initResizers()
 
@@ -135,14 +135,14 @@ export function initialize(values, options) {
 
 
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined, editorOptions)
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined, editorOptions)
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 
 
-    document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, compilerModes));
-    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, compilerModes, jsxMode ? babelCompiler.mode : undefined);
+    document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, frameworkEnvironment));
+    document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
     document.getElementById('compiler_mode').addEventListener('change', function (event) {
 
         // @ts-ignore

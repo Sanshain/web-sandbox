@@ -155,6 +155,15 @@
             display: none;
         }
 
+        #view__waiting{
+            color: gray;
+            text-align: center;
+            line-height: 20em;            
+            font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            width: 100%;
+            position: absolute;            
+        }
+
         @media screen and (max-width: 600px) {
             .tabs {
                 display: none;
@@ -227,7 +236,6 @@
 
 
 
-
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
@@ -247,6 +255,7 @@
                 {
                     css: null,
                     less: {
+                        ext: '.less',
                         src: document.location.origin + '/static/js/preproc/less.min.js',
                         target: {
                             outline: true,                                                         // 'outline'|'external'
@@ -260,6 +269,21 @@
                     'es модули': {                    
                         tabs: true,
                         mode: 'javascript'
+                    },
+                    typescript: {
+                        src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
+                        target: 'self',
+                        tabs: true,
+                        ext: '.ts',
+                        compileFunc: code => {
+                            if (window.ts){
+                                return ts.transpile(code);
+                            }
+                            else{
+                                console.warn('Something went wrong: ts is undefind...');
+                                return code;
+                            }
+                        }
                     }
                 }                
             ],

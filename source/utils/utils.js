@@ -26,6 +26,17 @@ export function debounce(func, delay) {
 
 
 
+/**
+ * @param {string} code
+ * @returns {string|null}
+ */
+export function getLangMode(code)
+{
+    let langModeMatch = code.match(/\/\* ([\w \n]+) \*\//);
 
+    return langModeMatch
+        ? langModeMatch.pop()
+        : null;
+}
 
 

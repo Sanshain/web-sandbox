@@ -18,6 +18,11 @@ var simplestBundler = (function (exports, require$$0) {
     pack.combine = combine;
     // exports.integrate = integrate;
 
+    /**
+     * @param {string} content
+     * @param {string} dirpath
+     * @param {any} options
+     */
     function combine(content, dirpath, options){
         
         exportedFiles = [];
@@ -42,12 +47,21 @@ var simplestBundler = (function (exports, require$$0) {
     // }
 
     class pathMan {
+        /**
+         * @param {string} dirname
+         * @param {any} _getContent
+         */
         constructor(dirname, _getContent) {
             this.dirPath = dirname;
             this.getContent = _getContent;
         }
     }
 
+    /**
+     * @param {string} content
+     * @param {string} dirpath
+     * @param {{ getContent: Function; release: any; }} options
+     */
     function importInsert(content, dirpath, options) {
         
         console.log('importInsert...');
@@ -78,11 +92,19 @@ var simplestBundler = (function (exports, require$$0) {
     }
 
 
+    /**
+     * @param {string} match
+     * @param {string|string[]} classNames
+     * @param {any} fileName
+     * @param {any} offset
+     * @param {any} source
+     */
     function defaultPack(match, classNames, fileName, offset, source) {
 
         var content = this.getContent(fileName);
         if (content == '' || !content) return ''
 
+        //@ts-ignore
         classNames = classNames.split(',').map(s => s.trim());
         const matches = Array.from(content.matchAll(/^export default (function|class) (\w+)[ ]*\([\w, ]*\)[\s]*{[\w\W]*?\n}/gm));        
 
@@ -101,6 +123,13 @@ var simplestBundler = (function (exports, require$$0) {
     }
 
 
+    /**
+     * @param {string} match
+     * @param {string} classNames
+     * @param {any} fileName
+     * @param {any} offset
+     * @param {any} source
+     */
     function wrapsPack(match, classNames, fileName, offset, source){
 
         console.log('wrapsPack...');
@@ -108,9 +137,18 @@ var simplestBundler = (function (exports, require$$0) {
         var content = this.getContent(fileName);
         if (content == '' || !content) return ''
 
+        //@ts-ignore
         classNames = classNames.split(',').map(s => s.trim());
-        let matches1 = Array.from(content.matchAll(/^export (let|var) (\w+) = [^\n]+/gm));    
-        let matches2 = Array.from(content.matchAll(/^export (function) (\w+)[ ]*\([\w, ]*\)[\s]*{[\w\W]*?\n}/gm));
+
+        // let matches1 = Array.from(content.matchAll(/^export (let|var) (\w+) = [^\n]+/gm))
+        // with ts support:
+        let matches1 = Array.from(content.matchAll(/^export (let|var) (\w+) ?(\: [\<\>\[\]\w\|]+)? = [^\n]+/gm));
+
+        // let matches2 = Array.from(content.matchAll(/^export (function) (\w+)[ ]*\([\w, ]*\)[\s]*{[\w\W]*?\n}/gm))
+        // with ts support:
+        let matches2 = Array.from(content.matchAll(/^export (function) (\w+)[ ]*\([\w, \:\<\>\[\]\|&\{\}]*\)(: [\w\|\<\>\{\} :]+)?[\s]*{[\w\W]*?\n}/gm));
+
+
         let matches3 = Array.from(content.matchAll(/^export (class) (\w+)([\s]*{[\w\W]*?\n})/gm));
         var matches = matches1.concat(matches2, matches3);
 
@@ -128,6 +166,15 @@ var simplestBundler = (function (exports, require$$0) {
         return content;
     }
 
+
+
+    /**
+     * @param {any} match
+     * @param {any} modulName
+     * @param {any} fileName
+     * @param {any} offset
+     * @param {any} source
+     */
     function unitsPack(match, modulName, fileName, offset, source){
 
         var content = this.getContent(fileName);
@@ -137,7 +184,7 @@ var simplestBundler = (function (exports, require$$0) {
 
         content = content.replace(/^(let|var) /gm, 'let ');
         content = content.replace(/^export (let|var|function|class) (\w+)/gm, 
-        function(match, declType, varName, offset, source)
+        function(/** @type {any} */ match, /** @type {string} */ declType, /** @type {string} */ varName, /** @type {any} */ offset, /** @type {any} */ source)
         {
             exportList.push('\t\t' + varName + ":" + varName);
             return declType + ' ' + varName;
@@ -155,6 +202,9 @@ var simplestBundler = (function (exports, require$$0) {
 
 
 
+    /**
+     * @param {fs.PathOrFileDescriptor} fileName
+     */
     function getContent(fileName){    
 
         const fs = require$$0__default["default"];

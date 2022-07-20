@@ -71,13 +71,13 @@ export function fileAttach(event) {
                 })
             })
 
-            let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
-            importSnippet.template = importSnippet.template.replace(
-                new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [[\w\d_, ]*] \\\})'), '{ ' + newComplete + ' }'
-            );
+            // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
+            // importSnippet.name = importSnippet.template = importSnippet.template.replace(
+            //     new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [\\\w\\\d_, ]* \\\})'), '{ ' + newComplete + ' }'
+            // );
 
-            console.log('{ ' + newComplete + ' }');
-            console.log(importSnippet.template);
+            // console.log('{ ' + newComplete + ' }');
+            // console.log(importSnippet.template);
 
             // if (defaultExport) {
             //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
@@ -102,6 +102,8 @@ export function fileAttach(event) {
         editors[2].focus();        
     }
 
+
+
     // создание нового таба:
 
     let newTab = origTab.cloneNode();
@@ -113,6 +115,7 @@ export function fileAttach(event) {
 
     newTab.style.marginRight = '1.25em';
     newTab.onclick = origTab.onclick;
+    newTab.ondblclick = origTab.ondblclick;
 
     if (!event.file) {
         fileStore[origTab.innerText] = editors[2].getValue();

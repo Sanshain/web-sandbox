@@ -79,6 +79,21 @@ var pageBuilder = (function (exports) {
 
     const commonStorage = sessionStorage;
 
+
+
+    /**
+     * @param {string} code
+     * @returns {string|null}
+     */
+    function getLangMode(code)
+    {
+        let langModeMatch = code.match(/\/\* ([\w \n]+) \*\//);
+
+        return langModeMatch
+            ? langModeMatch.pop()
+            : null;
+    }
+
     const html = (/** @type {ReadonlyArray<string>} */ text, /** @type {any[]} */ ...args) => text.reduce((p, n, i) => p + args[i - 1] + n);
 
     //@ts-check
@@ -286,7 +301,7 @@ var pageBuilder = (function (exports) {
                     ::slotted(.active), .active{
                         /*display: block !important;*/
 
-                        height: 3em;                        
+                        height: 6em;                        
                         display: block !important;
                     }
 
@@ -388,7 +403,6 @@ var pageBuilder = (function (exports) {
         }
 
         return nodeCreate(htmlStruct);
-
     }
 
 
@@ -415,10 +429,42 @@ var pageBuilder = (function (exports) {
             }        
         }
         
-        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
+        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'] || playgroundObject.fileStorage[undefined + ''];
         // console.log('appCode');
 
+
+        const langMode = getLangMode(appCode);
+        if (langMode) {
+
+            var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
+
+            if (currentLang.src && currentLang.target === 'self') {
+                let scriptID = currentLang.src.split('/').pop().split('.').shift();
+                let originScript = document.getElementById(scriptID);
+                if (!originScript) {
+                    originScript = document.createElement('script');
+                    //@ts-ignore
+                    originScript.src = currentLang.src;
+                    originScript.onload = () => {
+
+                        // createPage(prevUrl, additionalScripts, scriptType, options);
+                        waiting.parentElement.removeChild(waiting);
+                    };
+                    document.head.appendChild(originScript);
+                    let waiting = document.querySelector('.view').appendChild(document.createElement('div'));
+                    waiting.innerText = 'Ожидание...';
+                    waiting.id = 'view__waiting';                
+                    // return;
+                }
+            }
+        }
+
+
+
         let buildJS = (/** @type {string} */ code) => {        
+
+            // convert to js:   
+
 
             if (window['simplestBundler']) {
                 code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
@@ -427,6 +473,11 @@ var pageBuilder = (function (exports) {
             else {
                 console.warn('bundler is absent');
                 // alert('Warn/ look logs')
+            }        
+
+            // ts transpilation:
+            if (currentLang) {
+                code = currentLang.compileFunc(code);
             }
 
             // 
@@ -447,8 +498,9 @@ var pageBuilder = (function (exports) {
         };
 
 
-        
-        // compilerModes дополняем:
+        console.log(777777777777777789);
+
+        // compilerSubModes дополняем:
         if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
 
             /**

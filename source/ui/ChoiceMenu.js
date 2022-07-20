@@ -205,7 +205,7 @@ export class ChoiceMenu extends HTMLElement {
                     ::slotted(.active), .active{
                         /*display: block !important;*/
 
-                        height: 3em;                        
+                        height: 6em;                        
                         display: block !important;
                     }
 

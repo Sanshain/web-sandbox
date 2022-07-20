@@ -210,7 +210,7 @@ export let keyWords = wordList.map(
  * @param {{ hint?: {desc: string, origin?: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
  */
 export function autocompleteExpand(editor, keyWordInfo) {
-        
+
     let hint = keyWordInfo.hint;
     
     editor.completers.push({

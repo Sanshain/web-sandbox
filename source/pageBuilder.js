@@ -2,7 +2,7 @@
 
 import { babelCompiler, compilers } from "./features/compiler";
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
-import { commonStorage } from './utils/utils';
+import { commonStorage, getLangMode } from './utils/utils';
 
 // TODO REMOVE:
 import { ChoiceMenu } from "./ui/ChoiceMenu";
@@ -63,7 +63,6 @@ function createHtml({ body, style, script, link }, attrs) {
     }
 
     return nodeCreate(htmlStruct);
-
 }
 
 
@@ -90,10 +89,42 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         }        
     }
     
-    let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'];
+    let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'] || playgroundObject.fileStorage[undefined + ''];
     // console.log('appCode');
 
+
+    const langMode = getLangMode(appCode);
+    if (langMode) {
+
+        var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
+
+        if (currentLang.src && currentLang.target === 'self') {
+            let scriptID = currentLang.src.split('/').pop().split('.').shift();
+            let originScript = document.getElementById(scriptID)
+            if (!originScript) {
+                originScript = document.createElement('script');
+                //@ts-ignore
+                originScript.src = currentLang.src;
+                originScript.onload = () => {
+
+                    // createPage(prevUrl, additionalScripts, scriptType, options);
+                    waiting.parentElement.removeChild(waiting);
+                }
+                document.head.appendChild(originScript);
+                let waiting = document.querySelector('.view').appendChild(document.createElement('div'))
+                waiting.innerText = 'Ожидание...'
+                waiting.id = 'view__waiting';                
+                // return;
+            }
+        }
+    }
+
+
+
     let buildJS = (/** @type {string} */ code) => {        
+
+        // convert to js:   
+
 
         if (window['simplestBundler']) {
             code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
@@ -102,6 +133,11 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         else {
             console.warn('bundler is absent');
             // alert('Warn/ look logs')
+        }        
+
+        // ts transpilation:
+        if (currentLang) {
+            code = currentLang.compileFunc(code);
         }
 
         // 
@@ -122,8 +158,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     }
 
 
-    
-    // compilerModes дополняем:
+    console.log(777777777777777789);
+
+    // compilerSubModes дополняем:
     if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
 
         /**

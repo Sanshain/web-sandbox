@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "emmet": "^2.3.6",
-    "preact": "^10.7.2",
+    "preact": "10.7.2",
     "tcp-bundler": "github:Sanshain/tcp-bundler#browser"
   },
   "devDependencies": {
