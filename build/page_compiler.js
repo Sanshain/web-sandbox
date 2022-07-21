@@ -429,7 +429,8 @@ var pageBuilder = (function (exports) {
             }        
         }
         
-        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'] || playgroundObject.fileStorage[undefined + ''];
+        let _fs = (playgroundObject.fileStorage || window['fileStore'] || {});
+        let appCode = _fs['app.js'] || _fs['app.ts'] || playgroundObject.fileStorage[undefined + ''];
         // console.log('appCode');
 
 
@@ -438,7 +439,8 @@ var pageBuilder = (function (exports) {
 
             var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
-            if (currentLang.src && currentLang.target === 'self') {
+            if (currentLang && currentLang.src && currentLang.target === 'self') {
+                
                 let scriptID = currentLang.src.split('/').pop().split('.').shift();
                 let originScript = document.getElementById(scriptID);
                 if (!originScript) {
@@ -476,14 +478,14 @@ var pageBuilder = (function (exports) {
             }        
 
             // ts transpilation:
-            if (currentLang) {
+            if (currentLang && currentLang.compileFunc) {
                 code = currentLang.compileFunc(code);
             }
 
             // 
             let globalReinitializer = generateGlobalInintializer(code);
 
-            return 'window.addEventListener("DOMContentLoaded", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+            return 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
         };
 
 
@@ -634,7 +636,7 @@ var pageBuilder = (function (exports) {
                 script.type = "text/babel";
             }
 
-            let code = playgroundObject.fileStorage['app.js'] || editors[2].getValue();
+            let code = playgroundObject.fileStorage['app.js'] || playgroundObject.fileStorage['app.ts'] || editors[2].getValue();
 
             let globalReinitializer = generateGlobalInintializer(code);
 

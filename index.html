@@ -264,13 +264,15 @@
                         }
                     }
                 },
-                {
+                Object.assign({
                     javascript: null,
-                    'es модули': {                    
+                    'ES module': {
                         tabs: true,
                         mode: 'javascript'
-                    },
+                    },              
+                }, !(+sessionStorage.getItem('mode') % 2) ? {
                     typescript: {
+
                         src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
                         target: 'self',
                         tabs: true,
@@ -284,8 +286,8 @@
                                 return code;
                             }
                         }
-                    }
-                }                
+                    },                    
+                } : {})                
             ],
             onControlSave: function (event) {
                 // alert(99)

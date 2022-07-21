@@ -10,7 +10,7 @@ import { commonStorage } from "./utils/utils";
 import { fileAttach } from "./features/tabs";
 
 import { ChoiceMenu } from "./ui/ChoiceMenu";
-import { modes } from "./features/base";
+import { modes } from "./features/base.js";
 
 
 
@@ -59,7 +59,7 @@ export function initialize(values, options) {
     if (options.modes) {
         customElements.define('choice-menu', ChoiceMenu);
         console.log(options.modes);
-        options.modes.forEach(function (/** @type { {tabs?: true, src?: string, target? : object } } */ mode, i) {
+        options.modes.forEach(function (/** @type { {[k: string]: {tabs?: true, src?: string, target? : object, ext?: string }} } */ mode, i) {
 
             let items = [];  // ['css','less','stylus']
 
@@ -72,27 +72,43 @@ export function initialize(values, options) {
                     console.log(mode);
 
                     /**
-                     * @type {{src?: string, tabs?: true, mode: 'html'|'css'|'javascript'}}
+                     * @type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', ext?: string}}
                      */
                     const modeOptions = mode[e.detail.value];
                     // const link = options.modes[i][e.detail.value];
                     // console.log(link)
 
 
-                    // multitabs mode:
+                
+                
+                    // MULTITABS MODE:
+                
                     // if (mode[e.detail.value].tabs)
                     {
                         const multitabs = modeOptions && modeOptions.tabs;
-                        const tabs = document.querySelector('.tabs' + (multitabs ? '' : '.enabled'));
-                        tabs && tabs.classList.toggle('enabled')
+                        var tabs = document.querySelector('.tabs');  //  + (multitabs ? '' : '.enabled')
+                        if (tabs) {
+                            if (multitabs && !tabs.classList.contains('enabled')) {
+                                tabs.classList.add('enabled')
+                            }
+                            else if (!multitabs && tabs.classList.contains('enabled')) {
+                                tabs.classList.remove('enabled')
+                            }                                
+                        }
                     }
                     
                     // upload to frame will in pageBuilder, here just is highlight change
                     editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
 
+
+
+
+                    
+                    // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:
+
                     //@ts-ignore
                     var Range = ace.require("ace/range").Range;
-                    
+
                     let markLine = editors[i].session.getLine(0);
                     const markValue = "/* " + e.detail.value + " */";
 
@@ -101,7 +117,32 @@ export function initialize(values, options) {
                     }
                     else {
                         editors[i].session.insert({ row: 0, column: 0 }, markValue + '\n\n')
-                    }                    
+                    }
+                    
+
+                    // RENAME FILES:
+
+                    console.log('rename');
+                    if (tabs) {
+                        
+                        [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
+                            if (modeOptions.ext && !element.innerText.endsWith(modeOptions.ext)) {                                
+                                element.innerText = element.innerText.replace('.js', '.ts');
+                            }
+                            else if (!element.innerText.endsWith('.js')) {
+                                element.innerText = element.innerText.replace('.ts', '.js');
+                            }
+                        });
+
+                        if (modeOptions.ext) {
+                            let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.js', '.ts')]: playgroundObject.fileStorage[k] }));
+                            playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
+                        }
+                        else {
+                            let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.ts', '.js')]: playgroundObject.fileStorage[k] }));
+                            playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
+                        }
+                    }
                 })
 
                 // const value = editors[i].getValue()

@@ -4808,7 +4808,7 @@ var IDE = (function (exports) {
         {
             html: '<div id="root"></div>',
             css: '#root{\n\tcolor: red;\n}',
-            javascript: "const name = 'world'; \n\trender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
+            javascript: "const name = 'world'; \nrender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
         },
         // vue
         {
@@ -4821,7 +4821,7 @@ var IDE = (function (exports) {
             html: '<div id="root"></div>',
             css: '#root{\n\tcolor: red;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
             // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
-            javascript: "const name = 'world';function App(){\n\tconst [count, setCount] = React.useState(0);" +
+            javascript: "const name = 'world';\n\nfunction App(){\n\tconst [count, setCount] = React.useState(0);" +
                         "\n\treturn <h1 onClick={()=>setCount(count+1)}>Привет, {name} {count}!</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
         },
     ];
@@ -5181,7 +5181,8 @@ var IDE = (function (exports) {
             }        
         }
         
-        let appCode = (playgroundObject.fileStorage || window['fileStore'] || {})['app.js'] || playgroundObject.fileStorage[undefined + ''];
+        let _fs = (playgroundObject.fileStorage || window['fileStore'] || {});
+        let appCode = _fs['app.js'] || _fs['app.ts'] || playgroundObject.fileStorage[undefined + ''];
         // console.log('appCode');
 
 
@@ -5190,7 +5191,8 @@ var IDE = (function (exports) {
 
             var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
-            if (currentLang.src && currentLang.target === 'self') {
+            if (currentLang && currentLang.src && currentLang.target === 'self') {
+                
                 let scriptID = currentLang.src.split('/').pop().split('.').shift();
                 let originScript = document.getElementById(scriptID);
                 if (!originScript) {
@@ -5228,14 +5230,14 @@ var IDE = (function (exports) {
             }        
 
             // ts transpilation:
-            if (currentLang) {
+            if (currentLang && currentLang.compileFunc) {
                 code = currentLang.compileFunc(code);
             }
 
             // 
             let globalReinitializer = generateGlobalInintializer(code);
 
-            return 'window.addEventListener("DOMContentLoaded", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+            return 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
         };
 
 
@@ -5386,7 +5388,7 @@ var IDE = (function (exports) {
                 script.type = "text/babel";
             }
 
-            let code = playgroundObject.fileStorage['app.js'] || editors[2].getValue();
+            let code = playgroundObject.fileStorage['app.js'] || playgroundObject.fileStorage['app.ts'] || editors[2].getValue();
 
             let globalReinitializer = generateGlobalInintializer(code);
 
@@ -6394,7 +6396,10 @@ var IDE = (function (exports) {
 
         if (!filename) return;
 
-        let title = ~filename.indexOf('.') ? filename : (filename + '.js');
+        console.log(123222);
+
+        let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
+        let title = ~filename.indexOf('.') ? filename : (filename + ext);
 
         if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
             alert('Файл с таким именем уже существует');
@@ -6418,14 +6423,13 @@ var IDE = (function (exports) {
             let prevTab = document.querySelector('.tab.active');
             if (prevTab) {
 
+                fileStore = playgroundObject.fileStorage;  // т.к. при смене языка мы можем переопределить playgroundObject.fileStorage = Object.assign...
+
                 const prevTabName = prevTab['innerText'];
 
                 prevTab.classList.toggle('active');
 
                 fileStore[prevTabName] = editors[2].getValue();
-
-                
-
                 
                 const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
                 fileStore[prevTabName].match(/export default function (\w+)/);
@@ -6444,6 +6448,28 @@ var IDE = (function (exports) {
                         snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
                     });
                 });
+
+
+                // extension changing:
+                // if (importSnippet.template.endsWith(".ts") && !fileStore['app.ts']) {
+                //     // autocomplete refactoring:                
+                //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
+                // }
+
+                if (!title.endsWith(prevTabName.split('.').pop())) {
+                    
+                    // autocomplete refactoring:
+                    importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
+                    
+                    // code refactoring:
+                    // let importFilename = importSnippet.template.split('from ').pop()
+                    // console.log('importFilename', importFilename);
+                    fileStore[ev.target.innerText] = fileStore[ev.target.innerText].replace(title + "'", prevTabName + "'");
+                    
+                    //@ts-ignore
+                    title = prevTabName;
+                }
+
 
                 // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
                 // importSnippet.name = importSnippet.template = importSnippet.template.replace(
@@ -6566,7 +6592,7 @@ var IDE = (function (exports) {
         if (options.modes) {
             customElements.define('choice-menu', ChoiceMenu);
             console.log(options.modes);
-            options.modes.forEach(function (/** @type { {tabs?: true, src?: string, target? : object } } */ mode, i) {
+            options.modes.forEach(function (/** @type { {[k: string]: {tabs?: true, src?: string, target? : object, ext?: string }} } */ mode, i) {
 
                 let items = [];  // ['css','less','stylus']
 
@@ -6579,27 +6605,43 @@ var IDE = (function (exports) {
                         console.log(mode);
 
                         /**
-                         * @type {{src?: string, tabs?: true, mode: 'html'|'css'|'javascript'}}
+                         * @type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', ext?: string}}
                          */
                         const modeOptions = mode[e.detail.value];
                         // const link = options.modes[i][e.detail.value];
                         // console.log(link)
 
 
-                        // multitabs mode:
+                    
+                    
+                        // MULTITABS MODE:
+                    
                         // if (mode[e.detail.value].tabs)
                         {
                             const multitabs = modeOptions && modeOptions.tabs;
-                            const tabs = document.querySelector('.tabs' + (multitabs ? '' : '.enabled'));
-                            tabs && tabs.classList.toggle('enabled');
+                            var tabs = document.querySelector('.tabs');  //  + (multitabs ? '' : '.enabled')
+                            if (tabs) {
+                                if (multitabs && !tabs.classList.contains('enabled')) {
+                                    tabs.classList.add('enabled');
+                                }
+                                else if (!multitabs && tabs.classList.contains('enabled')) {
+                                    tabs.classList.remove('enabled');
+                                }                                
+                            }
                         }
                         
                         // upload to frame will in pageBuilder, here just is highlight change
                         editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
 
+
+
+
+                        
+                        // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:
+
                         //@ts-ignore
                         var Range = ace.require("ace/range").Range;
-                        
+
                         let markLine = editors[i].session.getLine(0);
                         const markValue = "/* " + e.detail.value + " */";
 
@@ -6608,7 +6650,32 @@ var IDE = (function (exports) {
                         }
                         else {
                             editors[i].session.insert({ row: 0, column: 0 }, markValue + '\n\n');
-                        }                    
+                        }
+                        
+
+                        // RENAME FILES:
+
+                        console.log('rename');
+                        if (tabs) {
+                            
+                            [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
+                                if (modeOptions.ext && !element.innerText.endsWith(modeOptions.ext)) {                                
+                                    element.innerText = element.innerText.replace('.js', '.ts');
+                                }
+                                else if (!element.innerText.endsWith('.js')) {
+                                    element.innerText = element.innerText.replace('.ts', '.js');
+                                }
+                            });
+
+                            if (modeOptions.ext) {
+                                let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.js', '.ts')]: playgroundObject.fileStorage[k] }));
+                                playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
+                            }
+                            else {
+                                let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.ts', '.js')]: playgroundObject.fileStorage[k] }));
+                                playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
+                            }
+                        }
                     });
 
                     // const value = editors[i].getValue()

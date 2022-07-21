@@ -20,7 +20,10 @@ export function fileAttach(event) {
 
     if (!filename) return;
 
-    let title = ~filename.indexOf('.') ? filename : (filename + '.js');
+    console.log(123222);
+
+    let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
+    let title = ~filename.indexOf('.') ? filename : (filename + ext);
 
     if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
         alert('Файл с таким именем уже существует');
@@ -44,14 +47,13 @@ export function fileAttach(event) {
         let prevTab = document.querySelector('.tab.active');
         if (prevTab) {
 
+            fileStore = playgroundObject.fileStorage;  // т.к. при смене языка мы можем переопределить playgroundObject.fileStorage = Object.assign...
+
             const prevTabName = prevTab['innerText'];
 
             prevTab.classList.toggle('active');
 
             fileStore[prevTabName] = editors[2].getValue();
-
-            
-
             
             const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
             const defaultExport = fileStore[prevTabName].match(/export default function (\w+)/);
@@ -70,6 +72,28 @@ export function fileAttach(event) {
                     snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
                 })
             })
+
+
+            // extension changing:
+            // if (importSnippet.template.endsWith(".ts") && !fileStore['app.ts']) {
+            //     // autocomplete refactoring:                
+            //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
+            // }
+
+            if (!title.endsWith(prevTabName.split('.').pop())) {
+                
+                // autocomplete refactoring:
+                importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
+                
+                // code refactoring:
+                // let importFilename = importSnippet.template.split('from ').pop()
+                // console.log('importFilename', importFilename);
+                fileStore[ev.target.innerText] = fileStore[ev.target.innerText].replace(title + "'", prevTabName + "'");
+                
+                //@ts-ignore
+                title = prevTabName;
+            }
+
 
             // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
             // importSnippet.name = importSnippet.template = importSnippet.template.replace(
