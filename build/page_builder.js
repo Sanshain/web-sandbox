@@ -4703,47 +4703,6 @@ var IDE = (function (exports) {
 
     //@ts-check
 
-    const commonStorage = sessionStorage;
-
-    /**
-     * @param {{ (): number; (): any; }} func
-     * @param {number} delay
-     */
-    function debounce(func, delay) {
-        
-        let inAwaiting = false;
-
-        return function ()
-        {
-            if (!inAwaiting) {
-
-                let result = func();
-
-                inAwaiting = true;
-                setTimeout(() => inAwaiting = false, delay);
-
-                return result;
-            }
-        };
-    }
-
-
-
-    /**
-     * @param {string} code
-     * @returns {string|null}
-     */
-    function getLangMode(code)
-    {
-        let langModeMatch = code.match(/\/\* ([\w \n]+) \*\//);
-
-        return langModeMatch
-            ? langModeMatch.pop()
-            : null;
-    }
-
-    //@ts-check
-
 
 
 
@@ -5104,14 +5063,15 @@ var IDE = (function (exports) {
     // @ts-check
 
     /**
-     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?]}}
+     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function}}
      */
     const playgroundObject = {
         editors: [],
         iframe: null,
         curUrl: null,
         fileStorage: { _active: 0 },
-        modes: null
+        modes: null,
+        onfilerename: null
     };
 
 
@@ -5435,6 +5395,49 @@ var IDE = (function (exports) {
         }
 
         // document.getElementById('compiler_mode')
+    }
+
+    //@ts-check
+
+    const commonStorage = sessionStorage;
+
+    /**
+     * @param {{ (): number; (): any; }} func
+     * @param {number} delay
+     */
+    function debounce(func, delay) {
+        
+        let inAwaiting = false;
+
+        return function ()
+        {
+            if (!inAwaiting) {
+
+                let result = func();
+
+                inAwaiting = true;
+                setTimeout(() => inAwaiting = false, delay);
+
+                return result;
+            }
+        };
+    }
+
+
+
+    /**
+     * extracts lang mode from code text
+     * 
+     * @param {string} code
+     * @returns {string|null}
+     */
+    function getLangMode(code)
+    {
+        let langModeMatch = code.match(/\/\* ([\w \n]+) \*\//);
+
+        return langModeMatch
+            ? langModeMatch.pop()
+            : null;
     }
 
     // @ts-check
@@ -6419,6 +6422,59 @@ var IDE = (function (exports) {
         //! Настройка переключения между табами:
 
         let origTab = target.parentElement.children[0];
+        origTab.ondblclick = function (e) {        
+
+            const prevName = e.target.innerText;
+            if (prevName.match(/app\.\ws/)) {
+                return;
+            }
+
+            let fileInfo = prevName.split('.');
+            let filename = prompt('Enter new file name:', fileInfo[0]);
+            if (filename === fileInfo[0]) return;
+            else if (!filename) {
+                alert('Имя файла должно содержать буквы (хотя бы одну)');
+                return;
+            }
+            else {
+                let fullname = [filename, fileInfo[1]].join('.');
+
+
+
+                if (playgroundObject.onfilerename) {
+                    renameOccurrences(prevName, fullname);
+                    e.target.innerText = fullname;
+                }
+                else {
+                    playgroundObject.onfilerename(e.target.innerText, fullname, () => {
+                        e.target.innerText = fullname;
+                        renameOccurrences(prevName, fullname);
+                    });
+                }
+                
+                
+                /**
+                 * 
+                 * @param {string} prevName 
+                 * @param {string} fullname 
+                 */
+                function renameOccurrences (prevName, fullname) {
+                    fileStore = playgroundObject.fileStorage;
+                    fileStore[fullname] = fileStore[prevName];
+                    delete fileStore[prevName];
+
+                    for (let file in playgroundObject.fileStorage) {
+                        if (typeof playgroundObject.fileStorage[file] === 'string') {
+                            playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname);
+                        }
+                    }
+
+                    let pos = editors[2].find(prevName + "'");
+                    pos && editors[2].getSession().replace(pos, fullname + "'");
+                }
+
+            }
+        };
         origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
             let prevTab = document.querySelector('.tab.active');
             if (prevTab) {
@@ -6456,19 +6512,25 @@ var IDE = (function (exports) {
                 //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
                 // }
 
-                if (!title.endsWith(prevTabName.split('.').pop())) {
+
+
+
+                // let actualExt = prevTabName.split('.').pop();
+                // if (!title.endsWith(actualExt)) {
                     
-                    // autocomplete refactoring:
-                    importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
+                //     // autocomplete refactoring:
+                //     importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
                     
-                    // code refactoring:
-                    // let importFilename = importSnippet.template.split('from ').pop()
-                    // console.log('importFilename', importFilename);
-                    fileStore[ev.target.innerText] = fileStore[ev.target.innerText].replace(title + "'", prevTabName + "'");
+                //     // code refactoring:
+                //     // let importFilename = importSnippet.template.split('from ').pop()
+                //     // console.log('importFilename', importFilename);
+                //     fileStore['app.' + actualExt] = fileStore['app.' + actualExt].replace(title + "'", prevTabName + "'");
                     
-                    //@ts-ignore
-                    title = prevTabName;
-                }
+                //     //@ts-ignore
+                //     title = prevTabName;
+                // }
+
+
 
 
                 // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
@@ -6550,7 +6612,7 @@ var IDE = (function (exports) {
 
     /**
      * @param {string[]} values
-     * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?]}?} options
+     * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function}?} options
      * @returns {any[]}
      */
     function initialize(values, options) {
@@ -6568,6 +6630,7 @@ var IDE = (function (exports) {
         }
 
         playgroundObject.modes = options.modes;
+        playgroundObject.onfilerename = options.onfilerename;
         const frameworkEnvironment = Object.values(compilers)[syntaxMode];
         
         // @ts-ignore
@@ -6656,8 +6719,10 @@ var IDE = (function (exports) {
                         // RENAME FILES:
 
                         console.log('rename');
-                        if (tabs) {
-                            
+                        if (tabs && Object.keys(playgroundObject.fileStorage).length > 1 && !playgroundObject.fileStorage['app' + modeOptions.ext]) {
+
+                            // rename tabs:
+
                             [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
                                 if (modeOptions.ext && !element.innerText.endsWith(modeOptions.ext)) {                                
                                     element.innerText = element.innerText.replace('.js', '.ts');
@@ -6667,14 +6732,27 @@ var IDE = (function (exports) {
                                 }
                             });
 
-                            if (modeOptions.ext) {
-                                let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.js', '.ts')]: playgroundObject.fileStorage[k] }));
-                                playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
+                            // file name rename:
+
+                            const extensions = modeOptions.ext ? ['.js', '.ts'] : ['.ts', '.js'];
+
+                            let storageFiles = Object.keys(playgroundObject.fileStorage).map(
+                                k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
+                            );
+                            playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
+
+
+                            // imports refactoring:
+
+                            for (let file in playgroundObject.fileStorage) {
+                                if (typeof playgroundObject.fileStorage[file] === 'string') {
+                                    playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
+                                }
                             }
-                            else {
-                                let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.ts', '.js')]: playgroundObject.fileStorage[k] }));
-                                playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
-                            }
+                            
+                            let pos = editors[2].find(extensions[0] + "'");
+                            pos && editors[2].getSession().replace(pos, extensions[1] + "'");
+
                         }
                     });
 

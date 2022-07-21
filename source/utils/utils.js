@@ -1,5 +1,7 @@
 //@ts-check
 
+import { playgroundObject } from "../pageBuilder";
+
 export const commonStorage = sessionStorage;
 
 /**
@@ -27,6 +29,8 @@ export function debounce(func, delay) {
 
 
 /**
+ * extracts lang mode from code text
+ * 
  * @param {string} code
  * @returns {string|null}
  */
@@ -40,3 +44,22 @@ export function getLangMode(code)
 }
 
 
+/**
+ * @param {string} prevName
+ * @param {string} fullname
+ * @param {{ find: (arg0: string) => any; getSession: () => string; }} editor
+ */
+function renameOccurrences(prevName, fullname, editor) {
+    let fileStore = playgroundObject.fileStorage
+    fileStore[fullname] = fileStore[prevName];
+    delete fileStore[prevName];
+
+    for (let file in playgroundObject.fileStorage) {
+        if (typeof playgroundObject.fileStorage[file] === 'string') {
+            playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname);
+        }
+    }
+
+    let pos = editor.find(prevName + "'")
+    pos && editor.getSession().replace(pos, fullname + "'")
+}

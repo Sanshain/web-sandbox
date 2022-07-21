@@ -17,7 +17,7 @@ import { modes } from "./features/base.js";
 
 /**
  * @param {string[]} values
- * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?]}?} options
+ * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function}?} options
  * @returns {any[]}
  */
 export function initialize(values, options) {
@@ -35,6 +35,7 @@ export function initialize(values, options) {
     }
 
     playgroundObject.modes = options.modes;
+    playgroundObject.onfilerename = options.onfilerename
     const frameworkEnvironment = Object.values(compilers)[syntaxMode];
     
     // @ts-ignore
@@ -123,8 +124,10 @@ export function initialize(values, options) {
                     // RENAME FILES:
 
                     console.log('rename');
-                    if (tabs) {
-                        
+                    if (tabs && Object.keys(playgroundObject.fileStorage).length > 1 && !playgroundObject.fileStorage['app' + modeOptions.ext]) {
+
+                        // rename tabs:
+
                         [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
                             if (modeOptions.ext && !element.innerText.endsWith(modeOptions.ext)) {                                
                                 element.innerText = element.innerText.replace('.js', '.ts');
@@ -134,14 +137,27 @@ export function initialize(values, options) {
                             }
                         });
 
-                        if (modeOptions.ext) {
-                            let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.js', '.ts')]: playgroundObject.fileStorage[k] }));
-                            playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
+                        // file name rename:
+
+                        const extensions = modeOptions.ext ? ['.js', '.ts'] : ['.ts', '.js']
+
+                        let storageFiles = Object.keys(playgroundObject.fileStorage).map(
+                            k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
+                        );
+                        playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
+
+
+                        // imports refactoring:
+
+                        for (let file in playgroundObject.fileStorage) {
+                            if (typeof playgroundObject.fileStorage[file] === 'string') {
+                                playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
+                            }
                         }
-                        else {
-                            let storageFiles = Object.keys(playgroundObject.fileStorage).map(k => ({ [k.replace('.ts', '.js')]: playgroundObject.fileStorage[k] }));
-                            playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
-                        }
+                        
+                        let pos = editors[2].find(extensions[0] + "'")
+                        pos && editors[2].getSession().replace(pos, extensions[1] + "'")
+
                     }
                 })
 

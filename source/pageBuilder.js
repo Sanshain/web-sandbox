@@ -12,14 +12,15 @@ import { modes as baseModes } from "./features/base";
 export { compilers, babelCompiler };
 
 /**
- * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?]}}
+ * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function}}
  */
 export const playgroundObject = {
     editors: [],
     iframe: null,
     curUrl: null,
     fileStorage: { _active: 0 },
-    modes: null
+    modes: null,
+    onfilerename: null
 }
 
 

@@ -82,6 +82,8 @@ var pageBuilder = (function (exports) {
 
 
     /**
+     * extracts lang mode from code text
+     * 
      * @param {string} code
      * @returns {string|null}
      */
@@ -352,14 +354,15 @@ var pageBuilder = (function (exports) {
     // @ts-check
 
     /**
-     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?]}}
+     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function}}
      */
     const playgroundObject = {
         editors: [],
         iframe: null,
         curUrl: null,
         fileStorage: { _active: 0 },
-        modes: null
+        modes: null,
+        onfilerename: null
     };
 
 

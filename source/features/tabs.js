@@ -43,6 +43,59 @@ export function fileAttach(event) {
     //! Настройка переключения между табами:
 
     let origTab = target.parentElement.children[0];
+    origTab.ondblclick = function (e) {        
+
+        const prevName = e.target.innerText;
+        if (prevName.match(/app\.\ws/)) {
+            return;
+        }
+
+        let fileInfo = prevName.split('.')
+        let filename = prompt('Enter new file name:', fileInfo[0])
+        if (filename === fileInfo[0]) return;
+        else if (!filename) {
+            alert('Имя файла должно содержать буквы (хотя бы одну)')
+            return;
+        }
+        else {
+            let fullname = [filename, fileInfo[1]].join('.')
+
+
+
+            if (playgroundObject.onfilerename) {
+                renameOccurrences(prevName, fullname);
+                e.target.innerText = fullname;
+            }
+            else {
+                playgroundObject.onfilerename(e.target.innerText, fullname, () => {
+                    e.target.innerText = fullname;
+                    renameOccurrences(prevName, fullname)
+                });
+            }
+            
+            
+            /**
+             * 
+             * @param {string} prevName 
+             * @param {string} fullname 
+             */
+            function renameOccurrences (prevName, fullname) {
+                fileStore = playgroundObject.fileStorage
+                fileStore[fullname] = fileStore[prevName];
+                delete fileStore[prevName];
+
+                for (let file in playgroundObject.fileStorage) {
+                    if (typeof playgroundObject.fileStorage[file] === 'string') {
+                        playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname);
+                    }
+                }
+
+                let pos = editors[2].find(prevName + "'")
+                pos && editors[2].getSession().replace(pos, fullname + "'")
+            }
+
+        }
+    }
     origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
         let prevTab = document.querySelector('.tab.active');
         if (prevTab) {
@@ -80,19 +133,25 @@ export function fileAttach(event) {
             //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
             // }
 
-            if (!title.endsWith(prevTabName.split('.').pop())) {
+
+
+
+            // let actualExt = prevTabName.split('.').pop();
+            // if (!title.endsWith(actualExt)) {
                 
-                // autocomplete refactoring:
-                importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
+            //     // autocomplete refactoring:
+            //     importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
                 
-                // code refactoring:
-                // let importFilename = importSnippet.template.split('from ').pop()
-                // console.log('importFilename', importFilename);
-                fileStore[ev.target.innerText] = fileStore[ev.target.innerText].replace(title + "'", prevTabName + "'");
+            //     // code refactoring:
+            //     // let importFilename = importSnippet.template.split('from ').pop()
+            //     // console.log('importFilename', importFilename);
+            //     fileStore['app.' + actualExt] = fileStore['app.' + actualExt].replace(title + "'", prevTabName + "'");
                 
-                //@ts-ignore
-                title = prevTabName;
-            }
+            //     //@ts-ignore
+            //     title = prevTabName;
+            // }
+
+
 
 
             // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');

@@ -59,6 +59,7 @@
             line-height: 1.6em; 
             padding: 0 0.75em;       
             margin-right: .9em;    
+            user-select: none;
         }
         .tab.active{
             color: azure;
@@ -291,7 +292,10 @@
             ],
             onControlSave: function (event) {
                 // alert(99)
-            },            
+            }, 
+            onfilerename: function(e) {
+                alert(99)
+            }
         });
 
 
