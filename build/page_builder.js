@@ -6811,12 +6811,15 @@ var IDE = (function (exports) {
         terminal.onclick = () => {
             
             const logContainer = document.querySelector('.console');
+            const play = document.querySelector('.play');
             //@ts-ignore
             if (logContainer && !logContainer.classList.toggle('hidden'))
             {
                 let input = logContainer.querySelector('input');
                 input.focus();
             }
+
+            play.classList.toggle('hidden');
         };
 
 

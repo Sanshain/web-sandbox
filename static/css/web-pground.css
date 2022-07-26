@@ -221,7 +221,8 @@ iframe {
     }
 
     #jseditor {
-        padding-bottom: 40vh;
+        /* padding-bottom: 40vh; */
+        margin-bottom: 38vh;
     }
 
     .view {
@@ -347,4 +348,49 @@ iframe {
 
 .hidden{
     display: none;
+}
+
+.console .close{
+    --size: 1.8em;
+    width           : var(--size);
+    height          : var(--size);
+    transform       : rotate(45deg);
+    position        : absolute;
+    top             : 0.5em;
+    right           : 0.7em;
+    border-radius   : 1em;
+    background-color: #ccc;
+    text-align      : center;
+    line-height     : var(--size);
+    font-weight     : 700;
+    color           : aliceblue;
+    box-shadow      : 0 0 15px aliceblue;
+    cursor: pointer;
+}
+
+
+@media screen and (max-width: 600px) {
+    
+    .terminal{
+        z-index: 1;
+        right: 1.5em;
+    }
+
+
+    .console{
+        position: fixed;
+        height  : 60.1%;
+        top     : 0;
+        width   : 100.2%;
+    }
+
+    /* .console input {
+        bottom: 4em;
+    }
+    .console .send{
+        bottom: 5.4em;
+    }
+    .console .lines{
+        height: calc(100% - 6em);
+    } */
 }

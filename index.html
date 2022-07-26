@@ -213,7 +213,7 @@
         <div class="view">            
             <div class="expand" data-title="Expand"></div>
             <div class="console hidden">
-
+                <div class="close" onclick="this.parentElement.classList.toggle('hidden')">+</div>
                 <div class="lines"></div>
                 <input type="text" onkeydown="evalCode(event)" placeholder="Введите выражение для вычислений">
                 <div class="send" onclick="evalCode({key: 'Enter', target: this.previousElementSibling})"></div>
