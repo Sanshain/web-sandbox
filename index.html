@@ -213,10 +213,15 @@
         <div class="view">            
             <div class="expand" data-title="Expand"></div>
             <div class="console hidden">
-                <div class="close" onclick="this.parentElement.classList.toggle('hidden')">+</div>
+                <div class="close" onclick="this.parentElement.classList.toggle('hidden'); document.querySelector('.play').classList.remove('hidden');">+</div>
                 <div class="lines"></div>
-                <input type="text" onkeydown="evalCode(event)" placeholder="Введите выражение для вычислений">
+                <input type="text" list='console__log__list' onkeydown="evalCode(event)" placeholder="Введите выражение для вычислений">
                 <div class="send" onclick="evalCode({key: 'Enter', target: this.previousElementSibling})"></div>
+
+                <datalist id='console__log__list'>
+                    <!-- <option value="document.querySelector("></option>
+                    <option value="document.querySelectorAll("></option> -->
+                </datalist>
             </div>
         </div>
 

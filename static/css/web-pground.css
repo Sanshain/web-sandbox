@@ -379,7 +379,8 @@ iframe {
 
     .console{
         position: fixed;
-        height  : 60.1%;
+        /* height  : 60.1%; */
+        height  : 100%;
         top     : 0;
         width   : 100.2%;
     }
