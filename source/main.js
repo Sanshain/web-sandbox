@@ -17,7 +17,7 @@ import { modes } from "./features/base.js";
 
 /**
  * @param {string[]} values
- * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function}?} options
+ * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (s: string) => void}?} options
  * @returns {any[]}
  */
 export function initialize(values, options) {
@@ -36,6 +36,7 @@ export function initialize(values, options) {
 
     playgroundObject.modes = options.modes;
     playgroundObject.onfilerename = options.onfilerename
+    playgroundObject.onfileRemove = options.onfileRemove
     const frameworkEnvironment = Object.values(compilers)[syntaxMode];
     
     // @ts-ignore

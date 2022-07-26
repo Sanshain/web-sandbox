@@ -45,7 +45,7 @@
             position: absolute;
             top: 43.6vh;
             background-color: transparent;
-            left: 3.5em;
+            left: 2.5em;
             top: 43.4vh;
             /* display: none; */
 
@@ -56,8 +56,8 @@
             margin-left: 2em;     
             
             overflow: auto;
-            height: 20.8px;
-            max-width: 79.1vw;
+            height: 20.8px;            
+            max-width: 42vw;
             white-space: nowrap;         
             
             /* overflow: -moz-scrollbars-none; */
@@ -182,7 +182,8 @@
             .tabs {
                 /* display: none; */
                 top: 89.7vh;
-                left: 1.5em;                
+                left: 1.5em;               
+                max-width: 79.1vw; 
             }
             .settings{
                 right: .8em;
@@ -364,6 +365,9 @@
             }, 
             onfilerename: function(e) {
                 alert(99)
+            },
+            onfileRemove: function(name) {
+                
             }
         });
 

@@ -395,3 +395,22 @@ iframe {
         height: calc(100% - 6em);
     } */
 }
+
+
+
+.context_menu{
+    position: fixed;
+    background-color: azure;    
+    min-width       : 7em;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: small;
+    opacity: 0.9;
+}
+.context_menu>div{
+    cursor: pointer;
+    padding : 3px 1em;
+}
+
+.context_menu>div:hover{
+    background-color: #ccc;
+}

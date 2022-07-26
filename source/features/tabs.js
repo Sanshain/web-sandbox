@@ -4,6 +4,20 @@ import { playgroundObject } from "../pageBuilder";
 import { autocompleteExpand, keyWords } from "../utils/autocompletion";
 
 
+
+const menuPoints = {
+    'Удалить': (e) => {
+        if (confirm('Вы уверены, что хотите удалить файл `' + e.target.innerText + '`'))
+        {
+            playgroundObject.onfileRemove(e.target.innerText + '');
+            delete playgroundObject.fileStorage[e.target.innerText];
+            e.target.parentElement.removeChild(e.target);
+        }
+    }
+}
+
+
+
 // var fileStore = { _active: 0 };
 
 /**
@@ -199,6 +213,40 @@ export function fileAttach(event) {
     newTab.style.marginRight = '1.25em';
     newTab.onclick = origTab.onclick;
     newTab.ondblclick = origTab.ondblclick;
+
+    if (playgroundObject.onfileRemove) {
+        newTab.oncontextmenu = (/** @type {{ target: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} */ e) => {
+
+            let contextMenu = document.querySelector('.context_menu');
+            if (contextMenu) contextMenu.classList.remove('hidden')
+            else {
+                contextMenu = document.body.appendChild(document.createElement('div'));
+                contextMenu.className = 'context_menu';
+                Object.keys(menuPoints).forEach(key => {
+                    let point = contextMenu.appendChild(document.createElement('div'))
+                    point.innerText = key;
+                    point.addEventListener('click', () => {
+
+                        contextMenu.classList.toggle('hidden');
+                        setTimeout(() => {
+                            menuPoints[key] && menuPoints[key](e)                                                        
+                        })
+                    })
+                })
+            }
+
+            console.log(e);
+
+
+            //@ts-ignore
+            contextMenu.style.left = e.clientX + 'px';
+            //@ts-ignore
+            contextMenu.style.top = e.clientY + 5 + 'px';
+
+            return false;
+        }
+    }
+
 
     if (!event.file) {
         fileStore[origTab.innerText] = editors[2].getValue();

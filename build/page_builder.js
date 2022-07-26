@@ -5063,7 +5063,7 @@ var IDE = (function (exports) {
     // @ts-check
 
     /**
-     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function}}
+     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (name: string) => void}}
      */
     const playgroundObject = {
         editors: [],
@@ -5071,7 +5071,8 @@ var IDE = (function (exports) {
         curUrl: null,
         fileStorage: { _active: 0 },
         modes: null,
-        onfilerename: null
+        onfilerename: null,
+        onfileRemove: null
     };
 
 
@@ -6396,6 +6397,20 @@ var IDE = (function (exports) {
     //@ts-check
 
 
+
+    const menuPoints = {
+        'Удалить': (e) => {
+            if (confirm('Вы уверены, что хотите удалить файл `' + e.target.innerText + '`'))
+            {
+                playgroundObject.onfileRemove(e.target.innerText + '');
+                delete playgroundObject.fileStorage[e.target.innerText];
+                e.target.parentElement.removeChild(e.target);
+            }
+        }
+    };
+
+
+
     // var fileStore = { _active: 0 };
 
     /**
@@ -6592,6 +6607,40 @@ var IDE = (function (exports) {
         newTab.onclick = origTab.onclick;
         newTab.ondblclick = origTab.ondblclick;
 
+        if (playgroundObject.onfileRemove) {
+            newTab.oncontextmenu = (/** @type {{ target: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} */ e) => {
+
+                let contextMenu = document.querySelector('.context_menu');
+                if (contextMenu) contextMenu.classList.remove('hidden');
+                else {
+                    contextMenu = document.body.appendChild(document.createElement('div'));
+                    contextMenu.className = 'context_menu';
+                    Object.keys(menuPoints).forEach(key => {
+                        let point = contextMenu.appendChild(document.createElement('div'));
+                        point.innerText = key;
+                        point.addEventListener('click', () => {
+
+                            contextMenu.classList.toggle('hidden');
+                            setTimeout(() => {
+                                menuPoints[key] && menuPoints[key](e);                                                        
+                            });
+                        });
+                    });
+                }
+
+                console.log(e);
+
+
+                //@ts-ignore
+                contextMenu.style.left = e.clientX + 'px';
+                //@ts-ignore
+                contextMenu.style.top = e.clientY + 5 + 'px';
+
+                return false;
+            };
+        }
+
+
         if (!event.file) {
             fileStore[origTab.innerText] = editors[2].getValue();
             fileStore[newTab.innerText] = '';                   // create new
@@ -6625,7 +6674,7 @@ var IDE = (function (exports) {
 
     /**
      * @param {string[]} values
-     * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function}?} options
+     * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (s: string) => void}?} options
      * @returns {any[]}
      */
     function initialize(values, options) {
@@ -6644,6 +6693,7 @@ var IDE = (function (exports) {
 
         playgroundObject.modes = options.modes;
         playgroundObject.onfilerename = options.onfilerename;
+        playgroundObject.onfileRemove = options.onfileRemove;
         const frameworkEnvironment = Object.values(compilers)[syntaxMode];
         
         // @ts-ignore

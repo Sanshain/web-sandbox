@@ -354,7 +354,7 @@ var pageBuilder = (function (exports) {
     // @ts-check
 
     /**
-     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function}}
+     * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (name: string) => void}}
      */
     const playgroundObject = {
         editors: [],
@@ -362,7 +362,8 @@ var pageBuilder = (function (exports) {
         curUrl: null,
         fileStorage: { _active: 0 },
         modes: null,
-        onfilerename: null
+        onfilerename: null,
+        onfileRemove: null
     };
 
 

@@ -12,7 +12,7 @@ import { modes as baseModes } from "./features/base";
 export { compilers, babelCompiler };
 
 /**
- * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function}}
+ * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (name: string) => void}}
  */
 export const playgroundObject = {
     editors: [],
@@ -20,7 +20,8 @@ export const playgroundObject = {
     curUrl: null,
     fileStorage: { _active: 0 },
     modes: null,
-    onfilerename: null
+    onfilerename: null,
+    onfileRemove: null
 }
 
 
