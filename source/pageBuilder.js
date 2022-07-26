@@ -144,9 +144,22 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         }
 
         // 
-        let globalReinitializer = generateGlobalInintializer(code)
+        let globalReinitializer = generateGlobalInintializer(code);
 
-        return 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+        // customLOG
+        document.querySelector('.console .lines').innerHTML = '';
+
+        function customLOG(/** @type {string} */ value) {
+            let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));            
+            line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
+            console.log([].slice.call(arguments).join())
+        }
+
+        code = 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+
+        code = customLOG.toString() + '\n\n' + code.replace(/console.log/g, 'customLOG');
+
+        return code;
     }
 
 

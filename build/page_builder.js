@@ -5197,7 +5197,20 @@ var IDE = (function (exports) {
             // 
             let globalReinitializer = generateGlobalInintializer(code);
 
-            return 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+            // customLOG
+            document.querySelector('.console .lines').innerHTML = '';
+
+            function customLOG(/** @type {string} */ value) {
+                let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));            
+                line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
+                console.log([].slice.call(arguments).join());
+            }
+
+            code = 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+
+            code = customLOG.toString() + '\n\n' + code.replace(/console.log/g, 'customLOG');
+
+            return code;
         };
 
 
@@ -6651,6 +6664,12 @@ var IDE = (function (exports) {
         let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);
 
         
+
+        /**
+         * Choice arg settings:
+         */
+
+
         
         if (options.modes) {
             customElements.define('choice-menu', ChoiceMenu);
@@ -6784,6 +6803,21 @@ var IDE = (function (exports) {
         }
 
 
+        /**
+         * terminal button:
+         */
+        let terminal = editors[2].container.appendChild(document.createElement('div'));
+        terminal.className = 'terminal';
+        terminal.onclick = () => {
+            
+            const logContainer = document.querySelector('.console');
+            //@ts-ignore
+            if (logContainer && !logContainer.classList.toggle('hidden'))
+            {
+                let input = logContainer.querySelector('input');
+                input.focus();
+            }
+        };
 
 
 

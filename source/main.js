@@ -56,6 +56,12 @@ export function initialize(values, options) {
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
 
     
+
+    /**
+     * Choice arg settings:
+     */
+
+
     
     if (options.modes) {
         customElements.define('choice-menu', ChoiceMenu);
@@ -189,6 +195,21 @@ export function initialize(values, options) {
     }
 
 
+    /**
+     * terminal button:
+     */
+    let terminal = editors[2].container.appendChild(document.createElement('div'));
+    terminal.className = 'terminal'
+    terminal.onclick = () => {
+        
+        const logContainer = document.querySelector('.console');
+        //@ts-ignore
+        if (logContainer && !logContainer.classList.toggle('hidden'))
+        {
+            let input = logContainer.querySelector('input');
+            input.focus()
+        }
+    }
 
 
 
