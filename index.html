@@ -53,7 +53,19 @@
             /* opacity: 0; */
             transform: perspective(var(--perspective)) rotateX(90deg);  
             transform-origin: 50% 100%;            
-            margin-left: 2em;            
+            margin-left: 2em;     
+            
+            overflow: auto;
+            height: 20.8px;
+            max-width: 79.1vw;
+            white-space: nowrap;         
+            
+            /* overflow: -moz-scrollbars-none; */
+            scrollbar-width: none;  
+        }
+        .tabs::-webkit-scrollbar{
+            /* width: 0; */
+            display: none;
         }
         .tab{
             font-size: small;
