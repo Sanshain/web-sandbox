@@ -6615,6 +6615,8 @@ var IDE = (function (exports) {
                 else {
                     contextMenu = document.body.appendChild(document.createElement('div'));
                     contextMenu.className = 'context_menu';
+                    //@ts-ignore
+                    contextMenu.tabIndex = 0;
                     Object.keys(menuPoints).forEach(key => {
                         let point = contextMenu.appendChild(document.createElement('div'));
                         point.innerText = key;
@@ -6626,6 +6628,10 @@ var IDE = (function (exports) {
                             });
                         });
                     });
+                    //@ts-ignore
+                    contextMenu.onblur = function() {
+                        contextMenu.classList.add('hidden');
+                    };
                 }
 
                 console.log(e);
@@ -6635,6 +6641,8 @@ var IDE = (function (exports) {
                 contextMenu.style.left = e.clientX + 'px';
                 //@ts-ignore
                 contextMenu.style.top = e.clientY + 5 + 'px';
+                //@ts-ignore
+                contextMenu.focus();
 
                 return false;
             };
