@@ -83,7 +83,8 @@
     top             : 43.4vh;
     /* display      : none; */
 
-    transition      : .7s linear;
+    /* transition      : .7s linear; */
+    transition      : transform .7s linear, top 0s;
     /* opacity      : 0; */
     transform       : perspective(var(--perspective)) rotateX(90deg);
     transform-origin: 50% 100%;

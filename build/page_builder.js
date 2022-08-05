@@ -6312,15 +6312,19 @@ var IDE = (function (exports) {
     //@ts-ignore
     window.__debug && console.log(paddingTop);
 
+
+    let tabs = null;
+
     /**
      * Initialize resize lines
      */
-    function initResizers() {        
+    function initResizers() {    
 
         container.addEventListener('mousedown', function (event) {
             if (event.target === hrSplitter) {
 
                 hoSeized = true;
+                tabs = document.querySelector('.tabs');
                 // let iframe = editionView.querySelector('iframe');
                 // iframe.contentDocument.onmouseup = function (event) { seized = false; };
             }
@@ -6338,8 +6342,8 @@ var IDE = (function (exports) {
         });
         container.addEventListener('mouseup', function (event) {
             if (hoSeized || allSeized) {
-                //@ts-ignore
-                editors.forEach(function(elem) {
+                
+                playgroundObject.editors.forEach(function(/** @type {{ resize: () => void; }} */ elem) {
                     elem.resize();
                     console.log('resize...');
                 });
@@ -6347,11 +6351,15 @@ var IDE = (function (exports) {
             hoSeized = vertSeized = allSeized = false;
             console.log('ok');
         });
-        container.addEventListener('mousemove', function (event) {
+        
+        container.addEventListener('mousemove', function(event) {
 
+            //@ts-ignore
             if (hoSeized) hTune(event);
+            //@ts-ignore
             else if (vertSeized) vTune(event);
             else if (allSeized) {
+                //@ts-ignore
                 hTune(event) ;
             }
         });
@@ -6359,6 +6367,9 @@ var IDE = (function (exports) {
 
 
 
+    /**
+     * @param {MouseEvent} event
+     */
     function hTune(event) {
         
         let marginTop = headerHeight;    
@@ -6381,9 +6392,21 @@ var IDE = (function (exports) {
         //@ts-ignore
         jsEditor.style.height = editionView.style.height = lowerHeight;
         
+        // выравниваем вкладки: 
+        if (tabs) {
+            // console.log(tabs.offsetHeight);
+            // console.log(headerHeight);
+            
+            //@ts-ignore
+            tabs.style.top = event.clientY - tabs.offsetHeight + 5 - container.offsetTop + 'px';        
+        }
+
         return true;
     }
 
+    /**
+     * @param {MouseEvent} event
+     */
     function vTune(event) {
         let pref = 14;
         let prefLine = 10;

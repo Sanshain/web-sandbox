@@ -60,7 +60,7 @@
   left: 2.5em;
   top: 43.4vh;
   /* display      : none; */
-  transition: 0.7s linear;
+  transition: transform 0.7s linear, top 0s;
   /* opacity      : 0; */
   transform: perspective(300px) rotateX(90deg);
   transform-origin: 50% 100%;
