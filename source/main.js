@@ -91,7 +91,7 @@ export function initialize(values, options) {
                 
                     // MULTITABS MODE:
                 
-                    // if (mode[e.detail.value].tabs)
+                    if (i && i - 1)
                     {
                         const multitabs = modeOptions && modeOptions.tabs;
                         var tabs = document.querySelector('.tabs');  //  + (multitabs ? '' : '.enabled')                        
