@@ -130,7 +130,7 @@ export class ChoiceMenu extends HTMLElement {
             // console.log(this.checkedElement);
 
             this.checkedElement.style.top = element.offsetTop + this.offsetHeight + 2 + 'px'
-            this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ? 
+            this.checkedElement.style.right = this.rootElement.offsetWidth - 20 + 'px';  // ? + (16 * 4)  
         })
     }
 
@@ -183,6 +183,7 @@ export class ChoiceMenu extends HTMLElement {
 
                     ::slotted(ul), ul{
                         margin: 0;
+                        padding-left: 0;
                         position: absolute;
                         top: 100%;
                         right: .1em;
@@ -211,7 +212,7 @@ export class ChoiceMenu extends HTMLElement {
 
                     .selected::after, .checked{
                         content: '';
-                        background: url(static/images/check_mark.svg) no-repeat;
+                        background: url(/static/images/check_mark.svg) no-repeat;
                         background-size: contain;
                         width: 1em;
                         height: 2em;

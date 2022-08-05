@@ -238,6 +238,8 @@ iframe {
 }
 
 
+/* terminal: */
+
 .terminal{
     background     : url(/static/images/terminal.svg) no-repeat;
     
@@ -264,7 +266,7 @@ iframe {
 
 
 
-
+/* console: */
 
 .console{
     width : 100%;
@@ -350,6 +352,9 @@ iframe {
     display: none;
 }
 
+
+/* settings: */
+
 .console .close{
     --size: 1.8em;
     width           : var(--size);
@@ -369,6 +374,32 @@ iframe {
 }
 
 
+
+.settings {
+    position       : absolute;
+    top            : .5em;
+    right          : .5em;
+    width          : 1.5em;
+    height         : 1.5em;
+    opacity        : .3;
+    cursor         : pointer;    
+    background-size: contain !important;
+    transition     : .5s;
+    z-index        : 5;
+}
+
+.settings:hover {
+    opacity: .6;
+}
+
+.settings ul {
+    font-family   : 'Courier New', Courier, monospace;
+    position: absolute;
+    /* font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; */
+}
+
+
+
 @media screen and (max-width: 600px) {
     
     .terminal{
@@ -385,6 +416,10 @@ iframe {
         width   : 100.2%;
     }
 
+    .settings {
+        right: .8em;
+    }    
+
     /* .console input {
         bottom: 4em;
     }
@@ -397,6 +432,7 @@ iframe {
 }
 
 
+/* context-menu: */
 
 .context_menu{
     position: fixed;
@@ -414,3 +450,5 @@ iframe {
 .context_menu>div:hover{
     background-color: #ccc;
 }
+
+

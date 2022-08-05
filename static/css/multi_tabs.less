@@ -1,0 +1,123 @@
+
+@tab_margin       : 1.25em;
+@top_border_radius: .5em;
+@tab_color        : gray;
+
+@perspective: 300px;
+// :root {
+//     --perspective: 300px;
+// }
+
+
+.md_container{
+    .tabs {
+        background-color: white;
+        position        : relative;
+        width           : fit-content;
+    }
+
+    .tabs::after {
+        content         : '';
+        background-color: @tab_color;
+        position        : absolute;
+        /* top          : 0; */
+        bottom          : 0;
+        left            : 0;
+        right           : 0;
+        height          : .6em;
+        border-radius   : 1em;
+        /* z-index      : -1; */
+    }
+
+
+    .tab {
+        display         : inline-block;
+        background-color: @tab_color;
+        padding         : 0 0.5em 0;
+        border-radius   : .5em .5em 0 0;
+        margin-right    : 1em;
+        position        : relative;
+        z-index         : 2;
+        cursor          : pointer;
+        font-family     : Arial, Helvetica, sans-serif;
+    }
+
+    .tab::before {
+        position        : absolute;
+        content         : '';
+        bottom          : 0;
+        right           : -@tab_margin;
+        height          : .8em;
+        width           : @tab_margin;
+        background-color: white;
+
+        /* opacity: .5; */
+        /* background-color: red; */
+
+        border-radius: 0 0 .75em .75em;
+        z-index      : 3;
+    }
+
+    .tab:hover {
+        color: antiquewhite;
+    }
+
+    .tab:focus {
+        color: azure;
+    }
+
+
+
+    /* re tabs: */
+
+    .tabs.enabled {
+        /* display: block; */
+
+        /* opacity: 1;                  */        
+        transform: perspective(~"@{perspective}") rotateX(0);        
+    }
+
+    .tabs {
+        position        : absolute;
+        top             : 43.6vh;
+        background-color: transparent;
+        left            : 2.5em;
+        top             : 43.4vh;
+        /* display      : none; */
+        transition : .7s linear;
+        
+        /* opacity      : 0; */
+        transform       : perspective(@perspective) rotateX(90deg);
+        transform-origin: 50% 100%;
+        margin-left     : 2em;
+
+        overflow   : auto;
+        height     : 20.8px;
+        max-width  : 42vw;
+        white-space: nowrap;
+
+        /* overflow: -moz-scrollbars-none; */
+        scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        /* width: 0; */
+        display: none;
+    }
+
+    .tab {
+        font-size   : small;
+        line-height : 1.6em;
+        padding     : 0 0.75em;
+        margin-right: .9em;
+        user-select : none;
+    }
+
+    .tab.active {
+        color: azure;
+    }
+
+    .tab::before {
+        background-color: #292929;
+    }    
+}

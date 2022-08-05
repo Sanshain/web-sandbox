@@ -94,8 +94,10 @@ export function initialize(values, options) {
                     // if (mode[e.detail.value].tabs)
                     {
                         const multitabs = modeOptions && modeOptions.tabs;
-                        var tabs = document.querySelector('.tabs');  //  + (multitabs ? '' : '.enabled')
+                        var tabs = document.querySelector('.tabs');  //  + (multitabs ? '' : '.enabled')                        
                         if (tabs) {
+                            //@ts-ignore
+                            tabs.style.transition = null;
                             if (multitabs && !tabs.classList.contains('enabled')) {
                                 tabs.classList.add('enabled')
                             }

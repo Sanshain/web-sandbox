@@ -228,7 +228,7 @@ var pageBuilder = (function (exports) {
                 // console.log(this.checkedElement);
 
                 this.checkedElement.style.top = element.offsetTop + this.offsetHeight + 2 + 'px';
-                this.checkedElement.style.right = this.rootElement.offsetWidth - (16 * 4) + 5 + 'px';  // ? 
+                this.checkedElement.style.right = this.rootElement.offsetWidth - 20 + 'px';  // ? + (16 * 4)  
             });
         }
 
@@ -281,6 +281,7 @@ var pageBuilder = (function (exports) {
 
                     ::slotted(ul), ul{
                         margin: 0;
+                        padding-left: 0;
                         position: absolute;
                         top: 100%;
                         right: .1em;
@@ -309,7 +310,7 @@ var pageBuilder = (function (exports) {
 
                     .selected::after, .checked{
                         content: '';
-                        background: url(static/images/check_mark.svg) no-repeat;
+                        background: url(/static/images/check_mark.svg) no-repeat;
                         background-size: contain;
                         width: 1em;
                         height: 2em;
@@ -372,7 +373,7 @@ var pageBuilder = (function (exports) {
      */
     function createHtml({ body, style, script, link }, attrs) {
 
-        // console.log(arguments);
+        // globalThis.__debug && console.log(arguments);
 
         const htmlStruct = {
             html: {
@@ -435,7 +436,7 @@ var pageBuilder = (function (exports) {
         
         let _fs = (playgroundObject.fileStorage || window['fileStore'] || {});
         let appCode = _fs['app.js'] || _fs['app.ts'] || playgroundObject.fileStorage[undefined + ''];
-        // console.log('appCode');
+        // globalThis.__debug && console.log('appCode');
 
 
         const langMode = getLangMode(appCode);
@@ -471,10 +472,9 @@ var pageBuilder = (function (exports) {
 
             // convert to js:   
 
-
             if (window['simplestBundler']) {
                 code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
-                console.log('build...');
+                globalThis.__debug && console.log('build...');
             }
             else {
                 console.warn('bundler is absent');
@@ -489,18 +489,22 @@ var pageBuilder = (function (exports) {
             // 
             let globalReinitializer = generateGlobalInintializer(code);
 
-            // customLOG
-            document.querySelector('.console .lines').innerHTML = '';
-
-            function customLOG(/** @type {string} */ value) {
-                let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));            
-                line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
-                console.log([].slice.call(arguments).join());
-            }
-
             code = 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
 
-            code = customLOG.toString() + '\n\n' + code.replace(/console.log/g, 'customLOG');
+            // customLOG
+            const logJar = document.querySelector('.console .lines');
+            if (logJar) {
+
+                logJar.innerHTML = '';
+
+                function customLOG(/** @type {string} */ value) {
+                    let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));
+                    line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
+                    globalThis.__debug && console.log([].slice.call(arguments).join());
+                }
+
+                code = customLOG.toString() + '\n\n' + code.replace(/globalThis.__debug && console.log/g, 'customLOG');
+            }        
 
             return code;
         };
@@ -515,9 +519,6 @@ var pageBuilder = (function (exports) {
         const attrs = {
             script: scriptType
         };
-
-
-        console.log(777777777777777789);
 
         // compilerSubModes дополняем:
         if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
@@ -536,7 +537,10 @@ var pageBuilder = (function (exports) {
                 }
                 
                 if (actualMode && actualMode.target) {
+                    
+                    /// possibility change style tag to link tag:
                     if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
+
                     if (actualMode.target.outline) {
                         // create link
                         let blob = new Blob([editors[i].getValue()], { type: 'text/' + modes[i] });
@@ -549,6 +553,7 @@ var pageBuilder = (function (exports) {
         });
 
         
+        /// TODO? @import 'style.css' to style html tag from link file?
         
         let htmlContent = baseTags.reduce((acc, el, i, arr) => (
             (
@@ -566,14 +571,14 @@ var pageBuilder = (function (exports) {
                 optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
             }
         }
-        // console.log(htmlContent);    
+        // globalThis.__debug && console.log(htmlContent);    
 
 
         // @ts-ignore
-        console.log('html');
+        globalThis.__debug && console.log('html');
         let html = createHtml(htmlContent, attrs);
 
-        console.log(optionalScripts);
+        globalThis.__debug && console.log(optionalScripts);
         html = html.replace('</head>', optionalScripts + '</head>');
         html = html.replace('<head>', '<head><meta charset="UTF-8">');
 
@@ -604,10 +609,10 @@ var pageBuilder = (function (exports) {
      */
     function webCompile(jsxMode, compilerModes) {
 
-        console.log('compile');
+        globalThis.__debug && console.log('compile');
 
         // [iframe, curUrl] = createPage(curUrl);
-        // console.log(iframe);
+        // globalThis.__debug && console.log(iframe);
 
 
 
@@ -616,7 +621,14 @@ var pageBuilder = (function (exports) {
 
         const fileStorage = playgroundObject.fileStorage || window['fileStore'];
         //@ts-ignore
-        if (Object.keys(fileStorage || {}).length) fileStorage[document.querySelector('.tabs .tab.active').innerText] = editors[2].getValue();
+        if (Object.keys(fileStorage || {}).length) {
+            let activeTab = document.querySelector('.tabs .tab.active');
+            //@ts-ignore
+            if (activeTab) fileStorage[activeTab.innerText] = editors[2].getValue();
+            // else {
+            //     fileStorage[undefined + ''] = editors[2].getValue()
+            // }
+        }
 
 
 
@@ -637,8 +649,8 @@ var pageBuilder = (function (exports) {
             
             let script = iframe.contentDocument.createElement('script');
             
-            console.log(jsxMode);
-            console.log(compilerModes);
+            globalThis.__debug && console.log(jsxMode);
+            globalThis.__debug && console.log(compilerModes);
 
             if (jsxMode) {
                 
@@ -663,8 +675,8 @@ var pageBuilder = (function (exports) {
             // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
         }
         else {
-            // console.log(compilerMode);
-            // console.log(Object.values(compilers)[compilerMode]);
+            // globalThis.__debug && console.log(compilerMode);
+            // globalThis.__debug && console.log(Object.values(compilers)[compilerMode]);
             // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
             let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined);
             playgroundObject.iframe = iframe;
@@ -696,7 +708,7 @@ var pageBuilder = (function (exports) {
 
             // js multitabs:
             (commonStorage || localStorage).setItem('_modules', JSON.stringify(modulesStore));
-            console.log('save modules...');
+            globalThis.__debug && console.log('save modules...');
         }
 
         // document.getElementById('compiler_mode')

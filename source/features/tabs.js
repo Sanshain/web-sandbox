@@ -56,8 +56,14 @@ export function fileAttach(event) {
 
     //! Настройка переключения между табами:
 
-    let origTab = target.parentElement.children[0];
-    origTab.ondblclick = function (e) {        
+    let origTab = target.parentElement.querySelector('.tab.active') || target.parentElement.children[0];
+    
+    /**
+     * Rename existing file
+     * @param {MouseEvent} e 
+     * @returns 
+     */
+    origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ e) {        
 
         const prevName = e.target.innerText;
         if (prevName.match(/app\.\ws/)) {
@@ -110,6 +116,12 @@ export function fileAttach(event) {
 
         }
     }
+
+    /**
+     * Toggle tabs
+     * @param {MouseEvent} ev
+     * @returns
+     */
     origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
         let prevTab = document.querySelector('.tab.active');
         if (prevTab) {
@@ -257,6 +269,7 @@ export function fileAttach(event) {
 
 
     if (!event.file) {
+        console.log('oooooooooooo');
         fileStore[origTab.innerText] = editors[2].getValue();
         fileStore[newTab.innerText] = '';                   // create new
         editors[2].setValue(fileStore[newTab.innerText]);

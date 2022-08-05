@@ -30,56 +30,7 @@
             background-color: gray;
             cursor: pointer;            
         }
-
-        :root{
-            --perspective: 300px;
-        }
-
-        .tabs.enabled{
-            /* display: block; */
-
-            /* opacity: 1;                  */
-            transform: perspective(var(--perspective)) rotateX(0);            
-        }
-        .tabs{
-            position: absolute;
-            top: 43.6vh;
-            background-color: transparent;
-            left: 2.5em;
-            top: 43.4vh;
-            /* display: none; */
-
-            transition: .7s linear;
-            /* opacity: 0; */
-            transform: perspective(var(--perspective)) rotateX(90deg);  
-            transform-origin: 50% 100%;            
-            margin-left: 2em;     
-            
-            overflow: auto;
-            height: 20.8px;            
-            max-width: 42vw;
-            white-space: nowrap;         
-            
-            /* overflow: -moz-scrollbars-none; */
-            scrollbar-width: none;  
-        }
-        .tabs::-webkit-scrollbar{
-            /* width: 0; */
-            display: none;
-        }
-        .tab{
-            font-size: small;
-            line-height: 1.6em; 
-            padding: 0 0.75em;       
-            margin-right: .9em;    
-            user-select: none;
-        }
-        .tab.active{
-            color: azure;
-        }
-        .tab::before{
-            background-color:#292929;
-        }
+        
 
         /* meta position */
         .ace_completion-meta{
@@ -145,24 +96,7 @@
 
 
         .settings{
-            position: absolute;
-            top: .5em;
-            right: .5em;
-            width: 1.5em;
-            height: 1.5em;
-            opacity: .3;
-            cursor: pointer;  
-            background: url(static/images/settings.svg) no-repeat;
-            background-size: contain;          
-            transition: .5s;       
-            z-index: 5;     
-        }
-        .settings:hover{
-            opacity: .6;
-        }
-        .settings ul{
-            font-family: 'Courier New', Courier, monospace;            
-            /* font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; */
+            background     : url(static/images/settings.svg) no-repeat;            
         }
 
         .expand{
@@ -185,9 +119,7 @@
                 left: 1.5em;               
                 max-width: 79.1vw; 
             }
-            .settings{
-                right: .8em;
-            }
+
         }
 
     
@@ -274,7 +206,7 @@
     <script>
 
 
-        function evalCode(event) {            
+        function evalCode(event) {
             if (event.key == 'Enter'){
                 let iframe = document.querySelector('iframe');                
 
