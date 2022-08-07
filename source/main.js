@@ -61,7 +61,11 @@ export function initialize(values, options) {
         storage: commonStorage
     }
 
-    if (options.additionalFiles) { values[3] = options.additionalFiles }
+    if (options.additionalFiles) {
+        //@ts-ignore
+        values = values || [];
+        values[3] = options.additionalFiles
+    }
 
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)

@@ -82,7 +82,7 @@ export function fileAttach(event) {
 
 
 
-            if (playgroundObject.onfilerename) {
+            if (!playgroundObject.onfilerename) {
                 renameOccurrences(prevName, fullname);
                 e.target.innerText = fullname;
             }
@@ -204,9 +204,9 @@ export function fileAttach(event) {
 
         editors[2].setValue(fileStore[ev.target.innerText]);
 
-        console.log('toggle tab...');    
+        globalThis.__debug && console.log('toggle tab...');    
 
-        console.log(fileStore[ev.target.innerText].split('\n').length);
+        // console.log(fileStore[ev.target.innerText].split('\n').length);
         editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1)
         editors[2].focus();        
     }
@@ -291,6 +291,7 @@ export function fileAttach(event) {
     editors[2].focus();
 
     if (!event.file) {
+        editors[2].setValue('');
         //@ts-ignore
         const snippetManager = ace.require('ace/snippets').snippetManager;
         snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");

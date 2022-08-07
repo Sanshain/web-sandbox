@@ -441,7 +441,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
     //@ts-ignore
     let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
-    // fileStorage
+    // fileStorage    
     let modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem('_modules');
     
     /// включаем вкладки:

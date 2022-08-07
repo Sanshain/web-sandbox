@@ -5894,7 +5894,7 @@ var IDE = (function (exports) {
 
 
 
-                if (playgroundObject.onfilerename) {
+                if (!playgroundObject.onfilerename) {
                     renameOccurrences(prevName, fullname);
                     e.target.innerText = fullname;
                 }
@@ -6016,9 +6016,9 @@ var IDE = (function (exports) {
 
             editors[2].setValue(fileStore[ev.target.innerText]);
 
-            console.log('toggle tab...');    
+            globalThis.__debug && console.log('toggle tab...');    
 
-            console.log(fileStore[ev.target.innerText].split('\n').length);
+            // console.log(fileStore[ev.target.innerText].split('\n').length);
             editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1);
             editors[2].focus();        
         };
@@ -6103,6 +6103,7 @@ var IDE = (function (exports) {
         editors[2].focus();
 
         if (!event.file) {
+            editors[2].setValue('');
             //@ts-ignore
             const snippetManager = ace.require('ace/snippets').snippetManager;
             snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
@@ -6541,7 +6542,7 @@ var IDE = (function (exports) {
 
         //@ts-ignore
         let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
-        // fileStorage
+        // fileStorage    
         let modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem('_modules');
         
         /// включаем вкладки:
@@ -6661,7 +6662,7 @@ var IDE = (function (exports) {
                 });
             }
             hoSeized = vertSeized = allSeized = false;
-            console.log('ok');
+            globalThis.__debug && console.log('mouseup on resize...');
         });
         
         container.addEventListener('mousemove', function(event) {
@@ -6829,7 +6830,11 @@ var IDE = (function (exports) {
             storage: commonStorage
         };
 
-        if (options.additionalFiles) { values[3] = options.additionalFiles; }
+        if (options.additionalFiles) {
+            //@ts-ignore
+            values = values || [];
+            values[3] = options.additionalFiles;
+        }
 
         // @ts-ignore
         let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);

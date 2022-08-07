@@ -63,7 +63,7 @@ export function initResizers() {
             })
         }
         hoSeized = vertSeized = allSeized = false;
-        console.log('ok');
+        globalThis.__debug && console.log('mouseup on resize...');
     })
     
     container.addEventListener('mousemove', function(event) {
