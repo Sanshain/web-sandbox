@@ -34,7 +34,7 @@ export function fileAttach(event) {
 
     if (!filename) return;
 
-    console.log('__fileAttach');
+    // console.log('__fileAttach');
 
     let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
     let title = ~filename.indexOf('.') ? filename : (filename + ext);

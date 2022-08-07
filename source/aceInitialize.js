@@ -442,7 +442,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
     //@ts-ignore
     let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
     // fileStorage
-    let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+    let modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem('_modules');
     
     /// включаем вкладки:
     if (~Object.keys(playgroundObject.modes[2]).slice(1).map(w => '/* ' + w + ' */').indexOf(editors[2].session.getLine(0))) {
@@ -456,12 +456,12 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
         // create tabs:
 
-        let _modules = JSON.parse(modulesStorage);
-        let fileCreate = document.querySelector('.tabs .tab:last-child');
+        let _modules = typeof modulesStorage === 'object' ? modulesStorage : JSON.parse(modulesStorage);
+        let fileCreateTab = document.querySelector('.tabs .tab:last-child');
 
         let i = 0;
 
-        if (fileCreate) {
+        if (fileCreateTab) {
             for (const key in _modules) {
                 if (Object.hasOwnProperty.call(_modules, key)) {
                     fileStorage[key] = _modules[key];
@@ -470,10 +470,9 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
                     console.log('create tab: ' + key);
                     
                     if (i++ || true) {
-                        console.log(fileCreate);
                         //@ts-ignore
                         // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
-                        fileAttach({ target: fileCreate, file: key, editors })
+                        fileAttach({ target: fileCreateTab, file: key, editors })
                     }
                     else {                        
                         editors[2].setValue(_modules[key]);                                     // set editor value
