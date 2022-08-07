@@ -112,7 +112,7 @@ function hTune(event) {
         // console.log(headerHeight);
         
         //@ts-ignore
-        tabs.style.top = event.clientY - tabs.offsetHeight + 5 - container.offsetTop + 'px';        
+        tabs.style.top = event.clientY - tabs.offsetHeight + 0 - headerHeight + 'px';
     }
 
     return true;

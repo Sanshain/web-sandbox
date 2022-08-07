@@ -12,12 +12,19 @@ import { fileAttach } from "./features/tabs";
 import { ChoiceMenu } from "./ui/ChoiceMenu";
 import { modes } from "./features/base.js";
 
-
+import "./features/consoleDebug";
 
 
 /**
- * @param {string[]} values
- * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (s: string) => void}?} options
+ * @param {[string, string, string, Storage|object?]} values
+ * @param {{
+ *      onControlSave?: Function, 
+ *      tabAttachSelector?: string, 
+ *      modes?: [object?, object?, object?], 
+ *      onfilerename?: Function,     
+ *      onfileRemove?: (s: string) => void,
+ *      additionalFiles?: Storage|object
+ * }?} options
  * @returns {any[]}
  */
 export function initialize(values, options) {
@@ -53,6 +60,9 @@ export function initialize(values, options) {
         controlSave: options.onControlSave,
         storage: commonStorage
     }
+
+    if (options.additionalFiles) { values[3] = options.additionalFiles }
+
     // @ts-ignore
     let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
 
@@ -86,9 +96,7 @@ export function initialize(values, options) {
                     // const link = options.modes[i][e.detail.value];
                     // console.log(link)
 
-
-                
-                
+                            
                     // MULTITABS MODE:
                 
                     if (i && i - 1)
@@ -253,6 +261,7 @@ export function initialize(values, options) {
         fileAttach(e);
     });
 
+    editors.playgroundObject = playgroundObject;
 
     return editors;
 }

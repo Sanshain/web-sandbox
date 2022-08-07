@@ -354,6 +354,7 @@ export function webCompile(jsxMode, compilerModes) {
 
     let modulesStore = {};
 
+    console.log('save modules...')
 
     if (fileStorage && Object.keys(fileStorage).length > 1) {
         

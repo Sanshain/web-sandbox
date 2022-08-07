@@ -161,6 +161,7 @@ iframe {
     left    : 0;
     top     : 44.7vh;
     top     : 44vh;
+    top     : 50vh;
     width   : 50%;
     /* width: 100%; */
 
@@ -185,7 +186,8 @@ iframe {
     cursor             : all-scroll;
     width              : 1em;
     height             : 1em;
-    top                : 44.7vh;
+    /* top                : 44.7vh; */
+    top                : 48vh;
     z-index            : 1;
     /* background-color: red; */
 }
@@ -248,7 +250,7 @@ iframe {
     background-size: cover;
     bottom         : 1em;
     right          : 1em;
-    z-index        : 10;
+    z-index        : 6;
     position       : absolute;
     cursor         : pointer;   
     opacity: .5; 
@@ -275,7 +277,7 @@ iframe {
     background-color: #eee;
     /* background-color: #333; */
     position: absolute;
-    z-index : 1;
+    z-index : 2;
 }
 
 .console input{

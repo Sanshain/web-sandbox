@@ -7,6 +7,7 @@ import { expand } from './features/expantion';
 import { defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
 import { playgroundObject } from './pageBuilder';
+import { fileAttach } from './features/tabs';
 
 
 
@@ -20,7 +21,7 @@ import { playgroundObject } from './pageBuilder';
  * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage, modes?: object[]}} editorOptions
  * @param {string[]} modes
  * @param {string | number} syntax
- * @param {?[string?, string?, string?]} [values]
+ * @param {?[string?, string?, string?, object?]} [values]
  */
 export default function initializeEditor(ace, editorOptions, modes, syntax, values) {
 
@@ -442,6 +443,15 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
     let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
     // fileStorage
     let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+    
+    /// включаем вкладки:
+    if (~Object.keys(playgroundObject.modes[2]).slice(1).map(w => '/* ' + w + ' */').indexOf(editors[2].session.getLine(0))) {
+        let tabs = document.querySelector('.tabs');
+        tabs && tabs.classList.add('enabled')
+    }        
+
+    console.log('modules Storage get:');
+
     if (modulesStorage) {
 
         // create tabs:
@@ -454,12 +464,16 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
         if (fileCreate) {
             for (const key in _modules) {
                 if (Object.hasOwnProperty.call(_modules, key)) {
-                    fileStorage[key] = _modules[key];                    
+                    fileStorage[key] = _modules[key];
                     
-                    if (i++) {
+                    if (/app\.(j|t)sx?/.test(key) || key == void 0 + '') continue;
+                    console.log('create tab: ' + key);
+                    
+                    if (i++ || true) {
                         console.log(fileCreate);
                         //@ts-ignore
-                        fileCreate.click({ target: fileCreate, file: key });
+                        // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
+                        fileAttach({ target: fileCreate, file: key, editors })
                     }
                     else {                        
                         editors[2].setValue(_modules[key]);                                     // set editor value
@@ -474,6 +488,8 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
 
             document.querySelector('.tabs .tab').classList.add('active');
         }
+
+        playgroundObject.fileStorage = fileStorage;
     }      
 
 

@@ -21,7 +21,7 @@ const menuPoints = {
 // var fileStore = { _active: 0 };
 
 /**
- * @param {{ file?: string; target: any; }} event
+ * @param {{ file?: string; target: any; editors?: object[] }} event
  */
 export function fileAttach(event) {
 
@@ -34,7 +34,7 @@ export function fileAttach(event) {
 
     if (!filename) return;
 
-    console.log(123222);
+    console.log('__fileAttach');
 
     let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
     let title = ~filename.indexOf('.') ? filename : (filename + ext);
@@ -269,10 +269,11 @@ export function fileAttach(event) {
 
 
     if (!event.file) {
-        console.log('oooooooooooo');
+        
+        console.log('fileAttach: editor setValue');
         fileStore[origTab.innerText] = editors[2].getValue();
         fileStore[newTab.innerText] = '';                   // create new
-        editors[2].setValue(fileStore[newTab.innerText]);
+        // editors[2].setValue(fileStore[newTab.innerText]);
 
         // добавление нового ключевого слова:
         // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
@@ -289,8 +290,10 @@ export function fileAttach(event) {
     target.parentElement.insertBefore(newTab, target);
     editors[2].focus();
 
-    //@ts-ignore
-    const snippetManager = ace.require('ace/snippets').snippetManager;    
-    snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
+    if (!event.file) {
+        //@ts-ignore
+        const snippetManager = ace.require('ace/snippets').snippetManager;
+        snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
+    }
     
 }

@@ -5406,6 +5406,7 @@ var IDE = (function (exports) {
 
         let modulesStore = {};
 
+        console.log('save modules...');
 
         if (fileStorage && Object.keys(fileStorage).length > 1) {
             
@@ -5812,6 +5813,303 @@ var IDE = (function (exports) {
     //         )
     //         .join('\n')
 
+    //@ts-check
+
+
+
+    const menuPoints = {
+        'Удалить': (e) => {
+            if (confirm('Вы уверены, что хотите удалить файл `' + e.target.innerText + '`'))
+            {
+                playgroundObject.onfileRemove(e.target.innerText + '');
+                delete playgroundObject.fileStorage[e.target.innerText];
+                e.target.parentElement.removeChild(e.target);
+            }
+        }
+    };
+
+
+
+    // var fileStore = { _active: 0 };
+
+    /**
+     * @param {{ file?: string; target: any; editors?: object[] }} event
+     */
+    function fileAttach(event) {
+
+        var fileStore = playgroundObject.fileStorage;
+
+        //! Проверяем имя файла на валидность:
+
+        var editors = event['editors'] || window['editors'];
+        var filename = event.file || prompt('Enter file name:');
+
+        if (!filename) return;
+
+        console.log('__fileAttach');
+
+        let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
+        let title = ~filename.indexOf('.') ? filename : (filename + ext);
+
+        if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
+            alert('Файл с таким именем уже существует');
+            return;
+        }
+
+
+        let importSnippet = {
+            name: "import { * } from './" + title + "'",
+            template: "import { ${1} } from './" + title + "'"
+        };
+
+
+
+        let target = event.target;
+
+        //! Настройка переключения между табами:
+
+        let origTab = target.parentElement.querySelector('.tab.active') || target.parentElement.children[0];
+        
+        /**
+         * Rename existing file
+         * @param {MouseEvent} e 
+         * @returns 
+         */
+        origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ e) {        
+
+            const prevName = e.target.innerText;
+            if (prevName.match(/app\.\ws/)) {
+                return;
+            }
+
+            let fileInfo = prevName.split('.');
+            let filename = prompt('Enter new file name:', fileInfo[0]);
+            if (filename === fileInfo[0]) return;
+            else if (!filename) {
+                alert('Имя файла должно содержать буквы (хотя бы одну)');
+                return;
+            }
+            else {
+                let fullname = [filename, fileInfo[1]].join('.');
+
+
+
+                if (playgroundObject.onfilerename) {
+                    renameOccurrences(prevName, fullname);
+                    e.target.innerText = fullname;
+                }
+                else {
+                    playgroundObject.onfilerename(e.target.innerText, fullname, () => {
+                        e.target.innerText = fullname;
+                        renameOccurrences(prevName, fullname);
+                    });
+                }
+                
+                
+                /**
+                 * 
+                 * @param {string} prevName 
+                 * @param {string} fullname 
+                 */
+                function renameOccurrences (prevName, fullname) {
+                    fileStore = playgroundObject.fileStorage;
+                    fileStore[fullname] = fileStore[prevName];
+                    delete fileStore[prevName];
+
+                    for (let file in playgroundObject.fileStorage) {
+                        if (typeof playgroundObject.fileStorage[file] === 'string') {
+                            playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname);
+                        }
+                    }
+
+                    let pos = editors[2].find(prevName + "'");
+                    pos && editors[2].getSession().replace(pos, fullname + "'");
+                }
+
+            }
+        };
+
+        /**
+         * Toggle tabs
+         * @param {MouseEvent} ev
+         * @returns
+         */
+        origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
+            let prevTab = document.querySelector('.tab.active');
+            if (prevTab) {
+
+                fileStore = playgroundObject.fileStorage;  // т.к. при смене языка мы можем переопределить playgroundObject.fileStorage = Object.assign...
+
+                const prevTabName = prevTab['innerText'];
+
+                prevTab.classList.toggle('active');
+
+                fileStore[prevTabName] = editors[2].getValue();
+                
+                const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
+                fileStore[prevTabName].match(/export default function (\w+)/);
+                
+                // atocomplete update:
+
+                exports.forEach((/** @type {string} */ ex) => {
+                    let exprWords = ex.split(' ');
+                    let caption = exprWords.pop();
+                    let meta = exprWords.pop();
+                    keyWords.push({
+                        caption,
+                        value: caption,
+                        meta,
+                        type: '',
+                        snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
+                    });
+                });
+
+
+                // extension changing:
+                // if (importSnippet.template.endsWith(".ts") && !fileStore['app.ts']) {
+                //     // autocomplete refactoring:                
+                //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
+                // }
+
+
+
+
+                // let actualExt = prevTabName.split('.').pop();
+                // if (!title.endsWith(actualExt)) {
+                    
+                //     // autocomplete refactoring:
+                //     importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
+                    
+                //     // code refactoring:
+                //     // let importFilename = importSnippet.template.split('from ').pop()
+                //     // console.log('importFilename', importFilename);
+                //     fileStore['app.' + actualExt] = fileStore['app.' + actualExt].replace(title + "'", prevTabName + "'");
+                    
+                //     //@ts-ignore
+                //     title = prevTabName;
+                // }
+
+
+
+
+                // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
+                // importSnippet.name = importSnippet.template = importSnippet.template.replace(
+                //     new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [\\\w\\\d_, ]* \\\})'), '{ ' + newComplete + ' }'
+                // );
+
+                // console.log('{ ' + newComplete + ' }');
+                // console.log(importSnippet.template);
+
+                // if (defaultExport) {
+                //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
+                //     keyWords.push({
+                //         caption: defaultExport[1],
+                //         value: defaultExport[1],
+                //         meta: 'function',
+                //         type: '',
+                //         snippet: undefined,  // (defaultExport[1] + '({$1})')
+                //     })
+                // }
+
+            }
+            ev.target.classList.add('active');
+
+            editors[2].setValue(fileStore[ev.target.innerText]);
+
+            console.log('toggle tab...');    
+
+            console.log(fileStore[ev.target.innerText].split('\n').length);
+            editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1);
+            editors[2].focus();        
+        };
+
+
+
+        // создание нового таба:
+
+        let newTab = origTab.cloneNode();
+        newTab.innerText = title;
+
+        let prevTab = document.querySelector('.tab.active');
+        prevTab && prevTab.classList.toggle('active');
+        newTab.classList.add('active');
+
+        newTab.style.marginRight = '1.25em';
+        newTab.onclick = origTab.onclick;
+        newTab.ondblclick = origTab.ondblclick;
+
+        if (playgroundObject.onfileRemove) {
+            newTab.oncontextmenu = (/** @type {{ target: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} */ e) => {
+
+                let contextMenu = document.querySelector('.context_menu');
+                if (contextMenu) contextMenu.classList.remove('hidden');
+                else {
+                    contextMenu = document.body.appendChild(document.createElement('div'));
+                    contextMenu.className = 'context_menu';
+                    //@ts-ignore
+                    contextMenu.tabIndex = 0;
+                    Object.keys(menuPoints).forEach(key => {
+                        let point = contextMenu.appendChild(document.createElement('div'));
+                        point.innerText = key;
+                        point.addEventListener('click', () => {
+
+                            contextMenu.classList.toggle('hidden');
+                            setTimeout(() => {
+                                menuPoints[key] && menuPoints[key](e);                                                        
+                            });
+                        });
+                    });
+                    //@ts-ignore
+                    contextMenu.onblur = function() {
+                        contextMenu.classList.add('hidden');
+                    };
+                }
+
+                console.log(e);
+
+
+                //@ts-ignore
+                contextMenu.style.left = e.clientX + 'px';
+                //@ts-ignore
+                contextMenu.style.top = e.clientY + 5 + 'px';
+                //@ts-ignore
+                contextMenu.focus();
+
+                return false;
+            };
+        }
+
+
+        if (!event.file) {
+            
+            console.log('fileAttach: editor setValue');
+            fileStore[origTab.innerText] = editors[2].getValue();
+            fileStore[newTab.innerText] = '';                   // create new
+            // editors[2].setValue(fileStore[newTab.innerText]);
+
+            // добавление нового ключевого слова:
+            // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+            // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
+
+
+            // let moduleName = newTab.innerText.split('.')[0];
+            // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
+            // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
+
+            autocompleteExpand(editors[2], importSnippet);
+        }
+
+        target.parentElement.insertBefore(newTab, target);
+        editors[2].focus();
+
+        if (!event.file) {
+            //@ts-ignore
+            const snippetManager = ace.require('ace/snippets').snippetManager;
+            snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
+        }
+        
+    }
+
     // @ts-check
 
 
@@ -5826,7 +6124,7 @@ var IDE = (function (exports) {
      * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage, modes?: object[]}} editorOptions
      * @param {string[]} modes
      * @param {string | number} syntax
-     * @param {?[string?, string?, string?]} [values]
+     * @param {?[string?, string?, string?, object?]} [values]
      */
     function initializeEditor(ace, editorOptions, modes, syntax, values) {
 
@@ -6245,6 +6543,15 @@ var IDE = (function (exports) {
         let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
         // fileStorage
         let modulesStorage = (editorOptions.storage || localStorage).getItem('_modules');
+        
+        /// включаем вкладки:
+        if (~Object.keys(playgroundObject.modes[2]).slice(1).map(w => '/* ' + w + ' */').indexOf(editors[2].session.getLine(0))) {
+            let tabs = document.querySelector('.tabs');
+            tabs && tabs.classList.add('enabled');
+        }        
+
+        console.log('modules Storage get:');
+
         if (modulesStorage) {
 
             // create tabs:
@@ -6257,12 +6564,16 @@ var IDE = (function (exports) {
             if (fileCreate) {
                 for (const key in _modules) {
                     if (Object.hasOwnProperty.call(_modules, key)) {
-                        fileStorage[key] = _modules[key];                    
+                        fileStorage[key] = _modules[key];
                         
-                        if (i++) {
+                        if (/app\.(j|t)sx?/.test(key) || key == void 0 + '') continue;
+                        console.log('create tab: ' + key);
+                        
+                        if (i++ || true) {
                             console.log(fileCreate);
                             //@ts-ignore
-                            fileCreate.click({ target: fileCreate, file: key });
+                            // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
+                            fileAttach({ target: fileCreate, file: key, editors });
                         }
                         else {                        
                             editors[2].setValue(_modules[key]);                                     // set editor value
@@ -6277,6 +6588,8 @@ var IDE = (function (exports) {
 
                 document.querySelector('.tabs .tab').classList.add('active');
             }
+
+            playgroundObject.fileStorage = fileStorage;
         }      
 
 
@@ -6398,7 +6711,7 @@ var IDE = (function (exports) {
             // console.log(headerHeight);
             
             //@ts-ignore
-            tabs.style.top = event.clientY - tabs.offsetHeight + 5 - container.offsetTop + 'px';        
+            tabs.style.top = event.clientY - tabs.offsetHeight + 0 - headerHeight + 'px';
         }
 
         return true;
@@ -6429,308 +6742,58 @@ var IDE = (function (exports) {
         editionView.style.width = container.offsetWidth - event.clientX + post + 'px';
     }
 
-    //@ts-check
+    window.evalCode = function evalCode(event) {
+        if (event.key == 'Enter') {
+            let iframe = document.querySelector('iframe');
 
-
-
-    const menuPoints = {
-        'Удалить': (e) => {
-            if (confirm('Вы уверены, что хотите удалить файл `' + e.target.innerText + '`'))
-            {
-                playgroundObject.onfileRemove(e.target.innerText + '');
-                delete playgroundObject.fileStorage[e.target.innerText];
-                e.target.parentElement.removeChild(e.target);
+            let error = '';
+            try {
+                var result = iframe.contentWindow.eval(event.target.value);
             }
+            catch (e) {
+                result = error = '> ' + e.stack.split(':').shift() + ': ' + e.message;
+            }
+
+            const lines = document.querySelector('.console .lines');
+            let line = lines.appendChild(document.createElement('div'));
+
+            let snipElem = line.appendChild(document.createElement('div'));
+            snipElem.textContent = '> ' + event.target.value;
+            snipElem.className = 'input';
+
+            let resultElem = line.appendChild(document.createElement('div'));
+            resultElem.textContent = typeof result === 'object'
+                ? (~result.toString().indexOf('HTML')
+                    ? result
+                    : JSON.stringify(result))
+                : result;
+            if (error) {
+                resultElem.style.color = 'red';
+                // resultElem.style.fontFamily = "'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif";
+                resultElem.style.fontFamily = "monospace";
+            }
+
+            event.target.value = '';
+
+            lines.scrollTo(0, lines.scrollHeight);
+
+            event.target.focus();
         }
     };
-
-
-
-    // var fileStore = { _active: 0 };
-
-    /**
-     * @param {{ file?: string; target: any; }} event
-     */
-    function fileAttach(event) {
-
-        var fileStore = playgroundObject.fileStorage;
-
-        //! Проверяем имя файла на валидность:
-
-        var editors = event['editors'] || window['editors'];
-        var filename = event.file || prompt('Enter file name:');
-
-        if (!filename) return;
-
-        console.log(123222);
-
-        let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
-        let title = ~filename.indexOf('.') ? filename : (filename + ext);
-
-        if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
-            alert('Файл с таким именем уже существует');
-            return;
-        }
-
-
-        let importSnippet = {
-            name: "import { * } from './" + title + "'",
-            template: "import { ${1} } from './" + title + "'"
-        };
-
-
-
-        let target = event.target;
-
-        //! Настройка переключения между табами:
-
-        let origTab = target.parentElement.querySelector('.tab.active') || target.parentElement.children[0];
-        
-        /**
-         * Rename existing file
-         * @param {MouseEvent} e 
-         * @returns 
-         */
-        origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ e) {        
-
-            const prevName = e.target.innerText;
-            if (prevName.match(/app\.\ws/)) {
-                return;
-            }
-
-            let fileInfo = prevName.split('.');
-            let filename = prompt('Enter new file name:', fileInfo[0]);
-            if (filename === fileInfo[0]) return;
-            else if (!filename) {
-                alert('Имя файла должно содержать буквы (хотя бы одну)');
-                return;
-            }
-            else {
-                let fullname = [filename, fileInfo[1]].join('.');
-
-
-
-                if (playgroundObject.onfilerename) {
-                    renameOccurrences(prevName, fullname);
-                    e.target.innerText = fullname;
-                }
-                else {
-                    playgroundObject.onfilerename(e.target.innerText, fullname, () => {
-                        e.target.innerText = fullname;
-                        renameOccurrences(prevName, fullname);
-                    });
-                }
-                
-                
-                /**
-                 * 
-                 * @param {string} prevName 
-                 * @param {string} fullname 
-                 */
-                function renameOccurrences (prevName, fullname) {
-                    fileStore = playgroundObject.fileStorage;
-                    fileStore[fullname] = fileStore[prevName];
-                    delete fileStore[prevName];
-
-                    for (let file in playgroundObject.fileStorage) {
-                        if (typeof playgroundObject.fileStorage[file] === 'string') {
-                            playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname);
-                        }
-                    }
-
-                    let pos = editors[2].find(prevName + "'");
-                    pos && editors[2].getSession().replace(pos, fullname + "'");
-                }
-
-            }
-        };
-
-        /**
-         * Toggle tabs
-         * @param {MouseEvent} ev
-         * @returns
-         */
-        origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
-            let prevTab = document.querySelector('.tab.active');
-            if (prevTab) {
-
-                fileStore = playgroundObject.fileStorage;  // т.к. при смене языка мы можем переопределить playgroundObject.fileStorage = Object.assign...
-
-                const prevTabName = prevTab['innerText'];
-
-                prevTab.classList.toggle('active');
-
-                fileStore[prevTabName] = editors[2].getValue();
-                
-                const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || [];
-                fileStore[prevTabName].match(/export default function (\w+)/);
-                
-                // atocomplete update:
-
-                exports.forEach((/** @type {string} */ ex) => {
-                    let exprWords = ex.split(' ');
-                    let caption = exprWords.pop();
-                    let meta = exprWords.pop();
-                    keyWords.push({
-                        caption,
-                        value: caption,
-                        meta,
-                        type: '',
-                        snippet: undefined // meta == 'function' ? (caption + '(${1})') : undefined
-                    });
-                });
-
-
-                // extension changing:
-                // if (importSnippet.template.endsWith(".ts") && !fileStore['app.ts']) {
-                //     // autocomplete refactoring:                
-                //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
-                // }
-
-
-
-
-                // let actualExt = prevTabName.split('.').pop();
-                // if (!title.endsWith(actualExt)) {
-                    
-                //     // autocomplete refactoring:
-                //     importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
-                    
-                //     // code refactoring:
-                //     // let importFilename = importSnippet.template.split('from ').pop()
-                //     // console.log('importFilename', importFilename);
-                //     fileStore['app.' + actualExt] = fileStore['app.' + actualExt].replace(title + "'", prevTabName + "'");
-                    
-                //     //@ts-ignore
-                //     title = prevTabName;
-                // }
-
-
-
-
-                // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
-                // importSnippet.name = importSnippet.template = importSnippet.template.replace(
-                //     new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [\\\w\\\d_, ]* \\\})'), '{ ' + newComplete + ' }'
-                // );
-
-                // console.log('{ ' + newComplete + ' }');
-                // console.log(importSnippet.template);
-
-                // if (defaultExport) {
-                //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
-                //     keyWords.push({
-                //         caption: defaultExport[1],
-                //         value: defaultExport[1],
-                //         meta: 'function',
-                //         type: '',
-                //         snippet: undefined,  // (defaultExport[1] + '({$1})')
-                //     })
-                // }
-
-            }
-            ev.target.classList.add('active');
-
-            editors[2].setValue(fileStore[ev.target.innerText]);
-
-            console.log('toggle tab...');    
-
-            console.log(fileStore[ev.target.innerText].split('\n').length);
-            editors[2].gotoLine(fileStore[ev.target.innerText].split('\n').length - 1);
-            editors[2].focus();        
-        };
-
-
-
-        // создание нового таба:
-
-        let newTab = origTab.cloneNode();
-        newTab.innerText = title;
-
-        let prevTab = document.querySelector('.tab.active');
-        prevTab && prevTab.classList.toggle('active');
-        newTab.classList.add('active');
-
-        newTab.style.marginRight = '1.25em';
-        newTab.onclick = origTab.onclick;
-        newTab.ondblclick = origTab.ondblclick;
-
-        if (playgroundObject.onfileRemove) {
-            newTab.oncontextmenu = (/** @type {{ target: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} */ e) => {
-
-                let contextMenu = document.querySelector('.context_menu');
-                if (contextMenu) contextMenu.classList.remove('hidden');
-                else {
-                    contextMenu = document.body.appendChild(document.createElement('div'));
-                    contextMenu.className = 'context_menu';
-                    //@ts-ignore
-                    contextMenu.tabIndex = 0;
-                    Object.keys(menuPoints).forEach(key => {
-                        let point = contextMenu.appendChild(document.createElement('div'));
-                        point.innerText = key;
-                        point.addEventListener('click', () => {
-
-                            contextMenu.classList.toggle('hidden');
-                            setTimeout(() => {
-                                menuPoints[key] && menuPoints[key](e);                                                        
-                            });
-                        });
-                    });
-                    //@ts-ignore
-                    contextMenu.onblur = function() {
-                        contextMenu.classList.add('hidden');
-                    };
-                }
-
-                console.log(e);
-
-
-                //@ts-ignore
-                contextMenu.style.left = e.clientX + 'px';
-                //@ts-ignore
-                contextMenu.style.top = e.clientY + 5 + 'px';
-                //@ts-ignore
-                contextMenu.focus();
-
-                return false;
-            };
-        }
-
-
-        if (!event.file) {
-            console.log('oooooooooooo');
-            fileStore[origTab.innerText] = editors[2].getValue();
-            fileStore[newTab.innerText] = '';                   // create new
-            editors[2].setValue(fileStore[newTab.innerText]);
-
-            // добавление нового ключевого слова:
-            // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
-            // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
-
-
-            // let moduleName = newTab.innerText.split('.')[0];
-            // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
-            // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
-
-            autocompleteExpand(editors[2], importSnippet);
-        }
-
-        target.parentElement.insertBefore(newTab, target);
-        editors[2].focus();
-
-        //@ts-ignore
-        const snippetManager = ace.require('ace/snippets').snippetManager;    
-        snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
-        
-    }
 
     // @ts-check
 
 
-
-
     /**
-     * @param {string[]} values
-     * @param {{onControlSave?: Function, tabAttachSelector?: string, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (s: string) => void}?} options
+     * @param {[string, string, string, Storage|object?]} values
+     * @param {{
+     *      onControlSave?: Function, 
+     *      tabAttachSelector?: string, 
+     *      modes?: [object?, object?, object?], 
+     *      onfilerename?: Function,     
+     *      onfileRemove?: (s: string) => void,
+     *      additionalFiles?: Storage|object
+     * }?} options
      * @returns {any[]}
      */
     function initialize(values, options) {
@@ -6766,6 +6829,9 @@ var IDE = (function (exports) {
             controlSave: options.onControlSave,
             storage: commonStorage
         };
+
+        if (options.additionalFiles) { values[3] = options.additionalFiles; }
+
         // @ts-ignore
         let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values);
 
@@ -6799,9 +6865,7 @@ var IDE = (function (exports) {
                         // const link = options.modes[i][e.detail.value];
                         // console.log(link)
 
-
-                    
-                    
+                                
                         // MULTITABS MODE:
                     
                         if (i && i - 1)
@@ -6966,6 +7030,7 @@ var IDE = (function (exports) {
             fileAttach(e);
         });
 
+        editors.playgroundObject = playgroundObject;
 
         return editors;
     }

@@ -697,6 +697,7 @@ var pageBuilder = (function (exports) {
 
         let modulesStore = {};
 
+        console.log('save modules...');
 
         if (fileStorage && Object.keys(fileStorage).length > 1) {
             
