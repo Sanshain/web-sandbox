@@ -5124,14 +5124,14 @@ var IDE = (function (exports) {
      * 
      * TODO: option {simplestBundler, fileStore}
      * 
-     * @param {string} [prevUrl]
-     * @param {string[]} [additionalScripts]
-     * @param {string} [scriptType]
+     * @param {string} [prevUrl] - предыдущий URL для освобождения
+     * @param {string[]} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...)
+     * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
      * @param {object} [options]
      * @returns {[HTMLElement, string]}
      */
-    function createPage(prevUrl, additionalScripts, scriptType, options) {    
-        
+    function createPage(prevUrl, additionalScripts, scriptType, options) {
+
         // alert(99)
         if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
             const fileStorage = playgroundObject.fileStorage || window['fileStore'];
@@ -5165,12 +5165,19 @@ var IDE = (function (exports) {
 
                         // createPage(prevUrl, additionalScripts, scriptType, options);
                         waiting.parentElement.removeChild(waiting);
+                        if (options && options.onload) {
+                            let frameInfo = createPage(prevUrl, additionalScripts, scriptType);
+                            options.onload(...frameInfo);
+                        }
                     };
                     document.head.appendChild(originScript);
                     let waiting = document.querySelector('.view').appendChild(document.createElement('div'));
                     waiting.innerText = 'Ожидание...';
                     waiting.id = 'view__waiting';                
-                    // return;
+                    
+                    if (options && options.onload) {
+                        return;
+                    }
                 }
             }
         }
@@ -5323,7 +5330,7 @@ var IDE = (function (exports) {
         // [iframe, curUrl] = createPage(curUrl);
         // globalThis.__debug && console.log(iframe);
 
-
+        
 
         let iframe = playgroundObject.iframe,
             editors = playgroundObject.editors;
@@ -5876,6 +5883,11 @@ var IDE = (function (exports) {
          * @returns 
          */
         origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ e) {        
+
+            if (!playgroundObject.onfilerename) {
+                console.warn('Specify onfilerename callback argument to activate the feature!');
+                return;
+            }
 
             const prevName = e.target.innerText;
             if (prevName.match(/app\.\ws/)) {
@@ -6541,7 +6553,7 @@ var IDE = (function (exports) {
         // read modules:
 
         //@ts-ignore
-        let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
+        let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || { _active: 0};
         // fileStorage    
         let modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem('_modules');
         
@@ -6879,8 +6891,16 @@ var IDE = (function (exports) {
                             if (tabs) {
                                 //@ts-ignore
                                 tabs.style.transition = null;
-                                if (multitabs && !tabs.classList.contains('enabled')) {
-                                    tabs.classList.add('enabled');
+                                if (multitabs) {
+                                    if (!tabs.classList.contains('enabled')) {
+                                        // enable tab:
+                                        tabs.classList.add('enabled');
+                                    }
+                                    else {
+                                        // switch to first tab:
+                                        //@ts-ignore
+                                        tabs.children[0] && tabs.children[0].click();
+                                    }
                                 }
                                 else if (!multitabs && tabs.classList.contains('enabled')) {
                                     tabs.classList.remove('enabled');
@@ -6914,41 +6934,60 @@ var IDE = (function (exports) {
                         // RENAME FILES:
 
                         console.log('rename');
-                        if (tabs && Object.keys(playgroundObject.fileStorage).length > 1 && !playgroundObject.fileStorage['app' + modeOptions.ext]) {
 
-                            // rename tabs:
+                        if (tabs) {
 
-                            [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
-                                if (modeOptions.ext && !element.innerText.endsWith(modeOptions.ext)) {                                
-                                    element.innerText = element.innerText.replace('.js', '.ts');
+                            if (Object.keys(playgroundObject.fileStorage).length > 1) {
+                                
+                                if (!playgroundObject.fileStorage['app' + modeOptions.ext]) {
+
+                                    // rename tabs:
+
+                                    [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
+                                        if (modeOptions.ext) {
+                                            if (!element.innerText.endsWith(modeOptions.ext)) {
+                                                element.innerText = element.innerText.replace('.js', '.ts');
+                                            }
+                                        }
+                                        else if (!element.innerText.endsWith('.js')) {
+                                            element.innerText = element.innerText.replace('.ts', '.js');
+                                        }
+                                    });
+
+                                    // file name rename:
+
+                                    const extensions = modeOptions.ext ? ['.js', '.ts'] : ['.ts', '.js'];
+
+                                    let storageFiles = Object.keys(playgroundObject.fileStorage).map(
+                                        k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
+                                    );
+                                    playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
+
+
+                                    // imports refactoring:
+
+                                    for (let file in playgroundObject.fileStorage) {
+                                        if (typeof playgroundObject.fileStorage[file] === 'string') {
+                                            playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
+                                        }
+                                    }
+
+                                    let pos = editors[2].find(extensions[0] + "'");
+                                    pos && editors[2].getSession().replace(pos, extensions[1] + "'");
                                 }
-                                else if (!element.innerText.endsWith('.js')) {
-                                    element.innerText = element.innerText.replace('.ts', '.js');
-                                }
-                            });
 
-                            // file name rename:
-
-                            const extensions = modeOptions.ext ? ['.js', '.ts'] : ['.ts', '.js'];
-
-                            let storageFiles = Object.keys(playgroundObject.fileStorage).map(
-                                k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
-                            );
-                            playgroundObject.fileStorage = Object.assign({}, ...storageFiles);
-
-
-                            // imports refactoring:
-
-                            for (let file in playgroundObject.fileStorage) {
-                                if (typeof playgroundObject.fileStorage[file] === 'string') {
-                                    playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
-                                }
                             }
                             
-                            let pos = editors[2].find(extensions[0] + "'");
-                            pos && editors[2].getSession().replace(pos, extensions[1] + "'");
+                            if (modeOptions.ext) {
+                                const firstTab = tabs.children[0];
+                                //@ts-ignore
+                                if (!~firstTab.innerText.indexOf(modeOptions.ext, firstTab.innerText.length - modeOptions.ext.length)) {
+                                    //@ts-ignore
+                                    firstTab.innerText = firstTab.innerText.split('.').shift() + modeOptions.ext;
+                                }
+                            }
 
-                        }
+                        }                    
                     });
 
                     // const value = editors[i].getValue()
@@ -6988,6 +7027,12 @@ var IDE = (function (exports) {
             
             const logContainer = document.querySelector('.console');
             const play = document.querySelector('.play');
+            const save = document.querySelector('.save');
+
+            // don`t work for mobile chrome (for some reason):        
+            // logContainer.parentElement.style.zIndex = 6 + '';
+
+
             //@ts-ignore
             if (logContainer && !logContainer.classList.toggle('hidden'))
             {
@@ -6996,11 +7041,12 @@ var IDE = (function (exports) {
             }
 
             play.classList.toggle('hidden');
+            save && save.classList.toggle('hidden');
         };
 
 
 
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
+        let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined, editorOptions);
 
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;

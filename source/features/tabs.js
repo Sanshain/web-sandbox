@@ -65,6 +65,11 @@ export function fileAttach(event) {
      */
     origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ e) {        
 
+        if (!playgroundObject.onfilerename) {
+            console.warn('Specify onfilerename callback argument to activate the feature!');
+            return;
+        }
+
         const prevName = e.target.innerText;
         if (prevName.match(/app\.\ws/)) {
             return;

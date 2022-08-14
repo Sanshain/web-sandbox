@@ -415,14 +415,14 @@ var pageBuilder = (function (exports) {
      * 
      * TODO: option {simplestBundler, fileStore}
      * 
-     * @param {string} [prevUrl]
-     * @param {string[]} [additionalScripts]
-     * @param {string} [scriptType]
+     * @param {string} [prevUrl] - предыдущий URL для освобождения
+     * @param {string[]} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...)
+     * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
      * @param {object} [options]
      * @returns {[HTMLElement, string]}
      */
-    function createPage(prevUrl, additionalScripts, scriptType, options) {    
-        
+    function createPage(prevUrl, additionalScripts, scriptType, options) {
+
         // alert(99)
         if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
             const fileStorage = playgroundObject.fileStorage || window['fileStore'];
@@ -456,12 +456,19 @@ var pageBuilder = (function (exports) {
 
                         // createPage(prevUrl, additionalScripts, scriptType, options);
                         waiting.parentElement.removeChild(waiting);
+                        if (options && options.onload) {
+                            let frameInfo = createPage(prevUrl, additionalScripts, scriptType);
+                            options.onload(...frameInfo);
+                        }
                     };
                     document.head.appendChild(originScript);
                     let waiting = document.querySelector('.view').appendChild(document.createElement('div'));
                     waiting.innerText = 'Ожидание...';
                     waiting.id = 'view__waiting';                
-                    // return;
+                    
+                    if (options && options.onload) {
+                        return;
+                    }
                 }
             }
         }
@@ -614,7 +621,7 @@ var pageBuilder = (function (exports) {
         // [iframe, curUrl] = createPage(curUrl);
         // globalThis.__debug && console.log(iframe);
 
-
+        
 
         let iframe = playgroundObject.iframe,
             editors = playgroundObject.editors;

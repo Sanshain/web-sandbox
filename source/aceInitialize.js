@@ -440,7 +440,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
     // read modules:
 
     //@ts-ignore
-    let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || {};
+    let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || { _active: 0};
     // fileStorage    
     let modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem('_modules');
     

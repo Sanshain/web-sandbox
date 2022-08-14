@@ -158,7 +158,9 @@
         <div class="view">            
             <div class="expand" data-title="Expand"></div>
             <div class="console hidden">
-                <div class="close" onclick="this.parentElement.classList.toggle('hidden'); document.querySelector('.play').classList.remove('hidden');">+</div>
+                <div class="close" onclick="['.play', '.save'].map(s => document.querySelector(s)).concat(this.parentElement).forEach(el => el && el.classList.toggle('hidden'))">
+                    +
+                </div>
                 <div class="lines"></div>
                 <input type="text" list='console__log__list' onkeydown="evalCode(event)" placeholder="Введите выражение для вычислений">
                 <div class="send" onclick="evalCode({key: 'Enter', target: this.previousElementSibling})"></div>
@@ -204,6 +206,23 @@
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
 
     <script>
+
+        /**
+         * to .close
+         */
+        // function hideConsole(event) {
+        //     event.target.parentElement.classList.toggle('hidden');
+        //     ['.play', '.save'].forEach(function (s) { 
+        //         let el = document.querySelector(s); 
+        //         console.log(el);
+        //         el && el.classList.remove('hidden'); 
+        //     })
+
+        //     // this.parentElement.classList.toggle('hidden'); ['.play', '.save'].map(s => {let el = document.querySelector(s); el && el.classList.toggle('hidden')})
+        //     // ['.play', '.save'].map(s => document.querySelector(s)).concat(event.target.parentElement).forEach(el => el && el.classList.toggle('hidden'))
+        // }
+
+
 
         __debug = true;
 
@@ -260,7 +279,7 @@
             onControlSave: function (event) {
                 // alert(99)
             }, 
-            onfilerename: function(e) {
+            onfilerename: function(prevName, name, rnCallback) {
                 alert(99)
             },
             onfileRemove: function(name) {
