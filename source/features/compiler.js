@@ -77,7 +77,7 @@ export const defaultValues = [
         html: '<div id="root"></div>',
         css: '#root{\n\tcolor: red;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
         // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
-        javascript: "const name = 'world';\n\nfunction App(){\n\tconst [count, setCount] = React.useState(0);" +
-                    "\n\treturn <h1 onClick={()=>setCount(count+1)}>Привет, {name} {count}!</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
+        javascript: "function App(){\n\n\tconst [count, setCount] = React.useState(0);\n" +
+                    "\n\treturn <h1 onClick={()=>setCount(count+1)}>\n\t\tClick me: {count}!\n\t</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
     },
 ]
