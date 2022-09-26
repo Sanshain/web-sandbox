@@ -444,7 +444,10 @@ var pageBuilder = (function (exports) {
 
             var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
+            
             if (currentLang && currentLang.src && currentLang.target === 'self') {
+
+                // currentLang.target === 'self'        /// script ожидает загрузки скрипта на основную страницу
                 
                 let scriptID = currentLang.src.split('/').pop().split('.').shift();
                 let originScript = document.getElementById(scriptID);
@@ -452,6 +455,7 @@ var pageBuilder = (function (exports) {
                     originScript = document.createElement('script');
                     //@ts-ignore
                     originScript.src = currentLang.src;
+                    originScript.id = scriptID;
                     originScript.onload = () => {
 
                         // createPage(prevUrl, additionalScripts, scriptType, options);
@@ -536,23 +540,31 @@ var pageBuilder = (function (exports) {
             let modeMenu = editor.container.querySelector('choice-menu');
             if (modeMenu) {
                 /**
-                 * @type {{src: string|string[], target?: {tag: string, attributes: string, outline?: true}}}
+                 * @type {{src: string|string[], target?: {tag: string, attributes: string, inside?: true}}}
                  */
                 let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText];
                 if (actualMode) {                
                     additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
+                    // дополнительные скрипты. В частности less
+                    window['__debug'] && console.log(additionalScripts);
                 }
                 
                 if (actualMode && actualMode.target) {
-                    
+                                                    
                     /// possibility change style tag to link tag:
                     if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
 
-                    if (actualMode.target.outline) {
-                        // create link
+                    if (actualMode.target.inside) {
+
+                        // here constructs tags that will involve right to iframe:
+                        
                         let blob = new Blob([editors[i].getValue()], { type: 'text/' + modes[i] });
                         let link = URL.createObjectURL(blob);
-                        actualMode.target.attributes = actualMode.target.attributes.replace('{}', link);
+                        // actualMode.target.attributes = actualMode.target.attributes.replace('{}', link)
+                        actualMode.target.attributes = actualMode.target.attributes.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
+                        // window['__debug'] && console.log(baseModes[i]);
+                        window['__debug'] && console.log(link);
+                        // window['__debug'] && console.log(actualMode.target);
                     }
                     if (actualMode.target.attributes) attrs[baseTags[i]] = actualMode.target.attributes;
                 }
@@ -569,7 +581,7 @@ var pageBuilder = (function (exports) {
                     : buildJS(appCode || editors[i].getValue())
             ), acc),
             {}
-        );
+        );    
 
         let optionalScripts = '';
         if (additionalScripts && additionalScripts.length) {
@@ -577,12 +589,10 @@ var pageBuilder = (function (exports) {
                 // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
                 optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
             }
-        }
-        // globalThis.__debug && console.log(htmlContent);    
+        }    
+        
+        window['__debug'] && console.log('htmlContent', htmlContent);
 
-
-        // @ts-ignore
-        globalThis.__debug && console.log('html');
         let html = createHtml(htmlContent, attrs);
 
         globalThis.__debug && console.log(optionalScripts);

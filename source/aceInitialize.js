@@ -51,17 +51,26 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             editor.session.setValue(value)
         }
 
-        const allCommands = editor.commands.byName;
+        const allCommands = editor.commands.byName;        
 
 
         // editor.commands.bindKey("F9", null);
-                
-        editor.commands.removeCommand(allCommands.removeline)        
+        
+        // ?
+        editor.commands.removeCommand(allCommands.removeline);
+        
+
+        // хотел сделать вырезание, но нет
         // allCommands.removeline.bindKey = { win: "Ctrl-X", mac: "Cmd-X" }
+        // ?
         // editor.commands.addCommand(allCommands.removeline)
+
+        // удаляет последний символ (добавлена и так)
         // // editor.commands.addCommand(allCommands.cut_or_delete)
 
-        allCommands.copylinesdown.bindKey = { win: "Ctrl-D", mac: "Cmd-D" }
+        // добавляем горячую клавишу
+        allCommands.copylinesdown.bindKey = { win: "Ctrl-D", mac: "Cmd-D" };
+        // сама команда уже добавлена и так (почему-то надо добавить для 1-го редактора):
         editor.commands.addCommand(allCommands.copylinesdown);
         
         
@@ -80,10 +89,18 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 
+                // ctrl + s
                 console.log(editorOptions);
                 // event.preventDefault(), (editorOptions.controlSave || webCompile)();
 
                 event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
+            }
+            else if (event.ctrlKey && event.key === 'f'){
+
+                // это не работает (!):
+
+                // event.preventDefault()
+                // return false
             }
         })
 
@@ -208,7 +225,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             else if (i === +!!i) {
 
                 editor.commands.on("afterExec", function (e) {
-                    console.log(e.command.name);
+                    window['__debug'] && console.log(e.command.name);
                     if (e.command.name.toLowerCase() === 'return') {
                         webCompile()
                     }

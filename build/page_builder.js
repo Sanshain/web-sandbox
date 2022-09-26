@@ -5153,7 +5153,10 @@ var IDE = (function (exports) {
 
             var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
+            
             if (currentLang && currentLang.src && currentLang.target === 'self') {
+
+                // currentLang.target === 'self'        /// script ожидает загрузки скрипта на основную страницу
                 
                 let scriptID = currentLang.src.split('/').pop().split('.').shift();
                 let originScript = document.getElementById(scriptID);
@@ -5161,6 +5164,7 @@ var IDE = (function (exports) {
                     originScript = document.createElement('script');
                     //@ts-ignore
                     originScript.src = currentLang.src;
+                    originScript.id = scriptID;
                     originScript.onload = () => {
 
                         // createPage(prevUrl, additionalScripts, scriptType, options);
@@ -5245,23 +5249,31 @@ var IDE = (function (exports) {
             let modeMenu = editor.container.querySelector('choice-menu');
             if (modeMenu) {
                 /**
-                 * @type {{src: string|string[], target?: {tag: string, attributes: string, outline?: true}}}
+                 * @type {{src: string|string[], target?: {tag: string, attributes: string, inside?: true}}}
                  */
                 let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText];
                 if (actualMode) {                
                     additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
+                    // дополнительные скрипты. В частности less
+                    window['__debug'] && console.log(additionalScripts);
                 }
                 
                 if (actualMode && actualMode.target) {
-                    
+                                                    
                     /// possibility change style tag to link tag:
                     if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
 
-                    if (actualMode.target.outline) {
-                        // create link
+                    if (actualMode.target.inside) {
+
+                        // here constructs tags that will involve right to iframe:
+                        
                         let blob = new Blob([editors[i].getValue()], { type: 'text/' + modes[i] });
                         let link = URL.createObjectURL(blob);
-                        actualMode.target.attributes = actualMode.target.attributes.replace('{}', link);
+                        // actualMode.target.attributes = actualMode.target.attributes.replace('{}', link)
+                        actualMode.target.attributes = actualMode.target.attributes.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
+                        // window['__debug'] && console.log(baseModes[i]);
+                        window['__debug'] && console.log(link);
+                        // window['__debug'] && console.log(actualMode.target);
                     }
                     if (actualMode.target.attributes) attrs[baseTags[i]] = actualMode.target.attributes;
                 }
@@ -5278,7 +5290,7 @@ var IDE = (function (exports) {
                     : buildJS(appCode || editors[i].getValue())
             ), acc),
             {}
-        );
+        );    
 
         let optionalScripts = '';
         if (additionalScripts && additionalScripts.length) {
@@ -5286,12 +5298,10 @@ var IDE = (function (exports) {
                 // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
                 optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
             }
-        }
-        // globalThis.__debug && console.log(htmlContent);    
+        }    
+        
+        window['__debug'] && console.log('htmlContent', htmlContent);
 
-
-        // @ts-ignore
-        globalThis.__debug && console.log('html');
         let html = createHtml(htmlContent, attrs);
 
         globalThis.__debug && console.log(optionalScripts);
@@ -6167,17 +6177,26 @@ var IDE = (function (exports) {
                 editor.session.setValue(value);
             }
 
-            const allCommands = editor.commands.byName;
+            const allCommands = editor.commands.byName;        
 
 
             // editor.commands.bindKey("F9", null);
-                    
-            editor.commands.removeCommand(allCommands.removeline);        
+            
+            // ?
+            editor.commands.removeCommand(allCommands.removeline);
+            
+
+            // хотел сделать вырезание, но нет
             // allCommands.removeline.bindKey = { win: "Ctrl-X", mac: "Cmd-X" }
+            // ?
             // editor.commands.addCommand(allCommands.removeline)
+
+            // удаляет последний символ (добавлена и так)
             // // editor.commands.addCommand(allCommands.cut_or_delete)
 
+            // добавляем горячую клавишу
             allCommands.copylinesdown.bindKey = { win: "Ctrl-D", mac: "Cmd-D" };
+            // сама команда уже добавлена и так (почему-то надо добавить для 1-го редактора):
             editor.commands.addCommand(allCommands.copylinesdown);
             
             
@@ -6196,11 +6215,13 @@ var IDE = (function (exports) {
                 }
                 else if (event.ctrlKey && event.keyCode === 83) {
                     
+                    // ctrl + s
                     console.log(editorOptions);
                     // event.preventDefault(), (editorOptions.controlSave || webCompile)();
 
                     event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
                 }
+                else if (event.ctrlKey && event.key === 'f');
             });
 
             if (i === 0 && window.outerWidth > 600) {
@@ -6324,7 +6345,7 @@ var IDE = (function (exports) {
                 else if (i === +!!i) {
 
                     editor.commands.on("afterExec", function (e) {
-                        console.log(e.command.name);
+                        window['__debug'] && console.log(e.command.name);
                         if (e.command.name.toLowerCase() === 'return') {
                             webCompile();
                         }

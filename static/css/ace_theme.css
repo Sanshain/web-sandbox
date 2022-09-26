@@ -1,0 +1,79 @@
+/* meta position */
+.ace_completion-meta {
+    color: gray;
+}
+
+.ace_completion-meta {
+    right       : 0;
+    position    : absolute;
+    top         : -.9em;
+    margin-right: 2em;
+}
+
+.ace_line {
+    width: 300px;
+}
+
+/* .ace-monokai .ace_entity.ace_name.ace_tag,  */
+.ace-monokai .ace_meta.ace_tag
+
+/* , .ace-monokai .ace_keyword, .ace-monokai .ace_meta.ace_tag, .ace-monokai .ace_storage */
+    {
+    color   : #26d2f9;
+    /* color: red; */
+}
+
+/* margin-right: 0.5em;  */
+
+
+/*  */
+
+.ace_tooltip.ace_doc-tooltip h5 {
+    margin: 1em 2em;
+}
+
+.ace_tooltip.ace_doc-tooltip p {
+    margin-left   : 1em;
+    text-transform: capitalize;
+    font-weight   : 600;
+}
+
+.ace_tooltip.ace_doc-tooltip {
+    padding-right: 1em;
+}
+
+/* function calling */
+.ace-monokai .ace_string {
+    color: #E6DB74;
+    color: rgb(247, 157, 55);
+    color: brown;
+    color: #dbb47b;
+}
+
+span.ace_identifier {
+    color: blueviolet;
+    color: darkcyan;
+    color: cadetblue;
+    color: #f7c334;
+    color: rgb(255, 217, 0);
+    color: yellowgreen;
+    color: rgb(215, 181, 247);
+    color: #E6DB74;
+}
+
+span.ace_identifier:hover {
+    cursor: pointer !important;
+}
+
+.ace-monokai .ace_keyword {
+    color: #F92672;
+    color: #ac82ee;
+}
+
+.ace_search {
+    background-color: #888;
+}
+
+.ace_searchbtn {
+    background-color: #ccc;
+}
