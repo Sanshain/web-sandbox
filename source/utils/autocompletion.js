@@ -119,19 +119,24 @@ export let domFuncs = {
     offsetWidth: null,
     getComputedStyle: '',
 
+    innerHTML: null,
     innerText: null,
 
     appendChild: '',
     insertBefore: '',
     createElement: '',
 
+    preventDefault: '',                                         //// - event
+    key: '',                                                    //// - event
+
     closest: '',
-    querySelectorAll: '',
+    
     getElementById: {
         desc: '',  //  'Найти элемент по его ID',
         'return': 'HTMLElement?'
     },
     
+    querySelectorAll: '',
     querySelector: {
         desc: 'get element by selector',
         sign: {

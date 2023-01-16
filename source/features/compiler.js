@@ -46,7 +46,7 @@ export const babelCompiler = {
 
 
 export const compilers = {
-    vanile: undefined,
+    vanile: [],
     preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
     vue: Object.values(vueCompiler),
     react: [babelCompiler.link].concat(Object.values(reactCompiler)),    
@@ -57,13 +57,13 @@ export const defaultValues = [
     // html
     {
         html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
-        css: 'h2 {\n\tcolor: green;\n\tcursor: pointer; \n}',
+        css: 'h2 {\n\tcolor: orangered;\n\tcursor: pointer; \n\tfont-family: arial;\n}',
         javascript: 'function greeting(event){\n\talert("greeting!")\n}'
     },
     // preact
     {
         html: '<div id="root"></div>',
-        css: '#root{\n\tcolor: red;\n}',
+        css: '#root{\n\tcolor: orangered;\n\tfont-family: arial;\n}',
         javascript: "const name = 'world'; \nrender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
     },
     // vue
@@ -75,7 +75,7 @@ export const defaultValues = [
     // react
     {
         html: '<div id="root"></div>',
-        css: '#root{\n\tcolor: red;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
+        css: '#root{\n\tcolor: red;\n\tfont-family: arial;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
         // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
         javascript: "function App(){\n\n\tconst [count, setCount] = React.useState(0);\n" +
                     "\n\treturn <h1 onClick={()=>setCount(count+1)}>\n\t\tClick me: {count}!\n\t</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"

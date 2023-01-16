@@ -15,6 +15,25 @@ import { modes } from "./features/base.js";
 import "./features/consoleDebug";
 
 
+
+/**
+ * @type { Array<keyof compilers>}
+ */
+// const frameworkEnvironment = []
+
+/**
+ * @param { string[] } frameworkEnvironment
+ * @param {keyof compilers} envName
+ */
+function updateEnvironment(frameworkEnvironment, envName) {
+    const libs = compilers[envName];
+    frameworkEnvironment.splice(0, frameworkEnvironment.length);
+    libs.forEach((/** @type {string} */ lib) => frameworkEnvironment.push(lib));
+    
+    window['__DEBUG'] && console.log(frameworkEnvironment);
+}
+
+
 /**
  * @param {[string, string, string, Storage|object?]} values
  * @param {{
@@ -23,14 +42,18 @@ import "./features/consoleDebug";
  *      modes?: [object?, object?, object?], 
  *      onfilerename?: Function,     
  *      onfileRemove?: (s: string) => void,
- *      additionalFiles?: Storage|object
+ *      additionalFiles?: Storage|object,
+ *      quickCompileMode?: boolean
  * }?} options
- * @returns {any[]}
+ * @returns {unknown[]}
  */
 export function initialize(values, options) {
 
     options = options || {};
     
+    /**
+     * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
+     */
     let syntaxMode = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
     //@ts-ignore
     document.getElementById('compiler_mode').selectedIndex = syntaxMode;
@@ -45,6 +68,7 @@ export function initialize(values, options) {
     playgroundObject.onfilerename = options.onfilerename
     playgroundObject.onfileRemove = options.onfileRemove
     const frameworkEnvironment = Object.values(compilers)[syntaxMode];
+    const updateEnv = updateEnvironment.bind(null, frameworkEnvironment);
     
     // @ts-ignore
     let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, frameworkEnvironment) : webCompile;
@@ -57,8 +81,10 @@ export function initialize(values, options) {
 
     const editorOptions = {
         compileFunc,
+        quickCompileMode: options.quickCompileMode,
         controlSave: options.onControlSave,
-        storage: commonStorage
+        storage: commonStorage,
+        syntaxMode,
     }
 
     if (options.additionalFiles) {
@@ -68,7 +94,7 @@ export function initialize(values, options) {
     }
 
     // @ts-ignore
-    let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, modes, syntaxMode, values)
+    let editors = playgroundObject.editors = initializeEditor(ace, editorOptions, values)
 
     
 
@@ -79,7 +105,7 @@ export function initialize(values, options) {
 
     
     if (options.modes) {
-        customElements.define('choice-menu', ChoiceMenu);
+        !customElements.get('choice-menu') && customElements.define('choice-menu', ChoiceMenu);
         console.log(options.modes);
         options.modes.forEach(function (/** @type { {[k: string]: {tabs?: true, src?: string, target? : object, ext?: string }} } */ mode, i) {
 
@@ -273,7 +299,7 @@ export function initialize(values, options) {
 
     document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, frameworkEnvironment));
     document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
-    document.getElementById('compiler_mode').addEventListener('change', function (event) {
+    document.getElementById('compiler_mode').onchange = function (event) {
 
         // @ts-ignore
         (editorOptions.storage || localStorage).setItem('mode', event.target.selectedIndex)
@@ -284,14 +310,14 @@ export function initialize(values, options) {
             for (let i = 0; i < editors.length; i++) {
                 //@ts-ignore
                 let value = (editorOptions.storage || localStorage).getItem(event.target.selectedIndex + '__' + modes[i]) || '';
-                editors[i].session.setValue(value)
+                editors[i].session.setValue(value)  
             }
             // document.querySelector('.play').click();
         }
 
         // localStorage.setItem('mode', event.target.selectedOptions[event.target.selectedIndex].value)
         // console.log(event.target.selectedIndex);
-    });
+    };
     
     
     options.tabAttachSelector && document.querySelector(options.tabAttachSelector).addEventListener('click', function (e) {
@@ -300,6 +326,7 @@ export function initialize(values, options) {
     });
 
     editors.playgroundObject = playgroundObject;
+    editors.updateEnv = updateEnv;
 
     return editors;
 }

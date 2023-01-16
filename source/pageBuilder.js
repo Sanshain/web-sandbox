@@ -140,19 +140,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
         // convert to js:   
 
-        if (window['simplestBundler']) {
-            code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
-            globalThis.__debug && console.log('build...');
-        }
-        else {
-            console.warn('bundler is absent');
-            // alert('Warn/ look logs')
-        }        
-
-        // ts transpilation:
-        if (currentLang && currentLang.compileFunc) {
-            code = currentLang.compileFunc(code);
-        }
+        code = buildAndTranspile(code, currentLang);
 
         // 
         let globalReinitializer = generateGlobalInintializer(code);
@@ -201,7 +189,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
              */
             let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
             if (actualMode) {                
-                additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src)
+                // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
+                [].slice.call(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src).forEach(el => additionalScripts.push(el));
                 // дополнительные скрипты. В частности less
                 window['__debug'] && console.log(additionalScripts);
             }
@@ -274,14 +263,35 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
 
 /**
- * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
- * @param {boolean} jsxMode
- * ///! param {number} compilerMode
- * @param {string[]} compilerModes - 
- * 
- * TODO: options: {storage (localStorage|sessionStorage), fileStore}
+ * @param {string} code
+ * @param {{ compileFunc: (arg0: string) => string; }} currentLang
  */
-export function webCompile(jsxMode, compilerModes) {
+function buildAndTranspile(code, currentLang) {
+    if (window['simplestBundler']) {
+        code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
+        globalThis.__debug && console.log('build...');
+    }
+    else {
+        console.warn('bundler is absent');
+        // alert('Warn/ look logs')
+    }
+
+    // ts transpilation:
+    if (currentLang && currentLang.compileFunc) {
+        code = currentLang.compileFunc(code);
+    }
+    return code;
+}
+
+/**
+ * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
+ * @param {boolean} jsxMode ///! param {number} compilerMode
+ * @param {string[]} compilerModes - list of script libs to attach to generated page
+ *
+ * TODO: options: {storage (localStorage|sessionStorage), fileStore}
+ * @param {boolean|undefined} [less]
+ */
+export function webCompile(jsxMode, compilerModes, less) {
 
     globalThis.__debug && console.log('compile');
 
@@ -304,16 +314,22 @@ export function webCompile(jsxMode, compilerModes) {
         // }
     }
 
-
-
-
-    if (iframe.contentDocument && !jsxMode && false) {
+    if (iframe.contentDocument && less) {
         
+        /**
+         * attantion: because from deleted scripts, working handlers may remain on the page, which will spoil the picture 
+         * (it may be safe to change styles only or for frameworks that completely overwrite html). With a full html record , it is quite an option
+         */
+
         iframe.contentDocument.body.innerHTML = editors[0].getValue()
         iframe.contentDocument.head.querySelector('style').innerHTML = editors[1].getValue()
 
+        /////// remove last script:
+
         let lastScript = [].slice.call(iframe.contentDocument.querySelectorAll('script')).pop();
         lastScript && lastScript.parentElement.removeChild(lastScript);
+
+        //////// 
 
         // let lastScripts = iframe.contentDocument.querySelectorAll('script');
         // lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
@@ -321,13 +337,20 @@ export function webCompile(jsxMode, compilerModes) {
         //     element.parentElement.removeChild(element);
         // });
         
+        /////////
+        
+        // [].slice.call(document.querySelector('iframe').contentDocument.getElementsByTagName('script')).pop()
+
         let script = iframe.contentDocument.createElement('script');
         
+        globalThis.__debug && console.log('less compilation')
         globalThis.__debug && console.log(jsxMode)
         globalThis.__debug && console.log(compilerModes);
 
         if (jsxMode) {
             
+            // add additional scripts:
+
             // for (let i = 0; i < compilerMode.length; i++) {
             //     const link = compilerMode[i];
 
@@ -341,11 +364,13 @@ export function webCompile(jsxMode, compilerModes) {
 
         let code = playgroundObject.fileStorage['app.js'] || playgroundObject.fileStorage['app.ts'] || editors[2].getValue();
 
+        const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()];
+        code = buildAndTranspile(code, currentLang);
+
         let globalReinitializer = generateGlobalInintializer(code)
 
-        script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()'
+        script.innerHTML = '(function(){' + code + ';\n\n' + globalReinitializer + '\n})()';
         iframe.contentDocument.body.appendChild(script)
-
         // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
     }
     else {
@@ -390,4 +415,11 @@ export function webCompile(jsxMode, compilerModes) {
 }
 
 
+
+function getLang() {
+    let fs = (playgroundObject.fileStorage || window['fileStore'] || {});
+    let appCode = fs['app.js'] || fs['app.ts'] || playgroundObject.fileStorage[undefined + ''];
+    const langMode = getLangMode(appCode);
+    return langMode;
+}
 

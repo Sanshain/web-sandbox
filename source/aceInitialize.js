@@ -8,6 +8,7 @@ import { defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
 import { playgroundObject } from './pageBuilder';
 import { fileAttach } from './features/tabs';
+import { modes } from './features/base';
 
 
 
@@ -17,14 +18,22 @@ import { fileAttach } from './features/tabs';
  *  + fileStore
  * }
  * 
- * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace
- * @param {{ compileFunc: Function; controlSave?: (ev: object, compileFunc: Function) => void; storage?: Storage, modes?: object[]}} editorOptions
- * @param {string[]} modes
- * @param {string | number} syntax
- * @param {?[string?, string?, string?, object?]} [values]
+ * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace - ace library instance
+ * @param {{ 
+ *      compileFunc: Function;                                                  //// prebinded webCompile
+ *      syntaxMode: 0 | 1 | 2 | 3                                               //// syntax mode (implied corresponding with vanile/preact/vue/react)
+ *      controlSave?: (ev: object, compileFunc: Function) => void;              //// callback on ctrlSave
+ *      storage?: Storage,                                                      //// (custom?) file storage instead of localStorage
+ *      quickCompileMode: boolean,                                              //// 
+ *      modes?: object[],                                                       //// ? - deprecated field
+ * }} editorOptions - options contained prebinded webCompile (compileFunc) and etc
+ * @obsolete {string[]} modes
+ * @obsolete {string|number} syntaxMode
+ * @param {?[string?, string?, string?, object?]} [values] - initial values for editors
  */
-export default function initializeEditor(ace, editorOptions, modes, syntax, values) {
-
+export default function initializeEditor(ace, editorOptions, values) {
+    
+    const syntax = editorOptions.syntaxMode
     const webCompile = editorOptions.compileFunc;
 
     const Range = ace.require('ace/range').Range;
@@ -45,6 +54,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
         let editor = ace.edit(element.id);        
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/" + modes[i]);
+        editor.setFontSize(fontSize);
         
         let value = values[i] || (editorOptions.storage || localStorage).getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];
         if (value) {
@@ -85,7 +95,7 @@ export default function initializeEditor(ace, editorOptions, modes, syntax, valu
             (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')})            
             if ( event.key === 'F9')      // ctrl+s
             {
-                event.preventDefault(), webCompile();
+                event.preventDefault(), webCompile(editorOptions.quickCompileMode);
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 
