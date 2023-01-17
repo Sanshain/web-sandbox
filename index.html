@@ -200,18 +200,20 @@
                     javascript: null,
                     'ES module': {
                         tabs: true,
-                        mode: 'javascript'
+                        mode: 'javascript',
                     },              
-                }, !(+sessionStorage.getItem('mode') % 2) ? {
+                },  
+                {
                     typescript: {
 
                         src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
                         target: 'self',
                         tabs: true,
                         ext: '.ts',
-                        compileFunc: code => {
+                        compileFunc: code => {                            
                             if (window.ts){
-                                return ts.transpile(code);
+                                let r = ts.transpile(code, {jsx: +sessionStorage.getItem('mode') % 2});
+                                return r;
                             }
                             else{
                                 console.warn('Something went wrong: ts is undefind...');
@@ -219,7 +221,7 @@
                             }
                         }
                     },                    
-                } : {})                
+                })
             ],
             onControlSave: function (event) {
                 // alert(99)

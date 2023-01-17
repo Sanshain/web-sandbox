@@ -19,18 +19,18 @@ import "./features/consoleDebug";
 /**
  * @type { Array<keyof compilers>}
  */
-// const frameworkEnvironment = []
+const frameworkEnvironment = []
 
 /**
- * @param { string[] } frameworkEnvironment
+ * @param { string[] } fwrkEnv
  * @param {keyof compilers} envName
  */
-function updateEnvironment(frameworkEnvironment, envName) {
+function updateEnvironment(fwrkEnv, envName) {
     const libs = compilers[envName] || [];
-    frameworkEnvironment.splice(0, frameworkEnvironment.length);
-    libs.forEach((/** @type {string} */ lib) => frameworkEnvironment.push(lib));
+    fwrkEnv.splice(0, fwrkEnv.length);
+    libs.forEach((/** @type {string} */ lib) => fwrkEnv.push(lib));
     
-    window['__DEBUG'] && console.log(frameworkEnvironment);
+    window['__DEBUG'] && console.log(fwrkEnv);
 }
 
 
@@ -57,7 +57,6 @@ window.addEventListener('message', function (event) {
         }
 
         consoleJar.scrollTo(0, consoleJar.scrollHeight);
-        console.log(55555555555555555);
 
         // event.target.focus()
     }
@@ -100,11 +99,16 @@ export function initialize(values, options) {
     playgroundObject.modes = options.modes;
     playgroundObject.onfilerename = options.onfilerename
     playgroundObject.onfileRemove = options.onfileRemove
-    const frameworkEnvironment = Object.values(compilers)[syntaxMode];
+
+    debugger;
+    //@ts-ignore
+    updateEnvironment(frameworkEnvironment, Object.keys(compilers)[syntaxMode])
+
+    // Object.values(compilers)[syntaxMode].forEach(link => frameworkEnvironment.push(link));
     const updateEnv = updateEnvironment.bind(null, frameworkEnvironment);
     
     // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode, frameworkEnvironment) : webCompile;
+    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode) : webCompile;
 
     initResizers()
 
@@ -114,6 +118,7 @@ export function initialize(values, options) {
 
     const editorOptions = {
         compileFunc,
+        frameworkEnvironment,
         quickCompileMode: options.quickCompileMode,
         controlSave: options.onControlSave,
         storage: commonStorage,
@@ -144,7 +149,7 @@ export function initialize(values, options) {
 
             let items = [];  // ['css','less','stylus']
 
-            if (mode && (items = Object.keys(mode)).length > 1) {                            
+            if (mode && (items = Object.keys(mode)).length > 1) {
 
                 const settingsElement = editors[i].container.appendChild(document.createElement('choice-menu'));
                 settingsElement.className = 'settings';
@@ -221,20 +226,26 @@ export function initialize(values, options) {
 
                                 // rename tabs:
 
+                                const jsPattern = /([\w_\d]+)\.js(x)$/m;
+                                const tsPattern = /([\w_\d]+)\.ts(x)$/m;
+                                
                                 [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
                                     if (modeOptions.ext) {
                                         if (!element.innerText.endsWith(modeOptions.ext)) {
-                                            element.innerText = element.innerText.replace('.js', '.ts');
+                                            element.innerText = element.innerText.replace(jsPattern, '$1.ts');
                                         }
                                     }
                                     else if (!element.innerText.endsWith('.js')) {
-                                        element.innerText = element.innerText.replace('.ts', '.js');
+                                        element.innerText = element.innerText.replace(tsPattern, '$1.js');
                                     }
                                 });
 
                                 // file name rename:
 
-                                const extensions = modeOptions.ext ? ['.js', '.ts'] : ['.ts', '.js']
+                                /**
+                                 * @type {[RegExp, string]}
+                                 */
+                                const extensions = modeOptions.ext ? [jsPattern, '$1.ts'] : [tsPattern, '$1.js']
 
                                 let storageFiles = Object.keys(playgroundObject.fileStorage).map(
                                     k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
@@ -324,7 +335,7 @@ export function initialize(values, options) {
 
 
 
-    let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined, editorOptions)
+    let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined)  // editorOptions
 
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;

@@ -6,17 +6,14 @@ import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
 import { defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
-import { playgroundObject } from './pageBuilder';
+import { playgroundObject, webCompile } from './pageBuilder';
 import { fileAttach } from './features/tabs';
 import { modes } from './features/base';
 
 
 
 /**
- * 
- * TODO: options {
- *  + fileStore
- * }
+ * setup ace editor: hangs events and configures compilers
  * 
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace - ace library instance
  * @param {{ 
@@ -26,6 +23,7 @@ import { modes } from './features/base';
  *      storage?: Storage,                                                      //// (custom?) file storage instead of localStorage
  *      quickCompileMode: boolean,                                              //// 
  *      modes?: object[],                                                       //// ? - deprecated field
+ *      frameworkEnvironment: string[]                                          //// list of lib links to page downloading
  * }} editorOptions - options contained prebinded webCompile (compileFunc) and etc
  * @obsolete {string[]} modes
  * @obsolete {string|number} syntaxMode
@@ -34,11 +32,14 @@ import { modes } from './features/base';
 export default function initializeEditor(ace, editorOptions, values) {
     
     const syntax = editorOptions.syntaxMode
-    const webCompile = editorOptions.compileFunc;
 
     const Range = ace.require('ace/range').Range;
     const delay = 500;
-    const autoPlay = debounce(() => setTimeout(webCompile, delay), delay);
+    
+    const autoPlay = debounce(
+        //@ts-ignore
+        () => setTimeout(webCompile.bind(null, !!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode), delay), delay
+    );
     const fontSize = '.9em';
 
     values = values || [];
@@ -102,7 +103,9 @@ export default function initializeEditor(ace, editorOptions, values) {
             (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')})            
             if ( event.key === 'F9')      // ctrl+s
             {
-                event.preventDefault(), webCompile(editorOptions.quickCompileMode);
+                event.preventDefault();
+                // binding is lost !!! 
+                webCompile(!!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode || false);
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 
@@ -110,7 +113,11 @@ export default function initializeEditor(ace, editorOptions, values) {
                 console.log(editorOptions);
                 // event.preventDefault(), (editorOptions.controlSave || webCompile)();
 
-                event.preventDefault(), (editorOptions.controlSave ? editorOptions.controlSave(event, webCompile) : webCompile());
+                event.preventDefault(), (editorOptions.controlSave
+                    ? editorOptions.controlSave(
+                        event, webCompile.bind(null, !!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode || false)
+                    )
+                    : webCompile(!!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode || false));
             }
             else if (event.ctrlKey && event.key === 'f'){
 
@@ -244,7 +251,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                 editor.commands.on("afterExec", function (e) {
                     window['__debug'] && console.log(e.command.name);
                     if (e.command.name.toLowerCase() === 'return') {
-                        webCompile()
+                        webCompile(!!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode)
                     }
                     // if (e.command.name == "insertstring" && /^[\w.]$/.test(e.args)) {
                     //     editor.execCommand("startAutocomplete")

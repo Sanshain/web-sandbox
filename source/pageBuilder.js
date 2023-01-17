@@ -75,7 +75,7 @@ function createHtml({ body, style, script, link }, attrs) {
  * @param {string} [prevUrl] - предыдущий URL для освобождения
  * @param {string[]} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...)
  * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
- * @param {object} [options]
+ * @param {{onload: Function}} [options] - onload callback
  * @returns {[HTMLElement, string]}
  */
 export function createPage(prevUrl, additionalScripts, scriptType, options) {
@@ -317,12 +317,12 @@ function buildAndTranspile(code, currentLang) {
 }
 
 /**
- * // @param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
+ * // obsolete @ param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
  * @param {boolean} jsxMode ///! param {number} compilerMode
  * @param {string[]} compilerModes - list of script libs to attach to generated page
  *
  * TODO: options: {storage (localStorage|sessionStorage), fileStore}
- * @param {boolean|undefined} [less]
+ * @param {boolean|undefined} [less] - less compile mode (Not implemented yet. TODO: via postMessage)
  */
 export function webCompile(jsxMode, compilerModes, less) {
 

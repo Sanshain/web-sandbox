@@ -5,7 +5,7 @@ import { createPage, playgroundObject } from "../pageBuilder";
 
 /**
  * @param {{currentTarget: any;}} event
- * @param {string | any[]} [additionalScripts]
+ * @param {string[]} [additionalScripts]
  * @param {string} [scriptType]
  */
 export function expand(event, additionalScripts, scriptType) {
