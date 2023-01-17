@@ -24,13 +24,13 @@ let modules = [
         
         outputName: 'IDE',
     },
-    {
-        // just page builder (w/o ui)
-        inputFile: './source/pageBuilder.js',
-        outputFile: 'page_compiler.js',
+    // {
+    //     // just page builder (w/o ui)
+    //     inputFile: './source/pageBuilder.js',
+    //     outputFile: 'page_compiler.js',
 
-        outputName: 'pageBuilder',
-    },
+    //     outputName: 'pageBuilder',
+    // },
     // {
     //     inputFile: './source/utils/bundler.js',
     //     outputFile: 'bundler.js',

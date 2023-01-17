@@ -158,7 +158,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
                 window.parent.postMessage(
                     // { value: typeof value === 'object' ? JSON.stringify(value) : value, type: typeof value },
-                    { value, type: typeof value },
+                    { value: String.fromCharCode(8250) + ' ' + value, type: typeof value },
                     '*'
                 );
                 console.log([].slice.call(arguments).join());
@@ -174,6 +174,15 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                     catch (e) {
                         data.value = data.error = '> ' + e.stack.split(':').shift() + ': ' + e.message;
                     }
+
+                    if (typeof data.value === 'object') {
+                        if (data.value === null) data.value += '';                        
+                        else if (~data.value.toString().indexOf('HTML')) data.value = data.value.toString()
+                        else {
+                            data.value = JSON.stringify(data.value)
+                        }
+                    }
+                    console.log(data);
                     window.parent.postMessage(data, '*')
                 }
             }

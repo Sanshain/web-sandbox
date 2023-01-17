@@ -43,7 +43,6 @@ window.addEventListener('message', function (event) {
     if (consoleJar) {
         let line = consoleJar.appendChild(document.createElement('div'));        
         // line.innerText = event.data.value;
-
         let snipElem = line.appendChild(document.createElement('div'));
         snipElem.textContent = '> ' + typeof event.data.value === 'object'
             ? (~event.data.value.toString().indexOf('HTML')
@@ -56,6 +55,11 @@ window.addEventListener('message', function (event) {
             // resultElem.style.fontFamily = "'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif";
             snipElem.style.fontFamily = "monospace";
         }
+
+        consoleJar.scrollTo(0, consoleJar.scrollHeight);
+        console.log(55555555555555555);
+
+        // event.target.focus()
     }
 
     // let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));
