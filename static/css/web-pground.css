@@ -363,19 +363,24 @@ iframe {
     width           : var(--size);
     height          : var(--size);
     transform       : rotate(45deg);
+    transition: .35s;
     position        : absolute;
     top             : 0.5em;
     right           : 0.7em;
     border-radius   : 1em;
     background-color: #ccc;
     text-align      : center;
-    line-height     : var(--size);
+    line-height     : calc(var(--size) + 0.1em);
     font-weight     : 700;
     color           : aliceblue;
     box-shadow      : 0 0 15px aliceblue;
     cursor: pointer;
 }
 
+.console .close:hover{
+    transform : rotate(45deg) scale(1.1);
+    background-color: darkgray;
+}
 
 
 .settings {

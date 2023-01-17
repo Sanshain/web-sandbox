@@ -148,18 +148,39 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         code = 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
 
         // customLOG
-        const logJar = document.querySelector('.console .lines');
-        if (logJar) {
+        const terminalJar = document.querySelector('.console .lines');
+        
+        if (terminalJar) {
 
-            logJar.innerHTML = '';
+            terminalJar.innerHTML = '';
 
-            function customLOG(/** @type {string} */ value) {
-                let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));
-                line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
-                globalThis.__debug && console.log([].slice.call(arguments).join())
+            function loclog(/** @type {string} */ value) {
+
+                window.parent.postMessage(
+                    // { value: typeof value === 'object' ? JSON.stringify(value) : value, type: typeof value },
+                    { value, type: typeof value },
+                    '*'
+                );
+                console.log([].slice.call(arguments).join());
             }
 
-            code = customLOG.toString() + '\n\n' + code.replace(/globalThis.__debug && console.log/g, 'customLOG');
+            function onmessage(event) {
+                if (typeof event.data == 'string') {
+
+                    let data = {type: 'string'}
+                    try {
+                        data.value = globalThis.eval(event.data);
+                    }
+                    catch (e) {
+                        data.value = data.error = '> ' + e.stack.split(':').shift() + ': ' + e.message;
+                    }
+                    window.parent.postMessage(data, '*')
+                }
+            }
+
+            const onmessageFunc = "window.addEventListener('message', " + onmessage.toString() + ");"
+
+            code = '\n' + loclog.toString() + '\n' + onmessageFunc + '\n\n' + code.replace(/console\.(log|warn)/g, 'loclog');
         }        
 
         return code;
@@ -255,6 +276,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     // view.innerHTML = '';    
 
     let frame = document.createElement('iframe');
+    frame.sandbox.add('allow-scripts')
+    frame.sandbox.add('allow-modals')
+    // frame.sandbox.add('allow-same-origin')
     frame.src = url;
     view.appendChild(frame)
 

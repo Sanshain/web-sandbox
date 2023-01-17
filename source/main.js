@@ -26,7 +26,7 @@ import "./features/consoleDebug";
  * @param {keyof compilers} envName
  */
 function updateEnvironment(frameworkEnvironment, envName) {
-    const libs = compilers[envName];
+    const libs = compilers[envName] || [];
     frameworkEnvironment.splice(0, frameworkEnvironment.length);
     libs.forEach((/** @type {string} */ lib) => frameworkEnvironment.push(lib));
     
@@ -34,11 +34,40 @@ function updateEnvironment(frameworkEnvironment, envName) {
 }
 
 
+window.addEventListener('message', function (event) {
+    
+    console.log(event.data);
+    
+    // let value = event.data.value;
+    let consoleJar = document.querySelector('.console .lines');
+    if (consoleJar) {
+        let line = consoleJar.appendChild(document.createElement('div'));        
+        // line.innerText = event.data.value;
+
+        let snipElem = line.appendChild(document.createElement('div'));
+        snipElem.textContent = '> ' + typeof event.data.value === 'object'
+            ? (~event.data.value.toString().indexOf('HTML')
+                ? event.data.value
+                : JSON.stringify(event.data.value))
+            : event.data.value;
+
+        if (event.data.error) {
+            snipElem.style.color = 'red';
+            // resultElem.style.fontFamily = "'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif";
+            snipElem.style.fontFamily = "monospace";
+        }
+    }
+
+    // let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));
+    // line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
+})
+
+
 /**
  * @param {[string, string, string, Storage|object?]} values
  * @param {{
  *      onControlSave?: Function, 
- *      tabAttachSelector?: string, 
+ *      tabAttachSelector?: string,
  *      modes?: [object?, object?, object?], 
  *      onfilerename?: Function,     
  *      onfileRemove?: (s: string) => void,
