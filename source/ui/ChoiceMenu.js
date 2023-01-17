@@ -7,8 +7,8 @@ import { html } from "./../utils/linter";
 export class ChoiceMenu extends HTMLElement {
 
     itemStyle = ' \
-        color: white; \
-        background-color: #666; \
+        color: #aaa; \
+        background-color: #444; \
         padding: 0.1em 1em 0.1em 2em; \
         margin-top: 1px; \
         text-align: right; \

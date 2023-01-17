@@ -397,10 +397,11 @@ iframe {
     background-size: contain !important;
     transition     : .5s;
     z-index        : 5;
+    /* opacity: .7;     */
 }
 
 .settings:hover {
-    opacity: .6;
+    opacity: .95;
 }
 
 .settings ul {

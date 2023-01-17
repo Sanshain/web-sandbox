@@ -187,7 +187,7 @@ export function initialize(values, options) {
                     }
                     
                     // upload to frame will in pageBuilder, here just is highlight change
-                    editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
+                    (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
 
 
 

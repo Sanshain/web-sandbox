@@ -53,7 +53,14 @@ export default function initializeEditor(ace, editorOptions, values) {
 
         let editor = ace.edit(element.id);        
         editor.setTheme("ace/theme/monokai");
-        editor.session.setMode("ace/mode/" + modes[i]);
+        
+        let mode = modes[i];
+        // (i && !(i % 2)
+        if (i == 2 && syntax % 2) {     //  javascript == 2   &&   syntax == 1 | 3 (preact|react)
+            // mode = syntax % 2 ? 'tsx' : mode;  // jsx?
+            mode = 'tsx';  // jsx
+        }
+        editor.session.setMode("ace/mode/" + mode);
         editor.setFontSize(fontSize);
         
         let value = values[i] || (editorOptions.storage || localStorage).getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];
