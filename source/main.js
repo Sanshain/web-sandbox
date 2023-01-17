@@ -220,14 +220,16 @@ export function initialize(values, options) {
 
                     if (tabs) {
 
+                        // const modeExt = (modeOptions || { ext: '.js' }).ext; // TODO may be fix error on modeOptions = undefined
+
                         if (Object.keys(playgroundObject.fileStorage).length > 1) {
                             
                             if (!playgroundObject.fileStorage['app' + modeOptions.ext]) {
 
                                 // rename tabs:
 
-                                const jsPattern = /([\w_\d]+)\.js(x)$/m;
-                                const tsPattern = /([\w_\d]+)\.ts(x)$/m;
+                                const jsPattern = /([\w_\d]+)\.js(x)?$/m;
+                                const tsPattern = /([\w_\d]+)\.ts(x)?$/m;
                                 
                                 [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
                                     if (modeOptions.ext) {
