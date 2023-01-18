@@ -75,7 +75,9 @@ window.addEventListener('message', function (event) {
  *      onfilerename?: Function,     
  *      onfileRemove?: (s: string) => void,
  *      additionalFiles?: Storage|object,
- *      quickCompileMode?: boolean
+ *      quickCompileMode?: boolean,
+ *      syntaxMode?: 0 | 1 | 2 | 3
+ *      clariryframework?: (code: string, fwmode: number | (0 | 1 | 2 | 3)) => 0 | 1 | 2 | 3
  * }?} options
  * @returns {unknown[]}
  */
@@ -86,7 +88,10 @@ export function initialize(values, options) {
     /**
      * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
      */
-    let syntaxMode = Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
+    let syntaxMode = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
+    syntaxMode = (options.clariryframework && values) ? options.clariryframework(values[2], syntaxMode) : syntaxMode;
+    console.log(syntaxMode, 'syntaxMode');
+
     //@ts-ignore
     document.getElementById('compiler_mode').selectedIndex = syntaxMode;
 
