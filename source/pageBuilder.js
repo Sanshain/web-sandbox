@@ -3,10 +3,18 @@
 import { babelCompiler, compilers } from "./features/compiler";
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
 import { commonStorage, getLangMode } from './utils/utils';
+import sass2less from 'less-plugin-sass2less'
+
 
 // TODO REMOVE:
 import { ChoiceMenu } from "./ui/ChoiceMenu";
-import { modes as baseModes } from "./features/base";
+import { modes as baseModes, modes } from './features/base';
+
+
+/**
+ * @typedef {{src: string|string[], target?: {tag?: BaseTags[number], attributes?: string, inside?: true | 1}}} Mode
+ */
+
 
 
 export { compilers, babelCompiler };
@@ -24,12 +32,13 @@ export const playgroundObject = {
     onfileRemove: null
 }
 
-
 /**
- * @param {{ [x: string]: string; }} [attrs]
+ * @typedef {BaseTags[number] | 'link'} KeyTags
+ * @param {{ [k in KeyTags]?: string; }} content - html object content
+ * @param {{ [k in KeyTags]?: string; }} attrs - list of accompanying attributes for each tag in html object content (look up htmlStruct)
  */
 function createHtml({ body, style, script, link }, attrs) {
-
+    
     // globalThis.__debug && console.log(arguments);
 
     const htmlStruct = {
@@ -67,13 +76,16 @@ function createHtml({ body, style, script, link }, attrs) {
     return nodeCreate(htmlStruct);
 }
 
+/**
+* @typedef {['body', 'style', 'script', 'link'?]} BaseTags
+ */
 
 /**
  * 
  * TODO: option {simplestBundler, fileStore}
  * 
  * @param {string} [prevUrl] - предыдущий URL для освобождения
- * @param {string[]} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...)
+ * @param {Array<string|[string]>} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...). Если массив - это inline script
  * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
  * @param {{onload: Function}} [options] - onload callback
  * @returns {[HTMLElement, string]}
@@ -201,7 +213,11 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     
     
     const editors = playgroundObject.editors;
+    /**     
+     * @type {BaseTags}
+     */
     const baseTags = ['body', 'style', 'script'];
+    
     const attrs = {
         script: scriptType
     }
@@ -215,34 +231,47 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         let modeMenu = editor.container.querySelector('choice-menu');
         if (modeMenu) {
             /**
-             * @type {{src: string|string[], target?: {tag: string, attributes: string, inside?: true}}}
+             * @type {Mode}
              */
             let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
-            if (actualMode) {                
+            if (actualMode) {
                 // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
                 [].slice.call(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src).forEach(el => additionalScripts.push(el));
                 // дополнительные скрипты. В частности less
                 window['__debug'] && console.log(additionalScripts);
             }
-            
-            if (actualMode && actualMode.target) {
-                                                
-                /// possibility change style tag to link tag:
-                if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
 
-                if (actualMode.target.inside) {
+            if (actualMode && actualMode.target) {
+
+                /**
+                 * @type {string}
+                 */
+                let value = editors[i].getValue()                
+
+
+                if (actualMode.target.inside === true) insideInjection(value, baseModes[i], actualMode, additionalScripts);
+                else if (actualMode.target.inside === 1) {
+
+                    //// only for unsandboxed version (legacy and TODO drop it later)
 
                     // here constructs tags that will involve right to iframe:
-                    
-                    let blob = new Blob([editors[i].getValue()], { type: 'text/' + baseModes[i] });
+
+                    let blob = new Blob([value], { type: 'text/' + baseModes[i] });
+
+                    /// possibility change style tag to link tag:
+                    if (actualMode.target.tag) baseTags[i] = actualMode.target.tag;
+
                     let link = URL.createObjectURL(blob);
+
                     // actualMode.target.attributes = actualMode.target.attributes.replace('{}', link)
                     actualMode.target.attributes = actualMode.target.attributes.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"')
-                    // window['__debug'] && console.log(baseModes[i]);
+
                     window['__debug'] && console.log(link);
-                    // window['__debug'] && console.log(actualMode.target);
+                    
+                    if (actualMode.target.attributes) attrs[baseTags[i]] = actualMode.target.attributes;
                 }
-                if (actualMode.target.attributes) attrs[baseTags[i]] = actualMode.target.attributes;
+                
+                // window['__debug'] && console.log(baseModes[i]);
             }
         }
     })
@@ -257,13 +286,22 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 : buildJS(appCode || editors[i].getValue())
         ), acc),
         {}
-    );    
+    );
+    
 
     let optionalScripts = ''
     if (additionalScripts && additionalScripts.length) {
         for (let i = 0; i < additionalScripts.length; i++) {
             // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
-            optionalScripts += '<script src="' + additionalScripts[i] + '"></script>';
+            const additionalScript = additionalScripts[i];
+            if (typeof additionalScript == 'string') optionalScripts += '<script src="' + additionalScript + '"></script>';
+            else if (additionalScript) {
+                
+                if (Array.isArray(additionalScript) && additionalScript.length === 1 && typeof additionalScript[0] === 'string') {
+                    optionalScripts += '<script>' + additionalScript[0] + '</script>';
+                }
+
+            }
         }
     }    
     
@@ -287,6 +325,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     let frame = document.createElement('iframe');
     frame.sandbox.add('allow-scripts')
     frame.sandbox.add('allow-modals')
+
+    // делает контекст небезопасным (!)
     // frame.sandbox.add('allow-same-origin')
     frame.src = url;
     view.appendChild(frame)
@@ -294,6 +334,117 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     return [frame, url]
 }
 
+
+/**
+ * @description 
+ * @param {string} value
+ * @param {"html"|"css"|"javascript"} baseMode
+ * @param {Mode} actualMode
+ * @param {Array<string | [string]>} additionalScripts
+ */
+function insideInjection(value, baseMode, actualMode, additionalScripts) {
+
+    // createURL from iframe DOM        
+
+    /**
+     * @type {string}
+     */
+    let scriptDetails = (function createInsides() {        
+
+        // create resource:
+        let blob = new Blob([value], { type: 'text/' + baseMode });
+        const link = URL.createObjectURL(blob);
+        
+
+        // append to frame DOM link to resource:
+        let baseTag = actualMode.target.tag;        
+        let attributes = actualMode.target.attributes.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
+        let id = link.split('/').pop();
+
+        let elemHTML = ('<___ id="' + id + '"' + attributes + (isPaired(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
+        document.head.insertAdjacentHTML('beforeend', elemHTML);
+
+        // if pair tag with content or not
+        const modeSrc = actualMode.src;
+        // if (!modeSrc) return;
+
+        // get the added element:
+        let elem = document.getElementById(id);
+
+        // upload next script after resource uploading, which handle the resource
+        function uploadScripts() {
+            
+            if (typeof modeSrc === 'string') {
+                let script = document.createElement('script');
+                script.src = modeSrc;
+                document.head.appendChild(script);
+            }
+            else {
+
+                console.warn('multiple inside. Not tested yet');
+
+                let uploaders = modeSrc.reduce((acc, src, i) => {
+
+                    acc.push(new Promise(function (resolve) {
+                        var script = document.createElement('script');
+                        script.src = src;
+                        document.head.appendChild(script);
+                        script.onload = () => resolve(script);
+                    }));
+
+                    return acc;
+
+                }, []);
+
+                /// sequence execution
+                uploaders.reduce((cur, next) => cur.then(next));
+            }
+        }
+
+        setTimeout(uploadScripts);
+
+        // if ('onload' in elem) {
+        //     elem.onload = uploadScripts;
+        // }
+        // else {
+        //     console.warn('unsupported inside');
+        //     setTimeout(uploadScripts);
+        // }
+
+
+    }).toString()
+        .replace('value', '`' + value + '`')
+        .replace('actualMode.target.tag', '"' + actualMode.target.tag + '"')
+        .replace('baseMode', '"' + baseMode + '"')
+        .replace('actualMode.target.attributes', "'" + actualMode.target.attributes + "'")
+        .replace('isPaired', '(' + isPaired.toString() + ')')
+        .replace('actualMode.src', actualMode.src
+            ? typeof actualMode.src === 'string'
+                ? ('"' + actualMode.src + '"')
+                : '["' + actualMode.src.join('", "') + '"]'
+            : null);
+    
+    scriptDetails = '(' + scriptDetails + ')()'
+
+    // remove from additionalScripts because of its unused then
+    if (typeof actualMode.src === 'string') {
+        let index = additionalScripts.indexOf(actualMode.src);
+        if (~index) {
+            additionalScripts.splice(index, 1);
+        }
+    }
+    else if (Array.isArray(actualMode.src)) {
+        actualMode.src.forEach(src => {
+            let index = additionalScripts.indexOf(src);
+            if (~index) {
+                additionalScripts.splice(index, 1);
+            }
+        });
+    }
+
+    /// inside [] meens its multiply!
+    additionalScripts.unshift([scriptDetails]);
+}
 
 /**
  * @param {string} code
@@ -348,6 +499,8 @@ export function webCompile(jsxMode, compilerModes, less) {
     }
 
     if (iframe.contentDocument && less) {
+
+        //// !with sandbox never will performed. Legacy content:
         
         /**
          * attantion: because from deleted scripts, working handlers may remain on the page, which will spoil the picture 

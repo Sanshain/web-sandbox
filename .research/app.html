@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- <link rel="stylesheet" id="link1" href="./aa.css"> -->
+    <script>
+        let baseTag = "link";
+        let link = './aa.css'
+        let attributes = ' rel="stylesheet" type="text/css" href="{}" '.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
+        let id = link.split('/').pop();
+
+        let elemHTML = ('<___ id="' + id + '"' + attributes + (((/** @type {string} */ tag) => !~['link'].indexOf(tag))(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
+        document.head.insertAdjacentHTML('beforeend', elemHTML);
+        document.getElementById(id).onload = () => console.log(789);
+
+        // document.getElementById('link1').onload = () => console.log(789);
+    </script>
+</head>
+<body>
+    <div class="aa">123</div>
+    <script>
+    (function createInsides() {
+
+        // create resource:
+        let blob = new Blob([`/* less */
+
+@a: red;
+
+h2 {
+	color: @a;
+	cursor: pointer; 
+	font-family: arial;
+}`], { type: 'text/' + "css" });
+        const link = URL.createObjectURL(blob);
+
+
+        // append to frame DOM link to resource:
+        let baseTag = "link";
+        let attributes = ' rel="stylesheet/less" type="text/css" href="{}" '.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
+        let id = link.split('/').pop();
+
+        let elemHTML = ('<___ id="' + id + '"' + attributes + (((/** @type {string} */ tag) => !~['link'].indexOf(tag))(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
+        document.head.insertAdjacentHTML('beforeend', elemHTML);
+
+        // if pair tag with content or not
+        const modeSrc = "http://127.0.0.1:3001/static/js/preproc/less.js";
+        // if (!modeSrc) return;
+
+        // get the added element:
+        let elem = document.getElementById(id);
+
+        // upload next script after resource uploading, which handle the resource
+        function uploadScripts() {
+
+            if (typeof modeSrc === 'string') {
+                let script = document.createElement('script');
+                script.src = modeSrc;
+                document.head.appendChild(script);
+            }
+            else {
+
+                console.warn('multiple inside. Not tested yet');
+
+                let uploaders = modeSrc.reduce((acc, src, i) => {
+
+                    acc.push(new Promise(function (resolve) {
+                        var script = document.createElement('script');
+                        script.src = src;
+                        document.head.appendChild(script);
+                        script.onload = () => resolve(script);
+                    }));
+
+                    return acc;
+
+                }, []);
+
+                /// sequence execution
+                uploaders.reduce((cur, next) => cur.then(next));
+            }
+        }
+
+        if ('onload' in elem) {
+            elem.onload = uploadScripts;
+        }
+        else {
+            console.warn('unsupported inside');
+            setTimeout(uploadScripts);
+        }
+
+
+    })()        
+    </script>
+</body>
+</html>

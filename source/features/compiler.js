@@ -10,7 +10,8 @@ const reactCompiler = {
 
 const vueCompiler = {
     // vue: "https://unpkg.com/vue@2.5.17/dist/vue.js"
-    vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'
+    vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js',
+    // vue: 'https://unpkg.com/vue@3/dist/vue.global.js'
 }
 
 const preactCompiler = {
@@ -81,3 +82,16 @@ export const defaultValues = [
                     "\n\treturn <h1 onClick={()=>setCount(count+1)}>\n\t\tClick me: {count}!\n\t</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
     },
 ]
+
+
+// vue3: 
+
+// const { createApp } = Vue
+
+// createApp({
+//     data() {
+//         return {
+//             message: 'Hello Vue!'
+//         }
+//     }
+// }).mount('#app')

@@ -167,7 +167,15 @@
         //     // ['.play', '.save'].map(s => document.querySelector(s)).concat(event.target.parentElement).forEach(el => el && el.classList.toggle('hidden'))
         // }
 
-
+        
+        // let link = document.createElement('link')
+        // link.href = './static/css/web-pground.css'
+        // link.onload = () => alert(99)
+        // link.rel = 'stylesheet'
+        // document.head.appendChild(link)
+        // document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" id="link_css" href="./static/css/web-pground.css">')
+        // document.querySelector('#link_css').onload = (e) => (console.log(e), alert(e))
+        // alert(10)
 
         __debug = true;
 
@@ -188,11 +196,18 @@
                     css: null,
                     less: {
                         ext: '.less',
-                        src: document.location.origin + '/static/js/preproc/less.min.js',
+                        // src: document.location.origin + '/static/js/preproc/less.min.js',
+                        src: document.location.origin + '/static/js/preproc/less.js',
                         target: {
-                            inside: true,                                                         // 'outline'|'external'
+                            inside: true,                                                         // 1|true    'outline'|'external'
                             tag: 'link',
-                            attributes: ' rel="stylesheet/less" type="text/css" href="{}" '
+                            attributes: ' rel="stylesheet/less" type="text/css" href="{}" ',
+                            // TODO?
+                            then: () => {
+                                let script = document.createElement('script');
+                                script.src = document.location.origin + '/static/js/preproc/less.js'
+                                document.appendChild(script);
+                            }
                         }
                     }
                 },
@@ -207,7 +222,14 @@
                     typescript: {
 
                         src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
-                        target: 'self',
+                        target: 'self', // TODO change to `root`
+                        // TODO2 bring the options to the following type:
+                        // target: {
+                        //     to: 'inside'|'root',
+                        //     attributes?: string
+                        //     tag: 'script'|'link' = 'script'
+                        //     then: (to == 'root' ? code : undefined) => string | void   //@@compileFunc is here!!
+                        // }
                         tabs: true,
                         ext: '.ts',
                         compileFunc: code => {                            

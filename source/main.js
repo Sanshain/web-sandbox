@@ -105,7 +105,6 @@ export function initialize(values, options) {
     playgroundObject.onfilerename = options.onfilerename
     playgroundObject.onfileRemove = options.onfileRemove
 
-    debugger;
     //@ts-ignore
     updateEnvironment(frameworkEnvironment, Object.keys(compilers)[syntaxMode])
 
