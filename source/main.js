@@ -14,7 +14,9 @@ import { modes } from "./features/base.js";
 
 import "./features/consoleDebug";
 
-
+/**
+ * @typedef {import("./ui/ChoiceMenu").ChoiceDetails} ChoiceDetails
+ */
 
 /**
  * @type { Array<keyof compilers>}
@@ -22,15 +24,20 @@ import "./features/consoleDebug";
 const frameworkEnvironment = []
 
 /**
- * @param { string[] } fwrkEnv
- * @param {keyof compilers} envName
+ * @description Do full environment cleaning and filling from scratch
+ * @param { string[] } environment - environment - list of external (or internal) scripts or another resources to load content
+ * @param {keyof compilers} envName - framework environment name
  */
-function updateEnvironment(fwrkEnv, envName) {
+function updateEnvironment(environment, envName) {
+
     const libs = compilers[envName] || [];
-    fwrkEnv.splice(0, fwrkEnv.length);
-    libs.forEach((/** @type {string} */ lib) => fwrkEnv.push(lib));
+
+    environment.splice(0, environment.length);
+    libs.forEach((/** @type {string} */ lib) => environment.push(lib));
     
-    window['__DEBUG'] && console.log(fwrkEnv);
+    // window['__DEBUG'] && console.log(environment);
+    
+    return environment;
 }
 
 
@@ -67,17 +74,37 @@ window.addEventListener('message', function (event) {
 
 
 /**
+ * 
+ * @typedef {{
+ *  [k: string]: {
+ *      extension?: `.${string}`,
+ *      src?: string | string[],
+ *      inside?: boolean,
+ *      prehandling?: (code: string) => string,
+ *      mode?: string,
+ *      tabs?: boolean,
+ *      target?:{
+ *          external?: boolean,
+ *          tag?: 'link'|'script'|'style'|'body',
+ *          attributes?: string
+ *      } 
+ *  }
+ * }} LangMode
+ * 
+ * @typedef { 0 | 1 | 2 | 3 } SyntaxMode - keyof (Object.keys(compilers) | ['vanile', 'preact', 'vue', 'react'])
+ * 
  * @param {[string, string, string, Storage|object?]} values
  * @param {{
- *      onControlSave?: Function, 
- *      tabAttachSelector?: string,
- *      modes?: [object?, object?, object?], 
- *      onfilerename?: Function,     
- *      onfileRemove?: (s: string) => void,
- *      additionalFiles?: Storage|object,
- *      quickCompileMode?: boolean,
- *      syntaxMode?: 0 | 1 | 2 | 3
- *      clariryframework?: (code: string, fwmode: number | (0 | 1 | 2 | 3)) => 0 | 1 | 2 | 3
+ *      onControlSave?: Function,                                                           // on ctrl+save callback
+ *      tabAttachSelector?: string,                                                         // selector for tab attach (tabs must be decorated in DOM outside the package)
+ *      modes?: [LangMode?, LangMode?, LangMode?],                                          // list of modes sets
+ *      onModeChange?: (a: {editor: number, mode: string, prevMode?: string}) => void,      // on chenge mode (for example less => scss)
+ *      onfilerename?: Function,                                                            // on file reneme event
+ *      onfileRemove?: (s: string) => void,                                                 // on file remove event
+ *      additionalFiles?: Storage|object,                                                   // ? implemented?
+ *      quickCompileMode?: boolean,                                                         // ? not implemented - the quick mode compilation via onmessages iver sandbox communication
+ *      syntaxMode?: SyntaxMode,                                                            // index of initial selected  framawork 
+ *      clariryframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? callback for what ? (I forgot)
  * }?} options
  * @returns {unknown[]}
  */
@@ -88,15 +115,15 @@ export function initialize(values, options) {
     /**
      * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
      */
-    let syntaxMode = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
-    syntaxMode = (options.clariryframework && values) ? options.clariryframework(values[2], syntaxMode) : syntaxMode;
-    console.log(syntaxMode, 'syntaxMode');
+    let frameworkID = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
+    frameworkID = (options.clariryframework && values) ? options.clariryframework(values[2], frameworkID) : frameworkID;
+    console.log(frameworkID, 'syntaxMode');
 
     //@ts-ignore
-    document.getElementById('compiler_mode').selectedIndex = syntaxMode;
+    document.getElementById('compiler_mode').selectedIndex = frameworkID;
 
     // js mode:
-    const jsxMode = !!(syntaxMode % 2);
+    const jsxMode = !!(frameworkID % 2);
     if (jsxMode) {
         document.getElementById('jseditor').classList.add('dis_errors');
     }
@@ -106,13 +133,13 @@ export function initialize(values, options) {
     playgroundObject.onfileRemove = options.onfileRemove
 
     //@ts-ignore
-    updateEnvironment(frameworkEnvironment, Object.keys(compilers)[syntaxMode])
+    updateEnvironment(frameworkEnvironment, Object.keys(compilers)[frameworkID])
 
     // Object.values(compilers)[syntaxMode].forEach(link => frameworkEnvironment.push(link));
     const updateEnv = updateEnvironment.bind(null, frameworkEnvironment);
     
     // @ts-ignore
-    let compileFunc = syntaxMode ? webCompile.bind(null, jsxMode) : webCompile;
+    let compileFunc = frameworkID ? webCompile.bind(null, jsxMode) : webCompile;
 
     initResizers()
 
@@ -120,13 +147,17 @@ export function initialize(values, options) {
     // console.log(mode);
     // console.log(Object.values(compilers)[mode]);
 
+    /**
+     * @_type // TODO
+     */
     const editorOptions = {
         compileFunc,
         frameworkEnvironment,
         quickCompileMode: options.quickCompileMode,
         controlSave: options.onControlSave,
         storage: commonStorage,
-        syntaxMode,
+        frameworkID,
+        updateEnv
     }
 
     if (options.additionalFiles) {
@@ -149,7 +180,8 @@ export function initialize(values, options) {
     if (options.modes) {
         !customElements.get('choice-menu') && customElements.define('choice-menu', ChoiceMenu);
         console.log(options.modes);
-        options.modes.forEach(function (/** @type { {[k: string]: {tabs?: true, src?: string, target? : object, ext?: string }} } */ mode, i) {
+        
+        options.modes.forEach(function (mode, i) {  /** @type { {[k: string]: LangMode} } */
 
             let items = [];  // ['css','less','stylus']
 
@@ -157,17 +189,19 @@ export function initialize(values, options) {
 
                 const settingsElement = editors[i].container.appendChild(document.createElement('choice-menu'));
                 settingsElement.className = 'settings';
-                settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent } */ e) => {
+
+                settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ e) => {
                     console.log(e.detail);
                     console.log(mode);
 
                     /**
-                     * @type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', ext?: string}}
+                     * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
+                     * @_type {LangMode} - ? - not applyed, but auto detected as expected - [?]
                      */
                     const modeOptions = mode[e.detail.value];
                     // const link = options.modes[i][e.detail.value];
-                    // console.log(link)
 
+                    options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: i })
                             
                     // MULTITABS MODE:
                 
@@ -195,8 +229,9 @@ export function initialize(values, options) {
                         }
                     }
                     
-                    // upload to frame will in pageBuilder, here just is highlight change
+                    // upload to frame will in pageBuilder, here just is highlight change                    
                     (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
+                    (i === 2) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
 
 
 
@@ -224,11 +259,11 @@ export function initialize(values, options) {
 
                     if (tabs) {
 
-                        // const modeExt = (modeOptions || { ext: '.js' }).ext; // TODO may be fix error on modeOptions = undefined
+                        // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined
 
                         if (Object.keys(playgroundObject.fileStorage).length > 1) {
                             
-                            if (!playgroundObject.fileStorage['app' + modeOptions.ext]) {
+                            if (!playgroundObject.fileStorage['app' + modeOptions.extension]) {
 
                                 // rename tabs:
 
@@ -236,8 +271,8 @@ export function initialize(values, options) {
                                 const tsPattern = /([\w_\d]+)\.ts(x)?$/m;
                                 
                                 [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
-                                    if (modeOptions.ext) {
-                                        if (!element.innerText.endsWith(modeOptions.ext)) {
+                                    if (modeOptions.extension) {
+                                        if (!element.innerText.endsWith(modeOptions.extension)) {
                                             element.innerText = element.innerText.replace(jsPattern, '$1.ts');
                                         }
                                     }
@@ -251,7 +286,7 @@ export function initialize(values, options) {
                                 /**
                                  * @type {[RegExp, string]}
                                  */
-                                const extensions = modeOptions.ext ? [jsPattern, '$1.ts'] : [tsPattern, '$1.js']
+                                const extensions = modeOptions.extension ? [jsPattern, '$1.ts'] : [tsPattern, '$1.js']
 
                                 let storageFiles = Object.keys(playgroundObject.fileStorage).map(
                                     k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
@@ -273,12 +308,12 @@ export function initialize(values, options) {
 
                         }
                         
-                        if (modeOptions.ext) {
+                        if (modeOptions.extension) {
                             const firstTab = tabs.children[0];
                             //@ts-ignore
-                            if (!~firstTab.innerText.indexOf(modeOptions.ext, firstTab.innerText.length - modeOptions.ext.length)) {
+                            if (!~firstTab.innerText.indexOf(modeOptions.extension, firstTab.innerText.length - modeOptions.extension.length)) {
                                 //@ts-ignore
-                                firstTab.innerText = firstTab.innerText.split('.').shift() + modeOptions.ext
+                                firstTab.innerText = firstTab.innerText.split('.').shift() + modeOptions.extension
                             }
                         }
 

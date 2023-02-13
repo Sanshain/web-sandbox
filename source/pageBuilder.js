@@ -12,7 +12,7 @@ import { modes as baseModes, modes } from './features/base';
 
 
 /**
- * @typedef {{src: string|string[], target?: {tag?: BaseTags[number], attributes?: string, inside?: true | 1}}} Mode
+ * @typedef {{src: string|string[], inside?: boolean, prehandling?: (arg: string) => string, target?: {tag?: BaseTags[number], external?: boolean, attributes?: string}}} Mode
  */
 
 
@@ -137,7 +137,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 document.head.appendChild(originScript);
                 let waiting = document.querySelector('.view').appendChild(document.createElement('div'))
                 waiting.innerText = 'Ожидание...'
-                waiting.id = 'view__waiting';                
+                waiting.id = 'view__waiting';
                 
                 if (options && options.onload) {
                     return;
@@ -246,11 +246,10 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 /**
                  * @type {string}
                  */
-                let value = editors[i].getValue()                
+                let value = editors[i].getValue()
 
-
-                if (actualMode.target.inside === true) insideInjection(value, baseModes[i], actualMode, additionalScripts);
-                else if (actualMode.target.inside === 1) {
+                if (actualMode.inside === true) resourceInject(value, baseModes[i], actualMode, additionalScripts);
+                else if (actualMode.inside) {
 
                     //// only for unsandboxed version (legacy and TODO drop it later)
 
@@ -294,7 +293,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         for (let i = 0; i < additionalScripts.length; i++) {
             // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
             const additionalScript = additionalScripts[i];
-            if (typeof additionalScript == 'string') optionalScripts += '<script src="' + additionalScript + '"></script>';
+            if (typeof additionalScript == 'string') optionalScripts += '<script src="' + additionalScript + '"></script>';  // defer?
             else if (additionalScript) {
                 
                 if (Array.isArray(additionalScript) && additionalScript.length === 1 && typeof additionalScript[0] === 'string') {
@@ -336,40 +335,63 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
 
 /**
- * @description 
+ * @description generate script, which creates virtual resource[s] with value contents based on `baseMode.target` options, 
+ * and append it to additionalScripts instead of `src` inject into frame head
  * @param {string} value
  * @param {"html"|"css"|"javascript"} baseMode
  * @param {Mode} actualMode
  * @param {Array<string | [string]>} additionalScripts
  */
-function insideInjection(value, baseMode, actualMode, additionalScripts) {
+function resourceInject(value, baseMode, actualMode, additionalScripts) {
 
-    // createURL from iframe DOM        
+    // createURL from iframe DOM
 
     /**
      * @type {string}
      */
     let scriptDetails = (function createInsides() {        
 
-        // create resource:
-        let blob = new Blob([value], { type: 'text/' + baseMode });
-        const link = URL.createObjectURL(blob);
+        const baseTag = actualMode.target.tag;
+        const content = value;
+        const isExternalContent = actualMode.target.external;
+
+        /**
+         * @description append to frame DOM link to resource
+         * @param {string?} link
+         * @returns {HTMLElement} - {HTMLLinkElement|HTMLScriptElement|HTMLStyleElement} - (Omit<BaseTags, 'body'> =-> HTMLElement)
+         */
+        function createElement(link) {
+            
+            const attributes = actualMode.target.attributes.replace(/(href|src)\="[\:\w\d-\{\}/\.]+"/, '$1="' + link + '"');
+
+            // set id
+            let id = (Math.random() + '').slice(2);         // link.split('/').pop() 
+
+            // forming html
+            let elemHTML = ('<___ id="' + id + '"' + attributes + (isPaired(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
+
+            if (!isExternalContent) {
+                elemHTML = elemHTML.replace('><' + baseTag + '/>', '>' + content + '<' + baseTag + '/>')
+            }
+
+            document.head.insertAdjacentHTML('beforeend', elemHTML);
+
+            return document.getElementById(id);
+        }
+
+        if (isExternalContent == false) var elem = createElement(null);
+        else {
+            // create resource:
+            let blob = new Blob([content], { type: 'text/' + baseMode });
+            const link = URL.createObjectURL(blob);
+            var elem = createElement(link);
+        }
+
         
-
-        // append to frame DOM link to resource:
-        let baseTag = actualMode.target.tag;        
-        let attributes = actualMode.target.attributes.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
-        let id = link.split('/').pop();
-
-        let elemHTML = ('<___ id="' + id + '"' + attributes + (isPaired(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
-        document.head.insertAdjacentHTML('beforeend', elemHTML);
 
         // if pair tag with content or not
         const modeSrc = actualMode.src;
-        // if (!modeSrc) return;
-
-        // get the added element:
-        let elem = document.getElementById(id);
+        if (!modeSrc) return;
 
         // upload next script after resource uploading, which handle the resource
         function uploadScripts() {
@@ -401,15 +423,14 @@ function insideInjection(value, baseMode, actualMode, additionalScripts) {
             }
         }
 
-        setTimeout(uploadScripts);
+        if (('onload' in elem) && ((baseTag === 'script' && elem['type'] == 'text/javascript')) || !elem['type']) {
 
-        // if ('onload' in elem) {
-        //     elem.onload = uploadScripts;
-        // }
-        // else {
-        //     console.warn('unsupported inside');
-        //     setTimeout(uploadScripts);
-        // }
+            elem.onload = uploadScripts;
+        }
+        else {
+            // console.warn('unsupported inside');
+            setTimeout(uploadScripts);
+        }
 
 
     }).toString()
@@ -418,6 +439,7 @@ function insideInjection(value, baseMode, actualMode, additionalScripts) {
         .replace('baseMode', '"' + baseMode + '"')
         .replace('actualMode.target.attributes', "'" + actualMode.target.attributes + "'")
         .replace('isPaired', '(' + isPaired.toString() + ')')
+        .replace('actualMode.target.external', actualMode.target.external + '')
         .replace('actualMode.src', actualMode.src
             ? typeof actualMode.src === 'string'
                 ? ('"' + actualMode.src + '"')
@@ -444,11 +466,13 @@ function insideInjection(value, baseMode, actualMode, additionalScripts) {
 
     /// inside [] meens its multiply!
     additionalScripts.unshift([scriptDetails]);
+
 }
 
 /**
  * @param {string} code
- * @param {{ compileFunc: (arg0: string) => string; }} currentLang
+ * @_param {{ prehandling: (arg0: string) => string; }} currentLang
+ * @param {Mode} currentLang
  */
 function buildAndTranspile(code, currentLang) {
     if (window['simplestBundler']) {
@@ -461,8 +485,8 @@ function buildAndTranspile(code, currentLang) {
     }
 
     // ts transpilation:
-    if (currentLang && currentLang.compileFunc) {
-        code = currentLang.compileFunc(code);
+    if (currentLang && currentLang.prehandling) {
+        code = currentLang.prehandling(code);
     }
     return code;
 }

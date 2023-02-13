@@ -3,6 +3,11 @@
 import { html } from "./../utils/linter";
 
 
+/** 
+ * @typedef {{id: string, metaId: string, value: string, previousValue: string}} ChoiceDetails
+ */
+
+
 // HTMLElement
 export class ChoiceMenu extends HTMLElement {
 
@@ -31,7 +36,7 @@ export class ChoiceMenu extends HTMLElement {
     rootElement = null;
 
     /** selected info
-     * @type {{id: string, metaId: string, value: string}}
+     * @type {ChoiceDetails}
      */
     checkInfo = null;
 
@@ -80,7 +85,7 @@ export class ChoiceMenu extends HTMLElement {
 
         // tactic vars
 
-        //
+        // ?
         let menuElement = this.rootElement = this.shadowRoot.querySelector('ul');
 
 
@@ -136,14 +141,19 @@ export class ChoiceMenu extends HTMLElement {
 
 
 
+
     /**
      * @param {Event} event
      */
     selectedChanged(event) {
+
         //@ts-expect-error
         if (event.target.tagName === 'li'.toUpperCase()) {
             
             (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
+
+            const previousValue = (this.selectedElement || {}).innerText;
+
             //@ts-expect-error
             (this.selectedElement = event.target).classList.add('selected');
 
@@ -158,6 +168,7 @@ export class ChoiceMenu extends HTMLElement {
                     metaId: event.target.dataset.id,
                     //@ts-expect-error
                     value: event.target.innerText,
+                    previousValue
                 }
             }))
         }

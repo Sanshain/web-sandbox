@@ -7,13 +7,27 @@
     <title>Document</title>
     <!-- <link rel="stylesheet" id="link1" href="./aa.css"> -->
     <script>
-        let baseTag = "link";
         let link = './aa.css'
-        let attributes = ' rel="stylesheet" type="text/css" href="{}" '.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');
         let id = link.split('/').pop();
 
-        let elemHTML = ('<___ id="' + id + '"' + attributes + (((/** @type {string} */ tag) => !~['link'].indexOf(tag))(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
-        document.head.insertAdjacentHTML('beforeend', elemHTML);
+        // let baseTag = "link";
+        // let attributes = ' rel="stylesheet" type="text/css" href="{}" '.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"');        
+        // let elemHTML = ('<___ id="' + id + '"' + attributes + (((/** @type {string} */ tag) => !~['link'].indexOf(tag))(baseTag) ? '><___/>' : ' />')).replace(/\<___/g, '<' + baseTag);
+        // document.head.insertAdjacentHTML('beforeend', elemHTML);
+
+        // let linkElem = document.createElement('link');
+        // linkElem.href = link;
+        // linkElem.id = id;
+        // linkElem.rel = 'stylesheet';
+        // linkElem.type = 'text/html';
+        // document.head.appendChild(linkElem);
+
+        let linkElem = document.createElement('script');
+        linkElem.src = link;
+        linkElem.id = id;
+        // linkElem.type = 'text/vbscript';
+        document.head.appendChild(linkElem);        
+
         document.getElementById(id).onload = () => console.log(789);
 
         // document.getElementById('link1').onload = () => console.log(789);

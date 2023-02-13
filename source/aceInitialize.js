@@ -4,7 +4,7 @@ import { default as extend } from 'emmet';
 
 import { debounce } from "./utils/utils";
 import { expand } from './features/expantion';
-import { defaultValues } from './features/compiler';
+import { compilers, defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
 import { playgroundObject, webCompile } from './pageBuilder';
 import { fileAttach } from './features/tabs';
@@ -14,16 +14,18 @@ import { modes } from './features/base';
 
 /**
  * setup ace editor: hangs events and configures compilers
+ * @typedef {0 | 1 | 2 | 3} FrameworkID - keyof Object.keys(compilers)
  * 
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace - ace library instance
  * @param {{ 
  *      compileFunc: Function;                                                  //// prebinded webCompile
- *      syntaxMode: 0 | 1 | 2 | 3                                               //// syntax mode (implied corresponding with vanile/preact/vue/react)
+ *      frameworkID: FrameworkID                                                 //// syntax mode (implied corresponding with vanile/preact/vue/react)
  *      controlSave?: (ev: object, compileFunc: Function) => void;              //// callback on ctrlSave
  *      storage?: Storage,                                                      //// (custom?) file storage instead of localStorage
- *      quickCompileMode: boolean,                                              //// 
+ *      quickCompileMode: boolean,                                              //// ? not implements: quick compile vua messages communitation among DOM and frame
  *      modes?: object[],                                                       //// ? - deprecated field
  *      frameworkEnvironment: string[]                                          //// list of lib links to page downloading
+ *      updateEnv: (frameworkName: string) => string[]                          //// update additionalScripts
  * }} editorOptions - options contained prebinded webCompile (compileFunc) and etc
  * @obsolete {string[]} modes
  * @obsolete {string|number} syntaxMode
@@ -31,14 +33,23 @@ import { modes } from './features/base';
  */
 export default function initializeEditor(ace, editorOptions, values) {
     
-    const syntax = editorOptions.syntaxMode
+    /**
+     * @type {FrameworkID}
+     */
+    const initialFramework = editorOptions.frameworkID
+    const frameworksList = Object.keys(compilers)
 
     const Range = ace.require('ace/range').Range;
-    const delay = 500;
+    const delay = 1500;
     
     const autoPlay = debounce(
-        //@ts-ignore
-        () => setTimeout(webCompile.bind(null, !!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode), delay), delay
+        () => {
+            const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
+            const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
+            setTimeout(
+                webCompile.bind(null, jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode),                
+            )
+        }, delay
     );
     const fontSize = '.9em';
 
@@ -57,14 +68,14 @@ export default function initializeEditor(ace, editorOptions, values) {
         
         let mode = modes[i];
         // (i && !(i % 2)
-        if (i == 2 && syntax % 2) {     //  javascript == 2   &&   syntax == 1 | 3 (preact|react)
+        if (i == 2 && initialFramework % 2) {     //  javascript == 2   &&   syntax == 1 | 3 (preact|react)
             // mode = syntax % 2 ? 'tsx' : mode;  // jsx?
             mode = 'tsx';  // jsx
         }
         editor.session.setMode("ace/mode/" + mode);
         editor.setFontSize(fontSize);
         
-        let value = values[i] || (editorOptions.storage || localStorage).getItem(syntax + '__' + modes[i]) || defaultValues[syntax][modes[i]];
+        let value = values[i] || (editorOptions.storage || localStorage).getItem(initialFramework + '__' + modes[i]) || defaultValues[initialFramework][modes[i]];
         if (value) {
             editor.session.setValue(value)
         }
@@ -104,20 +115,25 @@ export default function initializeEditor(ace, editorOptions, values) {
             if ( event.key === 'F9')      // ctrl+s
             {
                 event.preventDefault();
-                // binding is lost !!! 
-                webCompile(!!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode || false);
+                // binding is drop !!
+                const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
+                const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
+
+                webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false);
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 
                 // ctrl + s
                 console.log(editorOptions);
-                // event.preventDefault(), (editorOptions.controlSave || webCompile)();
+                
+                const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
+                const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
 
                 event.preventDefault(), (editorOptions.controlSave
                     ? editorOptions.controlSave(
-                        event, webCompile.bind(null, !!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode || false)
+                        event, webCompile.bind(null, jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false)
                     )
-                    : webCompile(!!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode || false));
+                    : webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false));
             }
             else if (event.ctrlKey && event.key === 'f'){
 
@@ -249,9 +265,15 @@ export default function initializeEditor(ace, editorOptions, values) {
             else if (i === +!!i) {
 
                 editor.commands.on("afterExec", function (e) {
+
+                    // when does it occure??
                     window['__debug'] && console.log(e.command.name);
-                    if (e.command.name.toLowerCase() === 'return') {
-                        webCompile(!!(editorOptions.syntaxMode % 2), editorOptions.frameworkEnvironment, editorOptions.quickCompileMode)
+
+                    if (e.command.name.toLowerCase() === 'return')
+                    {
+                        const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
+                        const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
+                        webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode)
                     }
                     // if (e.command.name == "insertstring" && /^[\w.]$/.test(e.args)) {
                     //     editor.execCommand("startAutocomplete")
