@@ -1,6 +1,10 @@
+//@ts-check
+
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from "rollup-plugin-terser";
+// import { uglify } from "rollup-plugin-uglify";
+
 
 
 // import typescript from '@rollup/plugin-typescript';
@@ -24,13 +28,13 @@ let modules = [
         
         outputName: 'IDE',
     },
-    // {
-    //     // just page builder (w/o ui)
-    //     inputFile: './source/pageBuilder.js',
-    //     outputFile: 'page_compiler.js',
+    {
+        // just page builder (w/o ui)
+        inputFile: './source/pageBuilder.js',
+        outputFile: 'page_compiler.js',
 
-    //     outputName: 'pageBuilder',
-    // },
+        outputName: 'pageBuilder',
+    },
     // {
     //     inputFile: './source/utils/bundler.js',
     //     outputFile: 'bundler.js',
@@ -66,12 +70,18 @@ module.exports = modules.map(function (config) {
             //     sourceMap: true
             // }),
 
-            terser({
-                keep_fnames: /(loclog|onmessage)/,
-                output: {
-                    comments: false,
-                }
-            }),
+            // terser({
+            //     keep_fnames: /(loclog|onmessage)/,
+            //     // mangle: true,
+            //     mangle: false,
+            //     compress: {
+            //         drop_debugger: false
+            //     },
+            //     output: {
+            //         comments: false,
+            //     }
+            // }),
+
         ]
     }
 

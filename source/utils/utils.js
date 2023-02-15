@@ -5,7 +5,7 @@ import { playgroundObject } from "../pageBuilder";
 export const commonStorage = sessionStorage;
 
 /**
- * @param {{ (): number; (): any; }} func
+ * @param {{ (): unknown }} func
  * @param {number} delay
  */
 export function debounce(func, delay) {
@@ -14,7 +14,7 @@ export function debounce(func, delay) {
 
     return function ()
     {
-        if (!inAwaiting) {
+        if (inAwaiting === false) {
 
             let result = func();
 

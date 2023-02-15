@@ -146,6 +146,10 @@
 
 
 
+    <script src="./static/js/preproc/less_sass.js" data-comment="convert `sass` to `less` and back"></script>
+
+
+
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
@@ -167,9 +171,19 @@
         //     // ['.play', '.save'].map(s => document.querySelector(s)).concat(event.target.parentElement).forEach(el => el && el.classList.toggle('hidden'))
         // }
 
-
+        
+        // let link = document.createElement('link')
+        // link.href = './static/css/web-pground.css'
+        // link.onload = () => alert(99)
+        // link.rel = 'stylesheet'
+        // document.head.appendChild(link)
+        // document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" id="link_css" href="./static/css/web-pground.css">')
+        // document.querySelector('#link_css').onload = (e) => (console.log(e), alert(e))
+        // alert(10)
 
         __debug = true;
+
+        // TODO check debounce?
 
         let editors = IDE.initialize([], {
             // tabAttachSelector: '.tab:last-child',
@@ -180,6 +194,23 @@
             // multitab: {
             //     selector: '.tab:last-child'
             // },
+
+            /**
+             * @param {{editor: {getValue: () => string, setValue: (s: string) => void}, mode: string, prevMode?: string}}
+             */
+            onModeChange(event){
+                
+                if (1){
+                    if (event.prevMode === 'less' && event.mode === 'scss'){
+                        event.editor.setValue(procCompiler.compileToSass(event.editor.getValue()))
+                    }
+                    else if(event.prevMode === 'scss' && event.mode === 'less'){
+                        event.editor.setValue(procCompiler.compileToLess(event.editor.getValue()))
+                    }
+                }
+
+                // target.value = procCompiler[!select.selectedIndex ? 'compileToSass' : 'compileToLess'](source.value)
+            },
             modes: [
                 {
                     html: null,
@@ -187,30 +218,47 @@
                 {
                     css: null,
                     less: {
-                        ext: '.less',
-                        src: document.location.origin + '/static/js/preproc/less.min.js',
-                        target: {
-                            inside: true,                                                         // 'outline'|'external'
-                            tag: 'link',
-                            attributes: ' rel="stylesheet/less" type="text/css" href="{}" '
+                        extension: '.less',
+
+                        // additional script to handling (uploading after target)
+
+                        // src: document.location.origin + '/static/js/preproc/less.min.js',
+                        src: document.location.origin + '/static/js/preproc/less/less.min.js',
+
+                        // where does the src scripts move:
+                        inside: true,                                                               // true|false = false (true - inside sandbox, else - to root)
+                        prehandling: (code) => code,                                                // inside === true ? null : (code: string) => string
+                        // mode: 'javascript',                                                         // ace editor mode
+
+                        // where does the source less code move:
+                        target: {                                                                   // as a rule, it makes sense only when inside = true
+                            // inside: true,                                                        // 1|true    
+                            external: true,                                                         // true|false = by default allways `true` if not paired tag specified (like `link`)
+                            tag: 'link',                                                            // external ? ('script'|'link') : ('script'|'style'|'body')
+                            attributes: ' rel="stylesheet/less" type="text/css" href="{}" ',        // ` ${Object.extries([\w\/\{\}]).map([k,v] => k + '="' + v + '"').join(' '))} `
                         }
+                    },
+                    scss: {
+                        extension: '.less',
+                        src: document.location.origin + '/static/js/preproc/sass/sass.js',
+                        inside: true,                                                               // true|false = false (true - inside sandbox, else - to root)           
                     }
                 },
                 Object.assign({
                     javascript: null,
                     'ES module': {
                         tabs: true,
-                        mode: 'javascript',
+                        mode: 'javascript',                                                         // ace editor mode
                     },              
                 },  
                 {
                     typescript: {
 
                         src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
-                        target: 'self',
+                        target: 'self',     // TODO change to `root`|`top`|`parent`|undefined!
                         tabs: true,
-                        ext: '.ts',
-                        compileFunc: code => {                            
+                        extension: '.ts',
+                        prehandling: code => {                            
                             if (window.ts){
                                 let r = ts.transpile(code, {jsx: +sessionStorage.getItem('mode') % 2});
                                 return r;
