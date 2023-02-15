@@ -13,6 +13,7 @@ import { ChoiceMenu } from "./ui/ChoiceMenu";
 import { modes } from "./features/base.js";
 
 import "./features/consoleDebug";
+import { i } from '../node__modules/preact/src/create-context';
 
 /**
  * @typedef {import("./ui/ChoiceMenu").ChoiceDetails} ChoiceDetails
@@ -92,13 +93,14 @@ window.addEventListener('message', function (event) {
  * }} LangMode
  * 
  * @typedef { 0 | 1 | 2 | 3 } SyntaxMode - keyof (Object.keys(compilers) | ['vanile', 'preact', 'vue', 'react'])
+ * @typedef {import("./aceInitialize").AceEditor} AceEditor
  * 
  * @param {[string, string, string, Storage|object?]} values
  * @param {{
  *      onControlSave?: Function,                                                           // on ctrl+save callback
  *      tabAttachSelector?: string,                                                         // selector for tab attach (tabs must be decorated in DOM outside the package)
  *      modes?: [LangMode?, LangMode?, LangMode?],                                          // list of modes sets
- *      onModeChange?: (a: {editor: number, mode: string, prevMode?: string}) => void,      // on chenge mode (for example less => scss)
+ *      onModeChange?: (a: {editor: AceEditor, mode: string, prevMode?: string}) => void,   // on chenge mode (for example less => scss)
  *      onfilerename?: Function,                                                            // on file reneme event
  *      onfileRemove?: (s: string) => void,                                                 // on file remove event
  *      additionalFiles?: Storage|object,                                                   // ? implemented?
@@ -187,9 +189,14 @@ export function initialize(values, options) {
 
             if (mode && (items = Object.keys(mode)).length > 1) {
 
+                /**
+                 * @type {ChoiceMenu}
+                */
+                //@ts-ignore
                 const settingsElement = editors[i].container.appendChild(document.createElement('choice-menu'));
                 settingsElement.className = 'settings';
 
+                //@ts-ignore
                 settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ e) => {
                     console.log(e.detail);
                     console.log(mode);
@@ -200,8 +207,8 @@ export function initialize(values, options) {
                      */
                     const modeOptions = mode[e.detail.value];
                     // const link = options.modes[i][e.detail.value];
-
-                    options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: i })
+                    
+                    options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: editors[i] })
                             
                     // MULTITABS MODE:
                 
@@ -235,7 +242,6 @@ export function initialize(values, options) {
 
 
 
-
                     
                     // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:
 
@@ -251,6 +257,8 @@ export function initialize(values, options) {
                     else {
                         editors[i].session.insert({ row: 0, column: 0 }, markValue + '\n\n')
                     }
+                    
+                    editors[i].clearSelection()
                     
 
                     // RENAME FILES:

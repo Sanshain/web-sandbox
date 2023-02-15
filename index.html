@@ -146,6 +146,10 @@
 
 
 
+    <script src="./static/js/preproc/less_sass.js" data-comment="convert `sass` to `less` and back"></script>
+
+
+
     <!-- test: -->
     <!-- <script src="./build/_preact.js"></script> -->    
     <!-- <script src="https://unpkg.com/vue@3.2.31/dist/vue.global.js"></script> -->
@@ -192,10 +196,20 @@
             // },
 
             /**
-             * @param {{editor: number, mode: string, prevMode?: string}}
+             * @param {{editor: {getValue: () => string, setValue: (s: string) => void}, mode: string, prevMode?: string}}
              */
             onModeChange(event){
+                
+                if (1){
+                    if (event.prevMode === 'less' && event.mode === 'scss'){
+                        event.editor.setValue(procCompiler.compileToSass(event.editor.getValue()))
+                    }
+                    else if(event.prevMode === 'scss' && event.mode === 'less'){
+                        event.editor.setValue(procCompiler.compileToLess(event.editor.getValue()))
+                    }
+                }
 
+                // target.value = procCompiler[!select.selectedIndex ? 'compileToSass' : 'compileToLess'](source.value)
             },
             modes: [
                 {
@@ -209,7 +223,7 @@
                         // additional script to handling (uploading after target)
 
                         // src: document.location.origin + '/static/js/preproc/less.min.js',
-                        src: document.location.origin + '/static/js/preproc/less.js',
+                        src: document.location.origin + '/static/js/preproc/less/less.min.js',
 
                         // where does the src scripts move:
                         inside: true,                                                               // true|false = false (true - inside sandbox, else - to root)
