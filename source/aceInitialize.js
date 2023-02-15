@@ -16,6 +16,31 @@ import { modes } from './features/base';
  * setup ace editor: hangs events and configures compilers
  * @typedef {0 | 1 | 2 | 3} FrameworkID - keyof Object.keys(compilers)
  * 
+ * @typedef {{row: number, column: number}} Position
+ * @typedef {{start: Position, end: Position}} Range
+ * @typedef {{
+ *      getLine: (x: number) => string,
+ *      setValue: (v: string) => void,
+ *      setMode: (s: string) => void,
+ *      replace: (range: Range, s: string) => unknown,
+ *      insert: (pos: Position, v: string) => void,
+ *  }} EditorSession
+ * 
+ * @typedef {{
+ *  container: HTMLElement,
+ *  find: (s: string) => Range,
+ *  session: EditorSession,
+ *  selection: {
+ *      setRange: (range: Range, selection?: boolean) => unknown
+ *  },
+ *  clearSelection: () => void,
+ *  moveCursorTo(line: number, col: number),
+ *  getSession: () => EditorSession
+ * }} AceEditor - custom AceEditor type (particular) (because of laziness to drag origin types)
+ */
+
+
+/**
  * @param {{require: (arg: string) => {(): any;new (): any;Range: any;};edit: (arg: any) => any;}} ace - ace library instance
  * @param {{ 
  *      compileFunc: Function;                                                  //// prebinded webCompile
@@ -30,6 +55,7 @@ import { modes } from './features/base';
  * @obsolete {string[]} modes
  * @obsolete {string|number} syntaxMode
  * @param {?[string?, string?, string?, object?]} [values] - initial values for editors
+ * @returns {[AceEditor, AceEditor, AceEditor] & {playgroundObject: object, updateEnv: (mode: string) => string[]}}
  */
 export default function initializeEditor(ace, editorOptions, values) {
     

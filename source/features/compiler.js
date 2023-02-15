@@ -46,6 +46,7 @@ export const babelCompiler = {
 // ];
 
 
+
 export const compilers = {
     vanile: [],
     preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
