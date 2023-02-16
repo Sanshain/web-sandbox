@@ -147,6 +147,8 @@
 
 
     <script src="./static/js/preproc/less_sass.js" data-comment="convert `sass` to `less` and back"></script>
+    <script src="./static/js/preproc/less/iife/less.js" defer async></script>
+    <script src="./static/js/preproc/sass/sass2css.js" defer async></script>
 
 
 
@@ -200,13 +202,88 @@
              */
             onModeChange(event){
                 
+                /**
+                 * @descriotion remove \r and first line with marker
+                 */
+                const getPureCode = w => w.split('\n').slice(1).join('\n').replace(/\r/g, '');
+                
+
                 if (1){
                     if (event.prevMode === 'less' && event.mode === 'scss'){
                         event.editor.setValue(procCompiler.compileToSass(event.editor.getValue()))
                     }
                     else if(event.prevMode === 'scss' && event.mode === 'less'){
                         event.editor.setValue(procCompiler.compileToLess(event.editor.getValue()))
+                    }                
+                    else if (event.prevMode === 'css' && event.mode == 'less') {
+
+                        const code = event.editor.getValue()                        
+
+                        // если в css были изменения, то less = css
+                        if (sessionStorage.getItem('__css') !== getPureCode(code)) event.editor.setValue(code);
+                        else {
+                            // иначе возвращаем less
+                            let scssCode = sessionStorage.getItem('__less')
+                            event.editor.setValue(scssCode || code);
+                        }
                     }
+                    else if (event.prevMode === 'css' && event.mode == 'scss') {
+
+                        const code = event.editor.getValue()
+                        
+                        if (sessionStorage.getItem('__css') !== getPureCode(code)) event.editor.setValue(code);
+                        else{
+
+                            let scssCode = sessionStorage.getItem('__scss')
+                            event.editor.setValue(scssCode || code);
+                        }
+
+                    }
+
+                    else if (event.prevMode === 'less' && event.mode == 'css') {
+
+                        let code = event.editor.getValue()                        
+
+                        if (getPureCode(code) === sessionStorage.getItem('__less')){
+                            // если в less не было изменений, то оставляем css
+                            return;
+                        }
+
+                        sessionStorage.setItem('__less', getPureCode(code))
+
+                        let indent = (code.match(/\/\* less \*\/(\s*)/) || []).pop()
+
+                        /// possible options:
+                        // {"javascriptEnabled":false,"depends":false,"compress":false,"lint":false,"paths":[],"color":true,"strictImports":false,"insecure":false,"rootpath":"","rewriteUrls":false,"math":1,"strictUnits":false,"globalVars":null,"modifyVars":null,"urlArgs":"","isFileProtocol":false,"async":false,"fileAsync":false,"poll":1500,"env":"production","useFileCache":true,"onReady":true,"plugins":[],"logLevel":1,"loggers":[{}],"mime":"text/css"}
+                        less.render(code, {}, function (e, result) {
+
+                            let css = result.css
+                                .replace('/* less */', '/* less */' + (indent || ' ').split('\n').slice(1).join('\n'))
+                                .replace('}\n', '}\n\n')
+
+                            event.editor.setValue(css)
+                            sessionStorage.setItem('__css', getPureCode(css))
+                        })
+
+                    }
+                    else if (event.prevMode === 'scss' && event.mode == 'css') {
+
+                        let code = event.editor.getValue()
+
+                        if (getPureCode(code) === sessionStorage.getItem('__scss')) {
+                            // если в less не было изменений, то оставляем css
+                            return;
+                        }
+                        
+                        sessionStorage.setItem('__scss', getPureCode(code))
+                        let indent = (code.match(/\/\* scss \*\/(\s*)/) || []).pop()
+                        let css = sassToCss(code)
+                            .replace('/* scss */', '/* scss */' + (indent || ' ').split('\n').slice(1).join('\n'))
+                            .replace('}\n', '}\n\n')
+                        event.editor.setValue(css)
+                        sessionStorage.setItem('__css', getPureCode(css))
+                    }   
+
                 }
 
                 // target.value = procCompiler[!select.selectedIndex ? 'compileToSass' : 'compileToLess'](source.value)
@@ -223,7 +300,7 @@
                         // additional script to handling (uploading after target)
 
                         // src: document.location.origin + '/static/js/preproc/less.min.js',
-                        src: document.location.origin + '/static/js/preproc/less/less.min.js',
+                        src: document.location.origin + '/static/js/preproc/less/less.js',
 
                         // where does the src scripts move:
                         inside: true,                                                               // true|false = false (true - inside sandbox, else - to root)
@@ -289,6 +366,8 @@
             // setTimeout(function() {
             //     editors[2].session.$mode.$highlightRules.$keywordList.push("from ")
             // }, 1000)
+
+            ['c', 'le', 'sc'].forEach(pref => sessionStorage.removeItem('__' + pref +'ss'))
         })
 
     </script>

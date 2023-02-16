@@ -16,12 +16,12 @@ let modules = [
 
     //     outputName: 'extend',
     // },
-    // {
-    //     inputFile: './source/libs/preact.js',
-    //     outputFile: '_preact.js',
+    {
+        inputFile: './source/libs/preact.js',
+        outputFile: '_preact.js',
 
-    //     outputName: '_preact',
-    // },
+        outputName: '_preact',
+    },
     {
         inputFile: './source/main.js',
         outputFile: 'page_builder.js',
@@ -35,12 +35,13 @@ let modules = [
 
         outputName: 'pageBuilder',
     },
-    // {
-    //     inputFile: './source/utils/bundler.js',
-    //     outputFile: 'bundler.js',
-    //     outputName: 'simplestBundler'
-    // }
+    {
+        inputFile: './source/utils/bundler.js',
+        outputFile: 'bundler.js',
+        outputName: 'simplestBundler'
+    }
 ]
+
 
 module.exports = modules.map(function (config) {
     

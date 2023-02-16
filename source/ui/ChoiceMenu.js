@@ -143,34 +143,38 @@ export class ChoiceMenu extends HTMLElement {
 
 
     /**
-     * @param {Event} event
+     * @param {Event & {target: HTMLElement}} event
      */
     selectedChanged(event) {
 
-        //@ts-expect-error
         if (event.target.tagName === 'li'.toUpperCase()) {
             
-            (this.selectedElement || (this.selectedElement = this.rootElement.querySelector('.selected'))) && this.selectedElement.classList.remove('selected');
+            this.selectedElement = this.selectedElement || this.rootElement.querySelector('.selected');
 
             const previousValue = (this.selectedElement || {}).innerText;
 
-            //@ts-expect-error
-            (this.selectedElement = event.target).classList.add('selected');
-
-            //@ts-expect-error
-            this.checkedElement && this.pickItem(event.target)
-
-            this.dispatchEvent(new CustomEvent("selected_changed", {
+            const onChangedEvent = new CustomEvent("selected_changed", {
+                cancelable: true,
                 detail: this.checkInfo = {
-                    //@ts-expect-error
                     id: event.target.id,
-                    //@ts-expect-error
                     metaId: event.target.dataset.id,
-                    //@ts-expect-error
                     value: event.target.innerText,
                     previousValue
                 }
-            }))
+            })
+
+
+            this.dispatchEvent(onChangedEvent);
+
+            if (!onChangedEvent.defaultPrevented) {
+                
+                this.selectedElement && this.selectedElement.classList.remove('selected');
+
+                (this.selectedElement = event.target).classList.add('selected');
+
+                this.checkedElement && this.pickItem(event.target)
+            }
+
         }
     }
 
