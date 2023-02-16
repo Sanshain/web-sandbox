@@ -202,7 +202,11 @@
              */
             onModeChange(event){
                 
+                /**
+                 * @descriotion remove \r and first line with marker
+                 */
                 const getPureCode = w => w.split('\n').slice(1).join('\n').replace(/\r/g, '');
+                
 
                 if (1){
                     if (event.prevMode === 'less' && event.mode === 'scss'){
@@ -238,29 +242,12 @@
 
                     else if (event.prevMode === 'less' && event.mode == 'css') {
 
-                        // if (!confirm('Do you want compile ' + event.prevMode + ' to css? The operation is not reversible')) return;
-
                         let code = event.editor.getValue()                        
 
                         if (getPureCode(code) === sessionStorage.getItem('__less')){
                             // если в less не было изменений, то оставляем css
                             return;
                         }
-                        else{
-
-                            // sessionStorage.getItem('__css', getPureCode(code))
-
-                            // // если были, предлагаем конвертнуть
-                            // if (!confirm('Вы хотите конвертировать ' + event.prevMode + ' в css? \n операция необратима.')){                                
-                            //     return;
-                            // }
-                            // else{
-                            //     // оставляем старый css
-                            // }
-                        }
-
-                        // если не было преобразований
-                        // if (!confirm('Вы хотите конвертировать ' + event.prevMode + ' в css? \n операция необратима.')) return;                        
 
                         sessionStorage.setItem('__less', getPureCode(code))
 
@@ -280,9 +267,6 @@
 
                     }
                     else if (event.prevMode === 'scss' && event.mode == 'css') {
-
-                        // if (!confirm('Do you want compile ' + event.prevMode + ' to css? The operation is not reversible')) return;
-                        // if (!confirm('Вы хотите конвертировать ' + event.prevMode + ' в css? \nОперация необратима.')) return;
 
                         let code = event.editor.getValue()
 
