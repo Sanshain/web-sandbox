@@ -53,7 +53,15 @@
         }
 
 
-
+        /* .ace_scrollbar.ace_scrollbar-h */
+        /* hide vertical scrolling: */
+        .ace_scrollbar.ace_scrollbar-v::-webkit-scrollbar {
+            display: none;
+            z-index: -1;
+        }
+        .ace_scrollbar.ace_scrollbar-v {
+            scrollbar-width: none;
+        }        
 
 
 
