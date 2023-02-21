@@ -96,7 +96,9 @@ function createHtml({ body, style, script, link }, attrs) {
  * @param {string} [prevUrl] - предыдущий URL для освобождения
  * @param {Array<string|[string]>} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...). Если массив - это inline script
  * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
- * @param {{onload: Function}} [options] - onload callback
+ * @param {{
+ *  onload: Function,
+ * }} [options] - onload callback (may be add previewClass?: string)
  * @returns {[HTMLElement, string]}
  */
 export function createPage(prevUrl, additionalScripts, scriptType, options) {
@@ -152,7 +154,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 document.head.appendChild(originScript);
                 let waiting = document.querySelector('.view').appendChild(document.createElement('div'))
                 waiting.innerText = 'Ожидание...'
+                // waiting.className = options.previewClass || 'waiting';
                 waiting.id = 'view__waiting';
+                waiting.style.height = waiting.style.lineHeight = waiting.parentElement.offsetHeight - 15 + 'px';
                 
                 if (options && options.onload) {
                     return;
@@ -191,6 +195,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 console.log([].slice.call(arguments).join());
             }
 
+            /**
+             * @param {{ data: string; }} event
+             */
             function onmessage(event) {
                 if (typeof event.data == 'string') {
 

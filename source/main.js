@@ -203,7 +203,9 @@ export function initialize(values, options) {
                      * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
                      * @_type {LangMode} - ? - not applyed, but auto detected as expected - [?]
                      */
-                    const modeOptions = mode[e.detail.value];
+                    const modeOptions = mode[e.detail.value] || {
+                        extension: '.js'
+                    };
                     // const link = options.modes[i][e.detail.value];
                     
                     options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: editors[i] })
