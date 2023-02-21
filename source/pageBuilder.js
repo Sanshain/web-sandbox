@@ -12,7 +12,16 @@ import { modes as baseModes, modes } from './features/base';
 
 
 /**
- * @typedef {{src: string|string[], inside?: boolean, prehandling?: (arg: string) => string, target?: {tag?: BaseTags[number], external?: boolean, attributes?: string}}} Mode
+ * @typedef {{
+ *      tag?: BaseTags[number], external?: boolean, attributes?: string
+ * }} CodeTarget
+ * 
+ * @typedef {{
+ *  src: string|string[], 
+ *  inside?: boolean, 
+ *  prehandling?: (arg: string) => string, 
+ *  target?: CodeTarget
+ * }} Mode
  */
 
 
@@ -111,22 +120,27 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     const langMode = getLangMode(appCode);
     if (langMode) {
 
+        /**
+         * @type {Mode}
+         */
         var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
-        
-        if (currentLang && currentLang.src && currentLang.target === 'self') {
+        /// attach to the root page
+        if (currentLang && currentLang.src && (currentLang.target === 'self' || (!currentLang.inside && currentLang.target === undefined))) {
 
             // currentLang.target === 'self'        /// script ожидает загрузки скрипта на основную страницу
             
+            // TODO fix type: (todo support src array)
+            //@ts-ignore 
             let scriptID = currentLang.src.split('/').pop().split('.').shift();
             let originScript = document.getElementById(scriptID)
             if (!originScript) {
+
                 originScript = document.createElement('script');
                 //@ts-ignore
                 originScript.src = currentLang.src;
                 originScript.id = scriptID;
-                originScript.onload = () => {
-
+                originScript.onload = () => {                    
                     // createPage(prevUrl, additionalScripts, scriptType, options);
                     waiting.parentElement.removeChild(waiting);
                     if (options && options.onload) {
@@ -233,8 +247,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
             /**
              * @type {Mode}
              */
-            let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
-            if (actualMode) {
+            let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]            
+            if (actualMode && (currentLang.target !== 'self' || (actualMode.inside === true && currentLang.target !== undefined))) {
+                debugger
                 // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
                 [].slice.call(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src).forEach(el => additionalScripts.push(el));
                 // дополнительные скрипты. В частности less
@@ -253,8 +268,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
                     //// only for unsandboxed version (legacy and TODO drop it later)
 
-                    // here constructs tags that will involve right to iframe:
-
+                    // here constructs tags that will involve right to iframe:                    
                     let blob = new Blob([value], { type: 'text/' + baseModes[i] });
 
                     /// possibility change style tag to link tag:
@@ -289,7 +303,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     
 
     let optionalScripts = ''
-    if (additionalScripts && additionalScripts.length) {
+    if (additionalScripts && additionalScripts.length) {        
         for (let i = 0; i < additionalScripts.length; i++) {
             // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
             const additionalScript = additionalScripts[i];

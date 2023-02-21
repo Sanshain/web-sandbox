@@ -154,8 +154,8 @@
 
 
 
-    <script src="./static/js/preproc/less_sass.js" data-comment="convert `sass` to `less` and back"></script>
-    <script src="./static/js/preproc/less/iife/less.js" defer async></script>
+    <script src="./static/js/preproc/less/iife/less.js" defer async data-comment="iife less. return less api to using inside code"></script>
+    <script src="./static/js/preproc/less_sass.js" defer async data-comment="convert `sass` to `less` and back"></script>    
     <script src="./static/js/preproc/sass/sass2css.js" defer async></script>
 
 
@@ -324,7 +324,7 @@
                         }
                     },
                     scss: {
-                        extension: '.less',
+                        extension: '.scss',
                         src: document.location.origin + '/static/js/preproc/sass/sass.js',
                         inside: true,                                                               // true|false = false (true - inside sandbox, else - to root)           
                     }
@@ -339,7 +339,8 @@
                 {
                     typescript: {
 
-                        src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
+                        // src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
+                        src: 'https://unpkg.com/typescript@4.9.5/lib/typescriptServices.js',
                         target: 'self',     // TODO change to `root`|`top`|`parent`|undefined!
                         tabs: true,
                         extension: '.ts',

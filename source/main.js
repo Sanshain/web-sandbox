@@ -106,7 +106,7 @@ window.addEventListener('message', function (event) {
  *      additionalFiles?: Storage|object,                                                   // ? implemented?
  *      quickCompileMode?: boolean,                                                         // ? not implemented - the quick mode compilation via onmessages iver sandbox communication
  *      syntaxMode?: SyntaxMode,                                                            // index of initial selected  framawork 
- *      clariryframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? callback for what ? (I forgot)
+ *      clariryframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? identifier rfamework on depend of source code
  * }?} options
  * @returns {unknown[]}
  */
