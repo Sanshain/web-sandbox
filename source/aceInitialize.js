@@ -21,6 +21,7 @@ import { modes } from './features/base';
  * @typedef {{
  *      getLine: (x: number) => string,
  *      setValue: (v: string) => void,
+ *      getValue: () => string,
  *      setMode: (s: string) => void,
  *      replace: (range: Range, s: string) => unknown,
  *      insert: (pos: Position, v: string) => void,
@@ -28,10 +29,11 @@ import { modes } from './features/base';
  * 
  * @typedef {{
  *  container: HTMLElement,
- *  find: (s: string) => Range,
+ *  find: (s: string|RegExp) => Range,
  *  session: EditorSession,
  *  selection: {
- *      setRange: (range: Range, selection?: boolean) => unknown
+ *      setRange: (range: Range, selection?: boolean) => unknown;
+ *      getCursor: () => Position
  *  },
  *  clearSelection: () => void,
  *  moveCursorTo(line: number, col: number),

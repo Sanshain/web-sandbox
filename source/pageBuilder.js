@@ -126,7 +126,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
         /// attach to the root page
-        if (currentLang && currentLang.src && (currentLang.target === 'self' || (!currentLang.inside && currentLang.target === undefined))) {
+        /// if (currentLang.inside === false|undefined)
+        if (currentLang && currentLang.src && (currentLang.target === 'self' || !currentLang.inside)) {
 
             // currentLang.target === 'self'        /// script ожидает загрузки скрипта на основную страницу
             
@@ -248,8 +249,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
              * @type {Mode}
              */
             let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]            
-            if (actualMode && (currentLang.target !== 'self' || (actualMode.inside === true && currentLang.target !== undefined))) {
-                debugger
+            if (actualMode && actualMode.inside === true) {
+                
                 // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
                 [].slice.call(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src).forEach(el => additionalScripts.push(el));
                 // дополнительные скрипты. В частности less

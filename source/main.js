@@ -198,8 +198,6 @@ export function initialize(values, options) {
 
                 //@ts-ignore
                 settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ e) => {
-                    console.log(e.detail);
-                    console.log(mode);
 
                     /**
                      * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
@@ -281,11 +279,11 @@ export function initialize(values, options) {
                                 [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
                                     if (modeOptions.extension) {
                                         if (!element.innerText.endsWith(modeOptions.extension)) {
-                                            element.innerText = element.innerText.replace(jsPattern, '$1.ts');
+                                            element.innerText = element.innerText.replace(jsPattern, '$1.ts$2');
                                         }
                                     }
                                     else if (!element.innerText.endsWith('.js')) {
-                                        element.innerText = element.innerText.replace(tsPattern, '$1.js');
+                                        element.innerText = element.innerText.replace(tsPattern, '$1.js$2');
                                     }
                                 });
 
@@ -294,24 +292,34 @@ export function initialize(values, options) {
                                 /**
                                  * @type {[RegExp, string]}
                                  */
-                                const extensions = modeOptions.extension ? [jsPattern, '$1.ts'] : [tsPattern, '$1.js']
+                                const extensions = modeOptions.extension ? [jsPattern, '$1.ts$2'] : [tsPattern, '$1.js$2']
 
                                 let storageFiles = Object.keys(playgroundObject.fileStorage).map(
                                     k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
                                 );
                                 playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
 
-
                                 // imports refactoring:
 
                                 for (let file in playgroundObject.fileStorage) {
                                     if (typeof playgroundObject.fileStorage[file] === 'string') {
+                                        // debugger;
                                         playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
                                     }
                                 }
 
-                                let pos = editors[2].find(extensions[0] + "'")
-                                pos && editors[2].getSession().replace(pos, extensions[1] + "'")
+                                let cursor = editors[2].selection.getCursor()
+                                editors[2].session.setValue(
+                                    editors[2].session.getValue().replace(
+                                        new RegExp(extensions[0].toString().slice(1, -2).replace('$', '([\'"])$'), 'm'),
+                                        extensions[1] + '$3'
+                                    )
+                                )
+                                editors[2].moveCursorTo(cursor.row, cursor.column)
+
+                                // let pos = editors[2].find(new RegExp(extensions[0].toString().slice(1, -2).replace('$', '([\'"])$'), 'm'))
+                                /// replace value idoes not applying as regex value (with groups $1, $2 etc)
+                                // pos && editors[2].getSession().replace(pos, extensions[1])
                             }
 
                         }
