@@ -5,7 +5,7 @@ import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 
 import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
-import { babelCompiler, compilers } from "./features/compiler";
+import { babelCompiler, compilers, defaultValues, versionController } from "./features/compiler";
 import { commonStorage } from "./utils/utils";
 import { fileAttach } from "./features/tabs";
 
@@ -25,6 +25,11 @@ import { i } from '../node__modules/preact/src/create-context';
 const frameworkEnvironment = []
 
 /**
+ * @type {string[]?}
+ */
+let cachedEnvironment = null;
+
+/**
  * @description Do full environment cleaning and filling from scratch
  * @param {string[]} environment - environment - list of external (or internal) scripts or another resources to load content
  * @param {keyof compilers} envName - framework environment name
@@ -32,13 +37,39 @@ const frameworkEnvironment = []
  */
 function updateEnvironment(environment, envName, entryPoint) {
 
-    const libs = compilers[envName] || [];
-
     environment.splice(0, environment.length);
-    libs.forEach((/** @type {string} */ lib) => {
+
+    if (versionController[envName] && !entryPoint && cachedEnvironment) {
         
+        cachedEnvironment.forEach(link => environment.push(link));
+        return environment;
+    }
+    else if (versionController[envName] && entryPoint) {
+        let entries = Object.entries(versionController[envName])
+        /**
+         * @type {[string, [string]]?}
+         */
+        let ver = entries.find(([k, v]) => ~entryPoint.indexOf(k))
+        if (ver && ver.length && ver[1].length) {
+            // version x.x.x            
+            let verNum = ver[1][0].match(/\d+\.\d+\.\d+/);
+            if (verNum) {
+                console.log(envName, 'version: ', verNum.pop())
+            }
+
+            (cachedEnvironment = ver[1]).forEach(link => environment.push(link));
+            return environment;
+        }
+    }
+    
+
+    const libs = compilers[envName] || [];
+    
+    libs.forEach((/** @type {string} */ lib) => {
+
         environment.push(lib);
     });
+    
     
     // window['__DEBUG'] && console.log(environment);
     
@@ -141,7 +172,7 @@ export function initialize(values, options) {
     updateEnvironment(frameworkEnvironment,
         //@ts-expect-error
         Object.keys(compilers)[frameworkID],
-        values[2]
+        values[2] || commonStorage.getItem(frameworkID + '__' + modes[2]) 
     )
 
     // Object.values(compilers)[syntaxMode].forEach(link => frameworkEnvironment.push(link));
@@ -407,7 +438,10 @@ export function initialize(values, options) {
     playgroundObject.curUrl = curUrl;
 
 
-    document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, frameworkEnvironment));
+    document.querySelector('.play').addEventListener('click', () => {
+        const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilers)[frameworkID], editors[2].getValue());
+        webCompile(jsxMode, frameworkEnvironment)
+    });
     document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
     document.getElementById('compiler_mode').onchange = function (event) {
 
