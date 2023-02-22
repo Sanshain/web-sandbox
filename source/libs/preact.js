@@ -34,4 +34,6 @@ Object.assign(globalThis, _preact);
 
 globalThis['__debug'] && console.log(globalThis);
 
+// TODO properly object to spread it (TODO check that works)
+
 export let __preact = _preact;

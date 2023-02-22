@@ -67,7 +67,7 @@ export let domFuncs = {
     // Array and string methods: 
 
     indexOf: '',
-    from: '',
+    // from: '',  // - interferes with import * form
     slice: '',
 
 

@@ -5,7 +5,7 @@ import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 
 import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
-import { babelCompiler, compilers } from "./features/compiler";
+import { babelCompiler, compilers, defaultValues, versionController } from "./features/compiler";
 import { commonStorage } from "./utils/utils";
 import { fileAttach } from "./features/tabs";
 
@@ -25,16 +25,51 @@ import { i } from '../node__modules/preact/src/create-context';
 const frameworkEnvironment = []
 
 /**
- * @description Do full environment cleaning and filling from scratch
- * @param { string[] } environment - environment - list of external (or internal) scripts or another resources to load content
- * @param {keyof compilers} envName - framework environment name
+ * @type {string[]?}
  */
-function updateEnvironment(environment, envName) {
+let cachedEnvironment = null;
 
-    const libs = compilers[envName] || [];
+/**
+ * @description Do full environment cleaning and filling from scratch
+ * @param {string[]} environment - environment - list of external (or internal) scripts or another resources to load content
+ * @param {keyof compilers} envName - framework environment name
+ * @param {string} [entryPoint=''] - code
+ */
+function updateEnvironment(environment, envName, entryPoint) {
 
     environment.splice(0, environment.length);
-    libs.forEach((/** @type {string} */ lib) => environment.push(lib));
+
+    if (versionController[envName] && !entryPoint && cachedEnvironment) {
+        
+        cachedEnvironment.forEach(link => environment.push(link));
+        return environment;
+    }
+    else if (versionController[envName] && entryPoint) {
+        let entries = Object.entries(versionController[envName])
+        /**
+         * @type {[string, [string]]?}
+         */
+        let ver = entries.find(([k, v]) => ~entryPoint.indexOf(k))
+        if (ver && ver.length && ver[1].length) {
+            // version x.x.x            
+            let verNum = ver[1][0].match(/\d+\.\d+\.\d+/);
+            if (verNum) {
+                console.log(envName, 'version: ', verNum.pop())
+            }
+
+            (cachedEnvironment = ver[1]).forEach(link => environment.push(link));
+            return environment;
+        }
+    }
+    
+
+    const libs = compilers[envName] || [];
+    
+    libs.forEach((/** @type {string} */ lib) => {
+
+        environment.push(lib);
+    });
+    
     
     // window['__DEBUG'] && console.log(environment);
     
@@ -106,7 +141,7 @@ window.addEventListener('message', function (event) {
  *      additionalFiles?: Storage|object,                                                   // ? implemented?
  *      quickCompileMode?: boolean,                                                         // ? not implemented - the quick mode compilation via onmessages iver sandbox communication
  *      syntaxMode?: SyntaxMode,                                                            // index of initial selected  framawork 
- *      clariryframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? callback for what ? (I forgot)
+ *      clarifyframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? identifier rfamework on depend of source code
  * }?} options
  * @returns {unknown[]}
  */
@@ -118,7 +153,7 @@ export function initialize(values, options) {
      * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
      */
     let frameworkID = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
-    frameworkID = (options.clariryframework && values) ? options.clariryframework(values[2], frameworkID) : frameworkID;
+    frameworkID = (options.clarifyframework && values) ? options.clarifyframework(values[2], frameworkID) : frameworkID;
     console.log(frameworkID, 'syntaxMode');
 
     //@ts-ignore
@@ -133,9 +168,12 @@ export function initialize(values, options) {
     playgroundObject.modes = options.modes;
     playgroundObject.onfilerename = options.onfilerename
     playgroundObject.onfileRemove = options.onfileRemove
-
-    //@ts-ignore
-    updateEnvironment(frameworkEnvironment, Object.keys(compilers)[frameworkID])
+    
+    updateEnvironment(frameworkEnvironment,
+        //@ts-expect-error
+        Object.keys(compilers)[frameworkID],
+        values[2] || commonStorage.getItem(frameworkID + '__' + modes[2]) 
+    )
 
     // Object.values(compilers)[syntaxMode].forEach(link => frameworkEnvironment.push(link));
     const updateEnv = updateEnvironment.bind(null, frameworkEnvironment);
@@ -198,14 +236,14 @@ export function initialize(values, options) {
 
                 //@ts-ignore
                 settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ e) => {
-                    console.log(e.detail);
-                    console.log(mode);
 
                     /**
                      * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
                      * @_type {LangMode} - ? - not applyed, but auto detected as expected - [?]
                      */
-                    const modeOptions = mode[e.detail.value];
+                    const modeOptions = mode[e.detail.value] || {
+                        extension: '.js'
+                    };
                     // const link = options.modes[i][e.detail.value];
                     
                     options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: editors[i] })
@@ -281,11 +319,11 @@ export function initialize(values, options) {
                                 [].slice.call(tabs.querySelectorAll('.tab')).forEach((/** @type {HTMLElement} */ element) => {
                                     if (modeOptions.extension) {
                                         if (!element.innerText.endsWith(modeOptions.extension)) {
-                                            element.innerText = element.innerText.replace(jsPattern, '$1.ts');
+                                            element.innerText = element.innerText.replace(jsPattern, '$1.ts$2');
                                         }
                                     }
                                     else if (!element.innerText.endsWith('.js')) {
-                                        element.innerText = element.innerText.replace(tsPattern, '$1.js');
+                                        element.innerText = element.innerText.replace(tsPattern, '$1.js$2');
                                     }
                                 });
 
@@ -294,24 +332,34 @@ export function initialize(values, options) {
                                 /**
                                  * @type {[RegExp, string]}
                                  */
-                                const extensions = modeOptions.extension ? [jsPattern, '$1.ts'] : [tsPattern, '$1.js']
+                                const extensions = modeOptions.extension ? [jsPattern, '$1.ts$2'] : [tsPattern, '$1.js$2']
 
                                 let storageFiles = Object.keys(playgroundObject.fileStorage).map(
                                     k => ({ [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k] })
                                 );
                                 playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
 
-
                                 // imports refactoring:
 
                                 for (let file in playgroundObject.fileStorage) {
                                     if (typeof playgroundObject.fileStorage[file] === 'string') {
+                                        // debugger;
                                         playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
                                     }
                                 }
 
-                                let pos = editors[2].find(extensions[0] + "'")
-                                pos && editors[2].getSession().replace(pos, extensions[1] + "'")
+                                let cursor = editors[2].selection.getCursor()
+                                editors[2].session.setValue(
+                                    editors[2].session.getValue().replace(
+                                        new RegExp(extensions[0].toString().slice(1, -2).replace('$', '([\'"])$'), 'm'),
+                                        extensions[1] + '$3'
+                                    )
+                                )
+                                editors[2].moveCursorTo(cursor.row, cursor.column)
+
+                                // let pos = editors[2].find(new RegExp(extensions[0].toString().slice(1, -2).replace('$', '([\'"])$'), 'm'))
+                                /// replace value idoes not applying as regex value (with groups $1, $2 etc)
+                                // pos && editors[2].getSession().replace(pos, extensions[1])
                             }
 
                         }
@@ -390,7 +438,10 @@ export function initialize(values, options) {
     playgroundObject.curUrl = curUrl;
 
 
-    document.querySelector('.play').addEventListener('click', () => webCompile(jsxMode, frameworkEnvironment));
+    document.querySelector('.play').addEventListener('click', () => {
+        const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilers)[frameworkID], editors[2].getValue());
+        webCompile(jsxMode, frameworkEnvironment)
+    });
     document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
     document.getElementById('compiler_mode').onchange = function (event) {
 

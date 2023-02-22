@@ -1,6 +1,6 @@
 // @ts-check
 
-import { babelCompiler, compilers } from "./features/compiler";
+import { babelCompiler, compilers, spreadImports } from "./features/compiler";
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
 import { commonStorage, getLangMode } from './utils/utils';
 import sass2less from 'less-plugin-sass2less'
@@ -12,7 +12,16 @@ import { modes as baseModes, modes } from './features/base';
 
 
 /**
- * @typedef {{src: string|string[], inside?: boolean, prehandling?: (arg: string) => string, target?: {tag?: BaseTags[number], external?: boolean, attributes?: string}}} Mode
+ * @typedef {{
+ *      tag?: BaseTags[number], external?: boolean, attributes?: string
+ * }} CodeTarget
+ * 
+ * @typedef {{
+ *  src: string|string[], 
+ *  inside?: boolean, 
+ *  prehandling?: (arg: string) => string, 
+ *  target?: CodeTarget
+ * }} Mode
  */
 
 
@@ -87,7 +96,9 @@ function createHtml({ body, style, script, link }, attrs) {
  * @param {string} [prevUrl] - предыдущий URL для освобождения
  * @param {Array<string|[string]>} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...). Если массив - это inline script
  * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
- * @param {{onload: Function}} [options] - onload callback
+ * @param {{
+ *  onload: Function,
+ * }} [options] - onload callback (may be add previewClass?: string)
  * @returns {[HTMLElement, string]}
  */
 export function createPage(prevUrl, additionalScripts, scriptType, options) {
@@ -111,22 +122,28 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     const langMode = getLangMode(appCode);
     if (langMode) {
 
+        /**
+         * @type {Mode}
+         */
         var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
-        
-        if (currentLang && currentLang.src && currentLang.target === 'self') {
+        /// attach to the root page
+        /// if (currentLang.inside === false|undefined)
+        if (currentLang && currentLang.src && (currentLang.target === 'self' || !currentLang.inside)) {
 
             // currentLang.target === 'self'        /// script ожидает загрузки скрипта на основную страницу
             
+            // TODO fix type: (todo support src array)
+            //@ts-ignore 
             let scriptID = currentLang.src.split('/').pop().split('.').shift();
             let originScript = document.getElementById(scriptID)
             if (!originScript) {
+
                 originScript = document.createElement('script');
                 //@ts-ignore
                 originScript.src = currentLang.src;
                 originScript.id = scriptID;
-                originScript.onload = () => {
-
+                originScript.onload = () => {                    
                     // createPage(prevUrl, additionalScripts, scriptType, options);
                     waiting.parentElement.removeChild(waiting);
                     if (options && options.onload) {
@@ -137,7 +154,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 document.head.appendChild(originScript);
                 let waiting = document.querySelector('.view').appendChild(document.createElement('div'))
                 waiting.innerText = 'Ожидание...'
+                // waiting.className = options.previewClass || 'waiting';
                 waiting.id = 'view__waiting';
+                waiting.style.height = waiting.style.lineHeight = waiting.parentElement.offsetHeight - 15 + 'px';
                 
                 if (options && options.onload) {
                     return;
@@ -176,6 +195,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                 console.log([].slice.call(arguments).join());
             }
 
+            /**
+             * @param {{ data: string; }} event
+             */
             function onmessage(event) {
                 if (typeof event.data == 'string') {
 
@@ -233,8 +255,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
             /**
              * @type {Mode}
              */
-            let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
-            if (actualMode) {
+            let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]            
+            if (actualMode && actualMode.inside === true) {
+                
                 // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
                 [].slice.call(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src).forEach(el => additionalScripts.push(el));
                 // дополнительные скрипты. В частности less
@@ -253,8 +276,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
                     //// only for unsandboxed version (legacy and TODO drop it later)
 
-                    // here constructs tags that will involve right to iframe:
-
+                    // here constructs tags that will involve right to iframe:                    
                     let blob = new Blob([value], { type: 'text/' + baseModes[i] });
 
                     /// possibility change style tag to link tag:
@@ -289,7 +311,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     
 
     let optionalScripts = ''
-    if (additionalScripts && additionalScripts.length) {
+    if (additionalScripts && additionalScripts.length) {        
         for (let i = 0; i < additionalScripts.length; i++) {
             // htmlContent['body'] += '<script src="' + additionalScripts[i] + '"></script>';
             const additionalScript = additionalScripts[i];
@@ -476,13 +498,15 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
  */
 function buildAndTranspile(code, currentLang) {
     if (window['simplestBundler']) {
-        code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
+        code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);        
         globalThis.__debug && console.log('build...');
     }
     else {
         console.warn('bundler is absent');
         // alert('Warn/ look logs')
     }
+
+    code = spreadImports(code)
 
     // ts transpilation:
     if (currentLang && currentLang.prehandling) {
@@ -632,4 +656,5 @@ function getLang() {
     const langMode = getLangMode(appCode);
     return langMode;
 }
+
 

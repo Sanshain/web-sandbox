@@ -35,11 +35,12 @@ body {
 }
 
 .view {
-    border             : 1px lightgray solid;
+    /* border             : 1px lightgray solid; */
     /* margin-top      : .4em; */
     left               : -2px;
     position           : relative;
     background-color   : #fff;
+    background-color   : #555;
 }
 
 .play {
@@ -276,7 +277,7 @@ iframe {
     height: 100%;
     background-color: #ddd;
     background-color: #eee;
-    /* background-color: #333; */
+    background-color: #999;
     position: absolute;
     z-index : 2;
 
@@ -317,6 +318,7 @@ iframe {
 
 .console .lines>div .input{
     color      : #999;
+    color      : #555;
     font-family: monospace;
     margin-bottom: 0.5em;
 }
@@ -376,7 +378,8 @@ iframe {
     line-height     : calc(var(--size) + 0.1em);
     font-weight     : 700;
     color           : aliceblue;
-    box-shadow      : 0 0 15px aliceblue;
+    /* box-shadow      : 0 0 15px aliceblue; */
+    box-shadow      : 0 0 15px #777;
     cursor: pointer;
 }
 

@@ -21,6 +21,7 @@ import { modes } from './features/base';
  * @typedef {{
  *      getLine: (x: number) => string,
  *      setValue: (v: string) => void,
+ *      getValue: () => string,
  *      setMode: (s: string) => void,
  *      replace: (range: Range, s: string) => unknown,
  *      insert: (pos: Position, v: string) => void,
@@ -28,13 +29,15 @@ import { modes } from './features/base';
  * 
  * @typedef {{
  *  container: HTMLElement,
- *  find: (s: string) => Range,
+ *  find: (s: string|RegExp) => Range,
  *  session: EditorSession,
  *  selection: {
- *      setRange: (range: Range, selection?: boolean) => unknown
+ *      setRange: (range: Range, selection?: boolean) => unknown;
+ *      getCursor: () => Position
  *  },
  *  clearSelection: () => void,
  *  moveCursorTo(line: number, col: number),
+ *  getValue: () => string,
  *  getSession: () => EditorSession
  * }} AceEditor - custom AceEditor type (particular) (because of laziness to drag origin types)
  */
@@ -50,7 +53,7 @@ import { modes } from './features/base';
  *      quickCompileMode: boolean,                                              //// ? not implements: quick compile vua messages communitation among DOM and frame
  *      modes?: object[],                                                       //// ? - deprecated field
  *      frameworkEnvironment: string[]                                          //// list of lib links to page downloading
- *      updateEnv: (frameworkName: string) => string[]                          //// update additionalScripts
+ *      updateEnv: (frameworkName: string, code?: string) => string[]           //// update additionalScripts
  * }} editorOptions - options contained prebinded webCompile (compileFunc) and etc
  * @obsolete {string[]} modes
  * @obsolete {string|number} syntaxMode
@@ -140,12 +143,16 @@ export default function initializeEditor(ace, editorOptions, values) {
             (event.ctrlKey && event.key === 'ArrowUp') && expand({ currentTarget: document.querySelector('.expand')})            
             if ( event.key === 'F9')      // ctrl+s
             {
+                console.time('F9')
+
                 event.preventDefault();
                 // binding is drop !!
-                const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
+                const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID], editors[2].getValue());
                 const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
 
                 webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false);
+
+                console.timeEnd('F9')
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 

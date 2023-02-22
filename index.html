@@ -49,7 +49,10 @@
             line-height: 20em;            
             font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
             width: 100%;
-            position: absolute;            
+            background-color: white;
+            background-color: #555;
+            position: absolute;
+            /* user-select: none; */
         }
 
 
@@ -86,8 +89,8 @@
         <select name="compiler_mode" id="compiler_mode">
             <option value="js">js</option>
             <option value="preact" title="^10.6.6">preact</option>
-            <option value="vue" title="2.6.14">vue</option>
-            <option value="react" title="@17">react</option>            
+            <option value="vue" title="2.6.14|3.2.47">vue</option>
+            <option value="react" title="@17|^18.2.0">react</option>            
             <!-- <option value="jsx">jsx</option> -->
         </select>
 
@@ -154,8 +157,8 @@
 
 
 
-    <script src="./static/js/preproc/less_sass.js" data-comment="convert `sass` to `less` and back"></script>
-    <script src="./static/js/preproc/less/iife/less.js" defer async></script>
+    <script src="./static/js/preproc/less/iife/less.js" defer async data-comment="iife less. return less api to using inside code"></script>
+    <script src="./static/js/preproc/less_sass.js" defer async data-comment="convert `sass` to `less` and back"></script>    
     <script src="./static/js/preproc/sass/sass2css.js" defer async></script>
 
 
@@ -324,7 +327,7 @@
                         }
                     },
                     scss: {
-                        extension: '.less',
+                        extension: '.scss',
                         src: document.location.origin + '/static/js/preproc/sass/sass.js',
                         inside: true,                                                               // true|false = false (true - inside sandbox, else - to root)           
                     }
@@ -339,7 +342,9 @@
                 {
                     typescript: {
 
-                        src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
+                        // src: 'https://unpkg.com/typescript@latest/lib/typescriptServices.js',
+                        src: 'https://cdnjs.cloudflare.com/ajax/libs/typescript/4.9.5/typescript.min.js',
+                        // src: 'https://unpkg.com/typescript@4.9.5/lib/typescriptServices.js',
                         target: 'self',     // TODO change to `root`|`top`|`parent`|undefined!
                         tabs: true,
                         extension: '.ts',
