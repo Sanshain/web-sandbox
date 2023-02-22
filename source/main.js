@@ -26,15 +26,19 @@ const frameworkEnvironment = []
 
 /**
  * @description Do full environment cleaning and filling from scratch
- * @param { string[] } environment - environment - list of external (or internal) scripts or another resources to load content
+ * @param {string[]} environment - environment - list of external (or internal) scripts or another resources to load content
  * @param {keyof compilers} envName - framework environment name
+ * @param {string} [entryPoint=''] - code
  */
-function updateEnvironment(environment, envName) {
+function updateEnvironment(environment, envName, entryPoint) {
 
     const libs = compilers[envName] || [];
 
     environment.splice(0, environment.length);
-    libs.forEach((/** @type {string} */ lib) => environment.push(lib));
+    libs.forEach((/** @type {string} */ lib) => {
+        
+        environment.push(lib);
+    });
     
     // window['__DEBUG'] && console.log(environment);
     
@@ -106,7 +110,7 @@ window.addEventListener('message', function (event) {
  *      additionalFiles?: Storage|object,                                                   // ? implemented?
  *      quickCompileMode?: boolean,                                                         // ? not implemented - the quick mode compilation via onmessages iver sandbox communication
  *      syntaxMode?: SyntaxMode,                                                            // index of initial selected  framawork 
- *      clariryframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? identifier rfamework on depend of source code
+ *      clarifyframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? identifier rfamework on depend of source code
  * }?} options
  * @returns {unknown[]}
  */
@@ -118,7 +122,7 @@ export function initialize(values, options) {
      * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
      */
     let frameworkID = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
-    frameworkID = (options.clariryframework && values) ? options.clariryframework(values[2], frameworkID) : frameworkID;
+    frameworkID = (options.clarifyframework && values) ? options.clarifyframework(values[2], frameworkID) : frameworkID;
     console.log(frameworkID, 'syntaxMode');
 
     //@ts-ignore
@@ -133,9 +137,12 @@ export function initialize(values, options) {
     playgroundObject.modes = options.modes;
     playgroundObject.onfilerename = options.onfilerename
     playgroundObject.onfileRemove = options.onfileRemove
-
-    //@ts-ignore
-    updateEnvironment(frameworkEnvironment, Object.keys(compilers)[frameworkID])
+    
+    updateEnvironment(frameworkEnvironment,
+        //@ts-expect-error
+        Object.keys(compilers)[frameworkID],
+        values[2]
+    )
 
     // Object.values(compilers)[syntaxMode].forEach(link => frameworkEnvironment.push(link));
     const updateEnv = updateEnvironment.bind(null, frameworkEnvironment);

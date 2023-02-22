@@ -77,7 +77,7 @@ module.exports = modules.map(function (config) {
                 mangle: false,
                 compress: {
                     drop_debugger: false,
-                    drop_console: true
+                    // drop_console: true
                 },
                 output: {
                     comments: false,

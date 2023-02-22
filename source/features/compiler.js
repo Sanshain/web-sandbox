@@ -10,8 +10,8 @@ const reactCompiler = {
 
 const vueCompiler = {
     // vue: "https://unpkg.com/vue@2.5.17/dist/vue.js"
-    vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js',
-    // vue: 'https://unpkg.com/vue@3/dist/vue.global.js'
+    // vue: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js',
+    vue: 'https://unpkg.com/vue@3/dist/vue.global.js'
 }
 
 const preactCompiler = {
@@ -46,6 +46,41 @@ export const babelCompiler = {
 // ];
 
 
+// v.1
+// export const versionClarifier = {
+//     __versions: [],
+//     vue: (/** @type {string} */ value) => {
+//         if (value.indexOf('createApp')) return {
+//             version: '^3.2.47',
+//             url: 'https://unpkg.com/vue@3/dist/vue.global.js'
+//         }
+//         // new Vue
+//         else return {
+//             version: '^2.6.14',
+//             url: 'https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'
+//         }
+//     }
+// }
+
+// // v.2
+// const versionController = {
+//     vue: {
+//         // 'createApp': 'https://unpkg.com/vue@3/dist/vue.global.js',
+//         'createApp': ['https://unpkg.com/vue@3.2.47/dist/vue.global.js'],
+//         'new Vue': ['https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js']
+//     },
+//     react: {
+//         'createRoot': [
+//             'https://unpkg.com/react@18.2.0/umd/react.production.min.js',
+//             'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js'
+//         ],
+//         'ReactDOM.render': [
+//             'https://unpkg.com/react@17/umd/react.production.min.js',
+//             'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+//         ]
+//     }
+// }
+
 
 export const compilers = {
     vanile: [],
@@ -70,19 +105,71 @@ export const defaultValues = [
     },
     // vue
     {
+        // v2:
         html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
         css: '#app { \n\tcolor: green; \n}',
+        // "import { Vue } from 'vue'"
         javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
+        
+        // v3:
+        // html: '<div id="app">\n\t<button @click="count++">\n\t\tCount is: {{ count }}\n\t</button>\n</div>'
+        // css: '#app button{ \n\tcolor: green; \n}',
+        // javascript: "import { createApp } from 'vue'\n\ncreateApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')"
     },
     // react
     {
         html: '<div id="root"></div>',
         css: '#root{\n\tcolor: red;\n\tfont-family: arial;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
         // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+        
+        // "import React from 'react';\nimport ReactDOM from 'react-dom';"
+
         javascript: "function App(){\n\n\tconst [count, setCount] = React.useState(0);\n" +
                     "\n\treturn <h1 onClick={()=>setCount(count+1)}>\n\t\tClick me: {count}!\n\t</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
     },
 ]
+
+
+/**
+ * Replace imprt to spread. 
+ * @param {string} code 
+ * @returns {string}
+ */
+export function spreadImports(code) {
+    
+    code = code.replace(/import ([\{\w, _\*\}]+) \s*from \s*['"]([\w-_\.\/]+)['"]/gm, function (match, spreadedBlock, module) {
+        
+        /**
+         * @type {string}
+         */
+        let packageName = module.split('/').shift()                                             /// preact/hooks => preact
+        let packageNameParts = packageName.split('-');                                          /// react-dom    => ['react', 'dom']; ['preact']
+        let firstPart = packageNameParts[0][0].toUpperCase() + packageNameParts[0].slice(1)     /// ['react', 'dom'] => React; Preact; Vue;
+        const spreadedName = firstPart + (packageNameParts[1] || '').toUpperCase()              /// React + dom => ReactDOM; React; Preact; Vue;        
+
+        // import defaultExport, { export1, /* … */ } from "module-name";
+        if (~spreadedBlock.indexOf('{') && (spreadedBlock[0] != '{' || spreadedBlock.slice(-1) != '}')) {
+            let r = spreadedBlock.match('\{[\w, _]+\}')
+            if (r) {
+                spreadedBlock = r[0];
+            }
+        }
+        
+        // import * as name from "module-name";
+        spreadedBlock = spreadedBlock.replace(/\* as \w+/, spreadedName)
+
+        // import { export1, export2 as alias2, /* … */ } from "module-name";
+        let result = 'var ' + spreadedBlock.replace(' as', ':') + ' = ' + spreadedName;
+
+        return result;
+    })
+    
+    // * -> Object.assign(window, default?) - unsupported
+    // default, {a1, a2}                    - unsupported
+
+    return code;
+}
+
 
 
 // vue3: 

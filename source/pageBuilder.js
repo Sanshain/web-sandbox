@@ -1,6 +1,6 @@
 // @ts-check
 
-import { babelCompiler, compilers } from "./features/compiler";
+import { babelCompiler, compilers, spreadImports } from "./features/compiler";
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
 import { commonStorage, getLangMode } from './utils/utils';
 import sass2less from 'less-plugin-sass2less'
@@ -498,13 +498,15 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
  */
 function buildAndTranspile(code, currentLang) {
     if (window['simplestBundler']) {
-        code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);
+        code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);        
         globalThis.__debug && console.log('build...');
     }
     else {
         console.warn('bundler is absent');
         // alert('Warn/ look logs')
     }
+
+    code = spreadImports(code)
 
     // ts transpilation:
     if (currentLang && currentLang.prehandling) {
@@ -654,4 +656,5 @@ function getLang() {
     const langMode = getLangMode(appCode);
     return langMode;
 }
+
 
