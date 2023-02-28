@@ -15,6 +15,7 @@ import { modes } from './features/base';
 /**
  * setup ace editor: hangs events and configures compilers
  * @typedef {0 | 1 | 2 | 3} FrameworkID - keyof Object.keys(compilers)
+ * @typedef {ReturnType<initializeEditor>} EditorsEnv
  * 
  * @typedef {{row: number, column: number}} Position
  * @typedef {{start: Position, end: Position}} Range
@@ -58,7 +59,7 @@ import { modes } from './features/base';
  * @obsolete {string[]} modes
  * @obsolete {string|number} syntaxMode
  * @param {?[string?, string?, string?, object?]} [values] - initial values for editors
- * @returns {[AceEditor, AceEditor, AceEditor] & {playgroundObject: object, updateEnv: (mode: string) => string[]}}
+ * @returns {[AceEditor, AceEditor, AceEditor] & {playgroundObject: typeof playgroundObject, updateEnv: (mode: string) => string[]}}
  */
 export default function initializeEditor(ace, editorOptions, values) {
     

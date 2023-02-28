@@ -123,7 +123,7 @@ export function fileAttach(event) {
     }
 
     /**
-     * Toggle tabs
+     * Toggle among active tabs
      * @param {MouseEvent} ev
      * @returns
      */
@@ -208,6 +208,7 @@ export function fileAttach(event) {
         ev.target.classList.add('active');
 
         editors[2].setValue(fileStore[ev.target.innerText]);
+        fileStore._active = ev.target.innerText;
 
         globalThis.__debug && console.log('toggle tab...');    
 
@@ -302,4 +303,6 @@ export function fileAttach(event) {
         snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
     }
     
+    if (!event.file) fileStore._active = title;
+
 }

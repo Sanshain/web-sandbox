@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "ace.js",
+  "types": "./types",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "types": "!! tsc source/main.js --declaration --allowJs --emitDeclarationOnly --outDir types"
   },
   "keywords": [],
   "author": "Sanshain",
@@ -14,13 +16,15 @@
     "less-plugin-sass2less": "github:Sanshain/less-plugin-sass2less",
     "preact": "10.7.2",
     "prettier": "^2.8.4",
-    "tcp-bundler": "github:Sanshain/tcp-bundler#browser"
+    "tcp-bundler": "github:Sanshain/tcp-bundler#browser",
+    "ts-a-editor": "github:Sanshain/TypeScriptEditor#feat__integrations"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "rollup": "^2.73.0",
     "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-uglify": "^6.0.4"
+    "rollup-plugin-uglify": "^6.0.4",
+    "typescript": "^4.9.5"
   }
 }

@@ -3,7 +3,7 @@
 import { babelCompiler, compilers, spreadImports } from "./features/compiler";
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
 import { commonStorage, getLangMode } from './utils/utils';
-import sass2less from 'less-plugin-sass2less'
+
 
 
 // TODO REMOVE:

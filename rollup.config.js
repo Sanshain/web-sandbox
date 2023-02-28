@@ -71,18 +71,18 @@ module.exports = modules.map(function (config) {
             //     sourceMap: true
             // }),
 
-            terser({
-                keep_fnames: /(loclog|onmessage)/,
-                // mangle: true,
-                mangle: false,
-                compress: {
-                    drop_debugger: false,
-                    // drop_console: true
-                },
-                output: {
-                    comments: false,
-                }
-            }),
+            // terser({
+            //     keep_fnames: /(loclog|onmessage)/,
+            //     // mangle: true,
+            //     mangle: false,
+            //     compress: {
+            //         drop_debugger: false,
+            //         // drop_console: true
+            //     },
+            //     output: {
+            //         comments: false,
+            //     }
+            // }),
 
         ]
     }

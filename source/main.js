@@ -12,8 +12,22 @@ import { fileAttach } from "./features/tabs";
 import { ChoiceMenu } from "./ui/ChoiceMenu";
 import { modes } from "./features/base.js";
 
+
+// import { dropMode, initialize as tsInitialize } from "ts-a-editor";
+
+
+/**
+ * @typedef {import("typescript").LanguageServiceHost} LanguageServiceHost
+ */
+
+// tsInitialize({
+
+// })
+
+
+
 import "./features/consoleDebug";
-import { i } from '../node__modules/preact/src/create-context';
+
 
 /**
  * @typedef {import("./ui/ChoiceMenu").ChoiceDetails} ChoiceDetails
@@ -119,6 +133,7 @@ window.addEventListener('message', function (event) {
  *      prehandling?: (code: string) => string,
  *      mode?: string,
  *      tabs?: boolean,
+ *      onModeChange?: (arg: {enable: boolean, disable?: boolean, editor: AceEditor, editors?: ReturnType<initializeEditor>}) => void,
  *      target?:{
  *          external?: boolean,
  *          tag?: 'link'|'script'|'style'|'body',
@@ -247,6 +262,17 @@ export function initialize(values, options) {
                     // const link = options.modes[i][e.detail.value];
                     
                     options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: editors[i] })
+                    if (options.modes[i] && options.modes[i][e.detail.value] && options.modes[i][e.detail.value].onModeChange) {
+
+                        let currentMode = (modeOptions.mode || '').split('/').pop() || modes[i];
+                        
+                        options.modes[i][e.detail.value].onModeChange({
+                            // disable: currentMode === e.detail.value,
+                            enable: currentMode === e.detail.previousValue,
+                            editor: editors[i],
+                            editors: editors
+                        })
+                    }
                             
                     // MULTITABS MODE:
                 

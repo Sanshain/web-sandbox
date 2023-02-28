@@ -460,6 +460,7 @@ iframe {
 .context_menu>div{
     cursor: pointer;
     padding : 3px 1em;
+    color: #333;
 }
 
 .context_menu>div:hover{
