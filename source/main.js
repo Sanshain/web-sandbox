@@ -262,16 +262,21 @@ export function initialize(values, options) {
                     // const link = options.modes[i][e.detail.value];
                     
                     options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: editors[i] })
-                    if (options.modes[i] && options.modes[i][e.detail.value] && options.modes[i][e.detail.value].onModeChange) {
-
-                        let currentMode = (modeOptions.mode || '').split('/').pop() || modes[i];
+                    if (options.modes[i]) {
                         
-                        options.modes[i][e.detail.value].onModeChange({
-                            // disable: currentMode === e.detail.value,
-                            enable: currentMode === e.detail.previousValue,
-                            editor: editors[i],
-                            editors: editors
-                        })
+                        let langmode = options.modes[i][e.detail.value] || options.modes[i][e.detail.previousValue]
+
+                        if (langmode && langmode.onModeChange) {
+
+                            let currentMode = (modeOptions.mode || '').split('/').pop() || modes[i];
+                        
+                            langmode.onModeChange({
+                                disable: currentMode === e.detail.value,
+                                enable: currentMode === e.detail.previousValue,
+                                editor: editors[i],
+                                editors: editors
+                            })
+                        }
                     }
                             
                     // MULTITABS MODE:

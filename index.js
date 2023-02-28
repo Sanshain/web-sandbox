@@ -191,13 +191,14 @@ const editors = IDE.initialize([], {
                     if (enable) {
 
                         const config = {
-                            selector: editor.container.id,
-                            content: editor.getValue(),
-                            position: editor.selection.getCursor(),
+                            // selector: editor.container.id,
+                            // content: editor.getValue(),
+                            // position: editor.selection.getCursor(),
+
                             fileNavigator: Object.assign(editors.playgroundObject.fileStorage, {
                                 _active: 'app.ts'
                             }),
-                            // editor,
+                            editor,
                             libFiles: [
                                 "./static/js/preproc/typescript/4.9.5/lib.dom.d.ts",
                                 "./static/js/preproc/typescript/4.9.5/lib.es5.d.ts",
@@ -251,12 +252,20 @@ const editors = IDE.initialize([], {
                             // setTimeout(this.onModeChange.bind(this), 650, {enable, editor})
                         }
                     }
-                    else {
-                        console.warn(window['tsEditor']);
-                        console.log('enable', enable);
+                    else if (window['tsEditor'] && disable) {
+                        debugger
+                        //@ts-ignore                        
+                        const ace = tsEditor.dropMode(editor)
+                        ace.setOptions({
+                            enableBasicAutocompletion: true,
+                            enableSnippets: true,
+                            enableLiveAutocompletion: true,
+                        });                        
+                        editors[2] = ace;
                     }
-                    console.log(this.onModeChange);
+                    
                     console.log('enable', enable);
+                    console.log('disable', disable);
                 },
                 prehandling: code => {
                     //@ts-ignore
