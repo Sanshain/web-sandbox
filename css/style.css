@@ -168,3 +168,11 @@ body{
     /* new */
     background: #25282c;
 }
+
+
+.tooltip {
+    position        : fixed;
+    background-color: #333;
+    opacity         : 1;
+    color           : cadetblue;
+}
