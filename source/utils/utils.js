@@ -63,3 +63,15 @@ function renameOccurrences(prevName, fullname, editor) {
     let pos = editor.find(prevName + "'")
     pos && editor.getSession().replace(pos, fullname + "'")
 }
+
+
+/**
+ * Extract mode name from playgroundObject.editors[i]
+ * @param {number} i 
+ * @example {'css'|'less'|'scss'|'javascript'|'typescript'|'html'}
+ * @return {string}
+ */
+export function getSelectedModeName(i) {
+    let mode = playgroundObject.editors[i].session.getMode().$id;
+    return mode.split('/').pop()
+}

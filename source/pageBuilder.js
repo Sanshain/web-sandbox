@@ -9,6 +9,7 @@ import { commonStorage, getLangMode } from './utils/utils';
 // TODO REMOVE:
 import { ChoiceMenu } from "./ui/ChoiceMenu";
 import { modes as baseModes, modes } from './features/base';
+import initializeEditor from './aceInitialize';
 
 
 /**
@@ -16,7 +17,9 @@ import { modes as baseModes, modes } from './features/base';
  *      tag?: BaseTags[number], external?: boolean, attributes?: string
  * }} CodeTarget
  * 
- * @typedef {{
+ * @typedef {LangMode[string]} Mode
+ * 
+ * @_typedef {{
  *  src: string|string[], 
  *  inside?: boolean, 
  *  prehandling?: (arg: string) => string, 
@@ -29,7 +32,16 @@ import { modes as baseModes, modes } from './features/base';
 export { compilers, babelCompiler };
 
 /**
- * @type {{editors: any[], iframe: any, curUrl: any, fileStorage: object, modes?: [object?, object?, object?], onfilerename?: Function, onfileRemove?: (name: string) => void}}
+ * @type {{
+ *      editors: import("./aceInitialize").EditorsEnv | [],                           // any[],
+ *      iframe: HTMLIFrameElement, 
+ *      curUrl: string, 
+ *      fileStorage: {[k: string]: string} | { _active: number|string },
+ *      modes?: [LangMode?, LangMode?, LangMode?],                                    // [object?, object?, object?]
+ *      onfilerename?: Function, 
+ *      onfileRemove?: (name: string) => void
+ * }}
+ *      activeModes?: [number?, number?, number?],                                    // UNUSED - use getSelectedModeName now
  */
 export const playgroundObject = {
     editors: [],
@@ -37,6 +49,7 @@ export const playgroundObject = {
     curUrl: null,
     fileStorage: { _active: 0 },
     modes: null,
+    // activeModes: [],
     onfilerename: null,
     onfileRemove: null
 }
@@ -123,7 +136,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     if (langMode) {
 
         /**
-         * @type {Mode}
+         * @type {Mode?}
          */
         var currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][langMode];
 
@@ -612,6 +625,8 @@ export function webCompile(jsxMode, compilerModes, less) {
         // globalThis.__debug && console.log(Object.values(compilers)[compilerMode]);
         // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
         let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined);
+        
+        //@ts-expect-error
         playgroundObject.iframe = iframe;
         playgroundObject.curUrl = curUrl;
     }

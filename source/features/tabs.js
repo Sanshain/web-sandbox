@@ -2,16 +2,28 @@
 
 import { playgroundObject } from "../pageBuilder";
 import { autocompleteExpand, keyWords } from "../utils/autocompletion";
+import { getSelectedModeName } from "../utils/utils";
 
 
 
 const menuPoints = {
-    'Удалить': (e) => {
+    'Удалить': (/** @type {{ target: HTMLDivElement }} */ e) => {
         if (confirm('Вы уверены, что хотите удалить файл `' + e.target.innerText + '`'))
         {
-            playgroundObject.onfileRemove(e.target.innerText + '');
-            delete playgroundObject.fileStorage[e.target.innerText];
+            let filename = e.target.innerText;
+
+            playgroundObject.onfileRemove(filename);
+            delete playgroundObject.fileStorage[filename];
             e.target.parentElement.removeChild(e.target);
+
+            let langModes = playgroundObject.modes[2];
+            let selMode = getSelectedModeName(2)
+            if (langModes[selMode].runtimeService) {
+                // langModes[selMode].runtimeService.removeScript(filename)
+
+                langModes[selMode].runtimeService.removeFile(filename)
+                playgroundObject.editors[2].getSession().$worker.emit("removeLibrary", { data: { name: filename }});
+            }
         }
     }
 }
@@ -233,44 +245,7 @@ export function fileAttach(event) {
     newTab.ondblclick = origTab.ondblclick;
 
     if (playgroundObject.onfileRemove) {
-        newTab.oncontextmenu = (/** @type {{ target: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} */ e) => {
-
-            let contextMenu = document.querySelector('.context_menu');
-            if (contextMenu) contextMenu.classList.remove('hidden')
-            else {
-                contextMenu = document.body.appendChild(document.createElement('div'));
-                contextMenu.className = 'context_menu';
-                //@ts-ignore
-                contextMenu.tabIndex = 0;
-                Object.keys(menuPoints).forEach(key => {
-                    let point = contextMenu.appendChild(document.createElement('div'))
-                    point.innerText = key;
-                    point.addEventListener('click', () => {
-
-                        contextMenu.classList.toggle('hidden');
-                        setTimeout(() => {
-                            menuPoints[key] && menuPoints[key](e)                                                        
-                        })
-                    })
-                })
-                //@ts-ignore
-                contextMenu.onblur = function() {
-                    contextMenu.classList.add('hidden');
-                }
-            }
-
-            console.log(e);
-
-
-            //@ts-ignore
-            contextMenu.style.left = e.clientX + 'px';
-            //@ts-ignore
-            contextMenu.style.top = e.clientY + 5 + 'px';
-            //@ts-ignore
-            contextMenu.focus()
-
-            return false;
-        }
+        newTab.oncontextmenu = onContextMenu;
     }
 
 
@@ -298,11 +273,66 @@ export function fileAttach(event) {
 
     if (!event.file) {
         editors[2].setValue('');
-        //@ts-ignore
+        /**
+         * @type {{insertSnippet: (block: string, snippet: string) => void}}
+         */
         const snippetManager = ace.require('ace/snippets').snippetManager;
         snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
+
+        fileStore._active = title;
+        
+        // add the file to ts lang server
+        let langModes = playgroundObject.modes[2];
+        let selMode = getSelectedModeName(2)
+        if (langModes[selMode].runtimeService) {
+            
+            const content = editors[2].getValue();
+            
+            // langModes[selMode].runtimeService.addScript(title, content)
+            langModes[selMode].runtimeService.loadContent(title, content, true)
+            playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: title, content } });
+        }
     }
-    
-    if (!event.file) fileStore._active = title;
 
 }
+
+
+
+/**
+ * @param {{ target?: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} e
+ */
+function onContextMenu(e) {
+    
+    /** @type {HTMLDivElement} */
+    let contextMenu = document.querySelector('.context_menu');
+
+    if (contextMenu) contextMenu.classList.remove('hidden');
+    else {
+        contextMenu = document.body.appendChild(document.createElement('div'));
+        contextMenu.className = 'context_menu';
+        contextMenu.tabIndex = 0;
+        Object.keys(menuPoints).forEach(key => {
+            let point = contextMenu.appendChild(document.createElement('div'));
+            point.innerText = key;
+            point.addEventListener('click', () => {
+
+                contextMenu.classList.toggle('hidden');
+                setTimeout(() => {
+                    menuPoints[key] && menuPoints[key](e);
+                });
+            });
+        });
+        contextMenu.onblur = function () {
+            contextMenu.classList.add('hidden');
+        };
+    }
+
+    // console.log(e);
+
+    contextMenu.style.left = e.clientX + 'px';
+    contextMenu.style.top = e.clientY + 5 + 'px';
+    contextMenu.focus();
+
+    return false;
+}
+

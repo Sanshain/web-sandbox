@@ -12,10 +12,12 @@ import { modes } from './features/base';
 
 
 
+
 /**
  * setup ace editor: hangs events and configures compilers
  * @typedef {0 | 1 | 2 | 3} FrameworkID - keyof Object.keys(compilers)
  * @typedef {ReturnType<initializeEditor>} EditorsEnv
+ * 
  * 
  * @typedef {{row: number, column: number}} Position
  * @typedef {{start: Position, end: Position}} Range
@@ -26,6 +28,12 @@ import { modes } from './features/base';
  *      setMode: (s: string) => void,
  *      replace: (range: Range, s: string) => unknown,
  *      insert: (pos: Position, v: string) => void,
+ *      getMode: () => {
+ *          $id: `ace/mode/{string}`
+ *      },
+ *      $worker: {
+ *          emit: (cmd: "addLibrary"|"removeLibrary"|"updateModule", {data: unknown}) => void
+ *      }
  *  }} EditorSession
  * 
  * @typedef {{

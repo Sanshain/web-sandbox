@@ -214,13 +214,14 @@ const editors = IDE.initialize([], {
                                 scr.src = './static/js/ts-editor/ts-editor.js'
                                 scr.onload = () => {                                    
                                     //@ts-ignore                                    
-                                    const [tsService, ace] = tsEditor.initialize(config)
+                                    const [tsService, ace] = tsEditor.initialize(config)                                    
                                     ace.setOptions({
                                         enableBasicAutocompletion: false,
                                         // enableSnippets: true,
                                         enableLiveAutocompletion: false,
                                     });
                                     editors[2] = ace;
+                                    this.runtimeService = tsService;
                                 }
                                 document.head.appendChild(scr)
                             }                            
@@ -233,6 +234,7 @@ const editors = IDE.initialize([], {
                                     enableLiveAutocompletion: false,
                                 });
                                 editors[2] = ace;
+                                this.runtimeService = tsService;
                                 // editor.clearSelection()
                             }
 

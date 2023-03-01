@@ -18,12 +18,12 @@ import { modes } from "./features/base.js";
 
 /**
  * @typedef {import("typescript").LanguageServiceHost} LanguageServiceHost
+ * @typedef {import("typescript").CompilerOptions} CompilerOptions
  */
 
 // tsInitialize({
 
 // })
-
 
 
 import "./features/consoleDebug";
@@ -133,6 +133,18 @@ window.addEventListener('message', function (event) {
  *      prehandling?: (code: string) => string,
  *      mode?: string,
  *      tabs?: boolean,
+ *      runtimeService?: {
+ *           loadPackages(libFiles?: string[]): LanguageServiceHost,
+ *           loadContent(filename: string, content: string, keepExistContent: true): void,
+ *           changeSelectFileName(filename: string): void;
+ *           removeFile: (fileName: string) => void;
+ *           getLoadedFilenames: () => string[];
+ *           hasFile: (fileName: any) => boolean;
+ *           updateFile: (fileName: string, content: string) => void;
+ *           editFile: (fileName: string, minChar: number, limChar: number, newText: string) => void;
+ *           setCompilationSettings: (settings: CompilerOptions) => void;
+ *           getCompilationSettings: () => CompilerOptions;
+ *      },
  *      onModeChange?: (arg: {enable: boolean, disable?: boolean, editor: AceEditor, editors?: ReturnType<initializeEditor>}) => void,
  *      target?:{
  *          external?: boolean,
@@ -158,7 +170,7 @@ window.addEventListener('message', function (event) {
  *      syntaxMode?: SyntaxMode,                                                            // index of initial selected  framawork 
  *      clarifyframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? identifier rfamework on depend of source code
  * }?} options
- * @returns {unknown[]}
+ * @returns {ReturnType<initializeEditor>} {unknown[]}
  */
 export function initialize(values, options) {
 
@@ -250,29 +262,29 @@ export function initialize(values, options) {
                 settingsElement.className = 'settings';
 
                 //@ts-ignore
-                settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ e) => {
+                settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ ev) => {
 
                     /**
                      * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
                      * @_type {LangMode} - ? - not applyed, but auto detected as expected - [?]
                      */
-                    const modeOptions = mode[e.detail.value] || {
+                    const modeOptions = mode[ev.detail.value] || {
                         extension: '.js'
                     };
                     // const link = options.modes[i][e.detail.value];
                     
-                    options.onModeChange && options.onModeChange({ mode: e.detail.value, prevMode: e.detail.previousValue, editor: editors[i] })
+                    options.onModeChange && options.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })
                     if (options.modes[i]) {
                         
-                        let langmode = options.modes[i][e.detail.value] || options.modes[i][e.detail.previousValue]
+                        let langmode = options.modes[i][ev.detail.value] || options.modes[i][ev.detail.previousValue]
 
                         if (langmode && langmode.onModeChange) {
 
                             let currentMode = (modeOptions.mode || '').split('/').pop() || modes[i];
                         
                             langmode.onModeChange({
-                                disable: currentMode === e.detail.value,
-                                enable: currentMode === e.detail.previousValue,
+                                disable: currentMode === ev.detail.value,
+                                enable: currentMode === ev.detail.previousValue,
                                 editor: editors[i],
                                 editors: editors
                             })
@@ -306,8 +318,8 @@ export function initialize(values, options) {
                     }
                     
                     // upload to frame will in pageBuilder, here just is highlight change                    
-                    (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
-                    (i === 2) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || e.detail.value));
+                    (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
+                    (i === 2) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
 
 
 
@@ -318,7 +330,7 @@ export function initialize(values, options) {
                     var Range = ace.require("ace/range").Range;
 
                     let markLine = editors[i].session.getLine(0);
-                    const markValue = "/* " + e.detail.value + " */";
+                    const markValue = "/* " + ev.detail.value + " */";
 
                     if (markLine.startsWith('/*')) {
                         editors[i].session.replace(new Range(0, 0, 0, markLine.length), markValue)
@@ -465,6 +477,7 @@ export function initialize(values, options) {
 
     let [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined)  // editorOptions
 
+    //@ts-expect-error
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 
