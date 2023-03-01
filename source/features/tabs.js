@@ -222,6 +222,22 @@ export function fileAttach(event) {
         editors[2].setValue(fileStore[ev.target.innerText]);
         fileStore._active = ev.target.innerText;
 
+        
+        // now update tsserv
+        let langModes = playgroundObject.modes[2];
+        let selMode = getSelectedModeName(2)
+        if (langModes[selMode].runtimeService) {
+
+            const content = editors[2].getValue();
+
+            // langModes[selMode].runtimeService.addScript(title, content)
+            // langModes[selMode].runtimeService.loadContent(title, content, true)
+            langModes[selMode].runtimeService.updateFile(title, content)
+            // playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: title, content } });
+            playgroundObject.editors[2].getSession().$worker.emit("updateModule", { data: { name: title, content } });
+        }
+
+
         globalThis.__debug && console.log('toggle tab...');    
 
         // console.log(fileStore[ev.target.innerText].split('\n').length);
@@ -299,6 +315,7 @@ export function fileAttach(event) {
 
 
 /**
+ * @description menu to remove some tab
  * @param {{ target?: { innerText: string | number; parentElement: { removeChild: (arg0: any) => void; }; }; clientX: string; clientY: number; }} e
  */
 function onContextMenu(e) {

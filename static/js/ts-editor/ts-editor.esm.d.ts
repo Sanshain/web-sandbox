@@ -26,7 +26,7 @@ declare const tsServiceHandler: {
     getLoadedFilenames: () => string[];
     hasFile: (fileName: any) => boolean;
     updateFile: (fileName: string, content: string) => void;
-    editFile: (fileName: string, minChar: number, limChar: number, newText: string) => void;
+    _$editFile: (fileName: string, minChar: number, limChar: number, newText: string) => void;
     setCompilationSettings: (settings: ts.CompilerOptions) => void;
     getCompilationSettings: () => ts.CompilerOptions;
 };

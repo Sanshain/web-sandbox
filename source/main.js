@@ -141,9 +141,9 @@ window.addEventListener('message', function (event) {
  *           getLoadedFilenames: () => string[];
  *           hasFile: (fileName: any) => boolean;
  *           updateFile: (fileName: string, content: string) => void;
- *           editFile: (fileName: string, minChar: number, limChar: number, newText: string) => void;
  *           setCompilationSettings: (settings: CompilerOptions) => void;
  *           getCompilationSettings: () => CompilerOptions;
+ *           _$editFile: (fileName: string, minChar: number, limChar: number, newText: string) => void;
  *      },
  *      onModeChange?: (arg: {enable: boolean, disable?: boolean, editor: AceEditor, editors?: ReturnType<initializeEditor>}) => void,
  *      target?:{
