@@ -186,16 +186,16 @@ const editors = IDE.initialize([], {
                  * 
                  * @param {{disable?: boolean, enable: boolean, editor: AceEditor, editors: EditorsEnv}} arg
                  */
-                onModeChange({ disable, enable, editor, editors }) {                                        
+                onModeChange({ disable, enable, editor, editors }) {
 
-                    if (enable) {
+                    if (enable || (enable === false && disable === false)) {
 
                         const config = {
                             // selector: editor.container.id,
                             // content: editor.getValue(),
                             // position: editor.selection.getCursor(),
 
-                            fileNavigator: Object.assign(editors.playgroundObject.fileStorage, {
+                            fileNavigator: Object.assign(editors.fileStorage, {
                                 _active: 'app.ts'
                             }),
                             editor,
@@ -210,10 +210,14 @@ const editors = IDE.initialize([], {
                         if (window['ts']) {
 
                             if (!window['tsEditor']) {
+
+                                //TODO deny to add ts files before runtimeService will uploaded?
+
                                 let scr = document.createElement('script')
                                 scr.src = './static/js/ts-editor/ts-editor.js'
-                                scr.onload = () => {                                    
-                                    //@ts-ignore                                    
+                                scr.onload = () => {
+
+                                    //@ts-expect-error
                                     const [tsService, ace] = tsEditor.initialize(config)                                    
                                     ace.setOptions({
                                         enableBasicAutocompletion: false,
@@ -222,11 +226,23 @@ const editors = IDE.initialize([], {
                                     });
                                     editors[2] = ace;
                                     this.runtimeService = tsService;
+
+                                    // if exists initial tabs:
+                                    
+                                    Object.entries(editors.fileStorage).forEach(([file, content]) => {
+                                        
+                                        if (file != 'app.ts' && file.split('.').pop() == 'ts') {
+                                            tsService.loadContent(file, content, true)
+                                            debugger
+                                            ace.session.$worker.emit("addLibrary", { data: { name: file, content } });                                            
+                                        }
+                                    })
+
                                 }
                                 document.head.appendChild(scr)
                             }                            
                             else {
-                                //@ts-ignore
+                                //@ts-expect-error
                                 const [tsService, ace] = tsEditor.initialize(config)
                                 ace.setOptions({
                                     enableBasicAutocompletion: false,
@@ -245,7 +261,7 @@ const editors = IDE.initialize([], {
                             tsServ.id = 'typescript';
                             tsServ.src = this.src
                             tsServ.onload = () => {
-                                this.onModeChange({ enable, editor, editors })
+                                this.onModeChange({ enable, disable, editor, editors })
                             }
 
                             // stop load and drop
@@ -255,7 +271,7 @@ const editors = IDE.initialize([], {
                         }
                     }
                     else if (window['tsEditor'] && disable) {
-                        debugger
+                        
                         //@ts-ignore                        
                         const ace = tsEditor.dropMode(editor)
                         ace.setOptions({

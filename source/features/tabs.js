@@ -16,9 +16,10 @@ const menuPoints = {
             delete playgroundObject.fileStorage[filename];
             e.target.parentElement.removeChild(e.target);
 
+
             let langModes = playgroundObject.modes[2];
             let selMode = getSelectedModeName(2)
-            if (langModes[selMode].runtimeService) {
+            if (langModes[selMode] && langModes[selMode].runtimeService) {
                 // langModes[selMode].runtimeService.removeScript(filename)
 
                 langModes[selMode].runtimeService.removeFile(filename)
@@ -41,6 +42,9 @@ export function fileAttach(event) {
 
     //! Проверяем имя файла на валидность:
 
+    /**
+     * @type {import("../aceInitialize").EditorsEnv}
+     */
     var editors = event['editors'] || window['editors'];
     var filename = event.file || prompt('Enter file name:');
 
@@ -49,17 +53,20 @@ export function fileAttach(event) {
     // console.log('__fileAttach');
 
     let ext = (fileStore['app.ts'] || editors[2].session.getLine(0).match(/typescript/)) ? '.ts' : '.js';
-    let title = ~filename.indexOf('.') ? filename : (filename + ext);
+    /**
+     * @type {string}
+     */
+    let activeTabName = ~filename.indexOf('.') ? filename : (filename + ext);
 
-    if (!event.file && ~Object.keys(fileStore).indexOf(title)) {
+    if (!event.file && ~Object.keys(fileStore).indexOf(activeTabName)) {
         alert('Файл с таким именем уже существует');
         return;
     }
 
 
     let importSnippet = {
-        name: "import { * } from './" + title + "'",
-        template: "import { ${1} } from './" + title + "'"
+        name: "import { * } from './" + activeTabName + "'",
+        template: "import { ${1} } from './" + activeTabName + "'"
     }
 
 
@@ -110,6 +117,7 @@ export function fileAttach(event) {
                 });
             }
             
+            activeTabName = fullname;
             
             /**
              * 
@@ -139,7 +147,8 @@ export function fileAttach(event) {
      * @param {MouseEvent} ev
      * @returns
      */
-    origTab.onclick = origTab.onclick || function toggleTab (/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string | number; }; }} */ ev) {
+    origTab.onclick = origTab.onclick || function toggleTab(/** @type {{ target: { classList: { add: (arg0: string) => void; }; innerText: string; }; }} */ ev) {
+
         let prevTab = document.querySelector('.tab.active');
         if (prevTab) {
 
@@ -217,24 +226,28 @@ export function fileAttach(event) {
             // }
 
         }
+
         ev.target.classList.add('active');
 
-        editors[2].setValue(fileStore[ev.target.innerText]);
+        activeTabName = ev.target.innerText;
+        editors[2].session.setValue(fileStore[ev.target.innerText]);
         fileStore._active = ev.target.innerText;
 
         
         // now update tsserv
         let langModes = playgroundObject.modes[2];
         let selMode = getSelectedModeName(2)
-        if (langModes[selMode].runtimeService) {
+        if (langModes[selMode] && langModes[selMode].runtimeService) {
 
-            const content = editors[2].getValue();
+            const content = fileStore[activeTabName]; // editors[2].getValue();
 
             // langModes[selMode].runtimeService.addScript(title, content)
             // langModes[selMode].runtimeService.loadContent(title, content, true)
-            langModes[selMode].runtimeService.updateFile(title, content)
+            langModes[selMode].runtimeService.updateFile(activeTabName, content)
             // playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: title, content } });
-            playgroundObject.editors[2].getSession().$worker.emit("updateModule", { data: { name: title, content } });
+            
+            playgroundObject.editors[2].getSession().$worker.emit("updateModule", { data: { name: activeTabName, content } });
+            langModes[selMode].runtimeService.changeSelectFileName(activeTabName);
         }
 
 
@@ -250,7 +263,7 @@ export function fileAttach(event) {
     // создание нового таба:
 
     let newTab = origTab.cloneNode();
-    newTab.innerText = title;
+    newTab.innerText = activeTabName;
 
     let prevTab = document.querySelector('.tab.active');
     prevTab && prevTab.classList.toggle('active');
@@ -287,26 +300,28 @@ export function fileAttach(event) {
     target.parentElement.insertBefore(newTab, target);
     editors[2].focus();
 
+    // debugger;
+
     if (!event.file) {
-        editors[2].setValue('');
+        editors[2].session.setValue('');
         /**
-         * @type {{insertSnippet: (block: string, snippet: string) => void}}
+         * @type {{insertSnippet: (editor: AceEditor, snippet: string) => void}}
          */
         const snippetManager = ace.require('ace/snippets').snippetManager;
         snippetManager.insertSnippet(editors[2], "export function ${1:funcName} (${2:args}){\n\t${3}\n}");
 
-        fileStore._active = title;
+        fileStore._active = activeTabName;
         
         // add the file to ts lang server
         let langModes = playgroundObject.modes[2];
         let selMode = getSelectedModeName(2)
-        if (langModes[selMode].runtimeService) {
+        if (langModes[selMode] && langModes[selMode].runtimeService) {
             
             const content = editors[2].getValue();
             
             // langModes[selMode].runtimeService.addScript(title, content)
-            langModes[selMode].runtimeService.loadContent(title, content, true)
-            playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: title, content } });
+            langModes[selMode].runtimeService.loadContent(activeTabName, content, true)
+            playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: activeTabName, content } });
         }
     }
 

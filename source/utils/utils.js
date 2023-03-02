@@ -72,6 +72,7 @@ function renameOccurrences(prevName, fullname, editor) {
  * @return {string}
  */
 export function getSelectedModeName(i) {
+    // let mode = (typeof i === 'number' ? playgroundObject.editors[i] : i).session.getMode().$id;
     let mode = playgroundObject.editors[i].session.getMode().$id;
     return mode.split('/').pop()
 }

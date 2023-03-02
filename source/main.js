@@ -134,13 +134,15 @@ window.addEventListener('message', function (event) {
  *      mode?: string,
  *      tabs?: boolean,
  *      runtimeService?: {
- *           loadPackages(libFiles?: string[]): LanguageServiceHost,
- *           loadContent(filename: string, content: string, keepExistContent: true): void,
- *           changeSelectFileName(filename: string): void;
- *           removeFile: (fileName: string) => void;
+ *           loadPackages(libFiles?: string[]): LanguageServiceHost,                                                         // to load Vue etc
+ *           loadContent(filename: string, content: string, keepExistContent: true): void,                                   // load entry point content on tab creation
+ *           changeSelectFileName(filename: string): void;                                                                   // change select file on tab switching
+ *           getFileContent(name: string): string,
+ *           getSelectFileName(): string,
+ *           removeFile: (fileName: string) => void;                                                                         // remove file from host on remove tab
  *           getLoadedFilenames: () => string[];
  *           hasFile: (fileName: any) => boolean;
- *           updateFile: (fileName: string, content: string) => void;
+ *           updateFile: (fileName: string, content: string) => void;                                                        // update file content for type checking on tab switching (when works - its autoupdates)
  *           setCompilationSettings: (settings: CompilerOptions) => void;
  *           getCompilationSettings: () => CompilerOptions;
  *           _$editFile: (fileName: string, minChar: number, limChar: number, newText: string) => void;
@@ -151,7 +153,7 @@ window.addEventListener('message', function (event) {
  *          tag?: 'link'|'script'|'style'|'body',
  *          attributes?: string
  *      } 
- *  }
+ *  } 
  * }} LangMode
  * 
  * @typedef { 0 | 1 | 2 | 3 } SyntaxMode - keyof (Object.keys(compilers) | ['vanile', 'preact', 'vue', 'react'])
@@ -248,7 +250,7 @@ export function initialize(values, options) {
         !customElements.get('choice-menu') && customElements.define('choice-menu', ChoiceMenu);
         console.log(options.modes);
         
-        options.modes.forEach(function (mode, i) {  /** @type { {[k: string]: LangMode} } */
+        options.modes.forEach(function (/** @type {LangMode} */mode, /** @type {number} */ i) {  
 
             let items = [];  // ['css','less','stylus']
 
@@ -257,22 +259,24 @@ export function initialize(values, options) {
                 /**
                  * @type {ChoiceMenu}
                 */
-                //@ts-ignore
+                //@ts-expect-error
                 const settingsElement = editors[i].container.appendChild(document.createElement('choice-menu'));
                 settingsElement.className = 'settings';
 
-                //@ts-ignore
+                //@ts-expect-error
                 settingsElement.addEventListener('selected_changed', (/** @type { CustomEvent<ChoiceDetails> } */ ev) => {
 
                     /**
                      * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
-                     * @_type {LangMode} - ? - not applyed, but auto detected as expected - [?]
+                     * @type {LangMode[string]}
                      */
                     const modeOptions = mode[ev.detail.value] || {
                         extension: '.js'
                     };
                     // const link = options.modes[i][e.detail.value];
                     
+                    console.log(ev.detail.value);
+
                     options.onModeChange && options.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })
                     if (options.modes[i]) {
                         
@@ -290,6 +294,14 @@ export function initialize(values, options) {
                             })
                         }
                     }
+
+                    if (!(options.modes[i] && options.modes[i][ev.detail.value] && options.modes[i][ev.detail.value].onModeChange)) {
+                        
+                        // upload to frame will in pageBuilder, here just is highlight change
+                        (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
+                        (i === 2) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
+                    }
+
                             
                     // MULTITABS MODE:
                 
@@ -316,12 +328,6 @@ export function initialize(values, options) {
                             }                                
                         }
                     }
-                    
-                    // upload to frame will in pageBuilder, here just is highlight change                    
-                    (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
-                    (i === 2) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
-
-
 
                     
                     // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:

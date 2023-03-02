@@ -2,7 +2,7 @@
 
 import { default as extend } from 'emmet';
 
-import { debounce } from "./utils/utils";
+import { debounce, getSelectedModeName } from "./utils/utils";
 import { expand } from './features/expantion';
 import { compilers, defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
@@ -48,6 +48,12 @@ import { modes } from './features/base';
  *  moveCursorTo(line: number, col: number),
  *  getValue: () => string,
  *  getSession: () => EditorSession
+ *  focus(),
+ *  gotoLine(line: number),
+ *  completers: {
+ *      getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => void;
+ *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
+ *   }[];
  * }} AceEditor - custom AceEditor type (particular) (because of laziness to drag origin types)
  */
 
@@ -67,7 +73,11 @@ import { modes } from './features/base';
  * @obsolete {string[]} modes
  * @obsolete {string|number} syntaxMode
  * @param {?[string?, string?, string?, object?]} [values] - initial values for editors
- * @returns {[AceEditor, AceEditor, AceEditor] & {playgroundObject: typeof playgroundObject, updateEnv: (mode: string) => string[]}}
+ * @returns {[AceEditor, AceEditor, AceEditor] & {
+ *      playgroundObject: typeof playgroundObject, 
+ *      fileStorage: (typeof playgroundObject)['fileStorage'], 
+ *      updateEnv: (mode: string) => string[]
+ * }}
  */
 export default function initializeEditor(ace, editorOptions, values) {
     
@@ -112,6 +122,8 @@ export default function initializeEditor(ace, editorOptions, values) {
         }
         editor.session.setMode("ace/mode/" + mode);
         editor.setFontSize(fontSize);
+
+        playgroundObject.modes[i][mode]
         
         let value = values[i] || (editorOptions.storage || localStorage).getItem(initialFramework + '__' + modes[i]) || defaultValues[initialFramework][modes[i]];
         if (value) {
@@ -577,7 +589,8 @@ export default function initializeEditor(ace, editorOptions, values) {
                     if (i++ || true) {
                         //@ts-ignore
                         // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
-                        fileAttach({ target: fileCreateTab, file: key, editors })
+                        fileAttach({ target: fileCreateTab, file: key, editors });
+
                     }
                     else {                        
                         editors[2].setValue(_modules[key]);                                     // set editor value

@@ -511,6 +511,7 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
  */
 function buildAndTranspile(code, currentLang) {
     if (window['simplestBundler']) {
+        // TODO add extensions if is absent (inside itself simplestBundler):
         code = window['simplestBundler'].default(code, playgroundObject.fileStorage || window['fileStore']);        
         globalThis.__debug && console.log('build...');
     }
