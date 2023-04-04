@@ -35,8 +35,8 @@ import { modes } from './features/base';
  *          emit: (cmd: "addLibrary"|"removeLibrary"|"updateModule", {data: unknown}) => void
  *      }
  *  }} EditorSession
- * 
- * @typedef {{
+ * AceAjax.Editor |
+ * @typedef { {
  *  container: HTMLElement,
  *  find: (s: string|RegExp) => Range,
  *  session: EditorSession,
@@ -50,11 +50,11 @@ import { modes } from './features/base';
  *  getSession: () => EditorSession
  *  focus(),
  *  gotoLine(line: number),
- *  completers: {
+ *  completers?: {
  *      getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => void;
  *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
  *   }[];
- * }} AceEditor - custom AceEditor type (particular) (because of laziness to drag origin types)
+ * } } AceEditor - custom AceEditor type (particular) (because of laziness to drag origin types)
  */
 
 

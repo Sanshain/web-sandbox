@@ -24,7 +24,7 @@ const preactCompiler = {
 
     // set: 'http://127.0.0.1:3000/build/_preact.js',
 
-    set: document.location.origin + (~document.location.host.indexOf('3000') ? '/build/_preact.js' : '/static/js/compiler_libs/_preact.js'),
+    set: document.location.origin + (document.location.port.slice(0, 3) == '300' ? '/build/_preact.js' : '/static/js/compiler_libs/_preact.js'),
 }
 
 
@@ -95,33 +95,33 @@ export const defaultValues = [
     {
         html: '<h2 onclick="greeting(event)">\n\tHello world!\n</h2>',
         // css: 'h2 {\n\tcolor: orangered;\n\tcursor: pointer; \n\tfont-family: arial;\n}',
-        css: 'body{\n    background-color: #555;}\n\nh2 {\n\tcolor: #aaa;\n\tcursor: pointer; \n\tfont-family: arial;\n}',
+        css: 'body{\n    background-color: #555;\n}\n\nh2 {\n\tcolor: #aaa;\n\tcursor: pointer; \n\tfont-family: arial;\n}',
         javascript: 'function greeting(event){\n\talert("greeting!")\n}'
     },
     // preact
     {
         html: '<div id="root"></div>',
-        css: 'body{\n    background-color: #555;}\n\n#root{\n\tcolor: orangered;\n\tfont-family: arial;\n}',
+        css: 'body{\n    background-color: #555;\n}\n\n#root{\n\tcolor: orangered;\n\tfont-family: arial;\n}',
         javascript: "const name = 'world'; \nrender(\n\t<h1>Hello {name}</h1>, \n\tdocument.getElementById('root')\n);"
     },
     // vue
     {
         // v2:
-        html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
-        css: 'body{\n    background-color: #555;}\n\n#app { \n\tcolor: green; \n}',
-        // "import { Vue } from 'vue'"
-        javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
+        // html: '<div id="app">\n\t<input type="text" v-on:input="setMsg" />\n\t<p>{{msg}}</p>\n</div>',
+        // css: 'body{\n    background-color: #555;\n}\n\n#app { \n\tcolor: green; \n}',
+        // // "import { Vue } from 'vue'"
+        // javascript: "new Vue({\n\tel: '#app', \n\tdata: {\n\t\tmsg: 'Hello Vue!'\n\t}, \n\tmethods: {\n\t\tsetMsg: function(e){\n\t\t\tthis.msg = e.target.value;\n\t\t}\n\t}\n})"
         
         // v3:
-        // html: '<div id="app">\n\t<button @click="count++">\n\t\tCount is: {{ count }}\n\t</button>\n</div>'
-        // css: '#app button{ \n\tcolor: green; \n}',
-        // javascript: "import { createApp } from 'vue'\n\ncreateApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')"
+        html: '<div id="app">\n\t<button @click="count++">\n\t\tCount is: {{ count }}\n\t</button>\n</div>',
+        css: '#app button{ \n\tcolor: green; \n}',
+        javascript: "import { createApp } from 'vue'\n\ncreateApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')"
     },
     // react
     {
         html: '<div id="root"></div>',
         // css: '#root{\n\tcolor: red;\n\tfont-family: arial;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
-        css: 'body{\n    background-color: #555;}\n\n#root{\n\tcolor: #aaa;\n\tfont-family: arial;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
+        css: 'body{\n    background-color: #555;\n}\n\n#root{\n\tcolor: #aaa;\n\tfont-family: arial;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
         // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
         
         // "import React from 'react';\nimport ReactDOM from 'react-dom';"

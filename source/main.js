@@ -351,7 +351,7 @@ export function initialize(values, options) {
                     // RENAME FILES:
 
                     console.log('rename');
-
+                    
                     if (tabs) {
 
                         // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined

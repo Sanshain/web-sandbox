@@ -29,7 +29,8 @@ export default function plainBuild(content, store) {
                 exportedFiles.push(fileName)
             }
 
-            let content = store[fileName];          // var content = fs.readFileSync(fileName).toString()    // store['app.js'] || 
+            // var content = fs.readFileSync(fileName).toString()    // store['app.js'] || 
+            let content = store[fileName] || store[fileName + '.js'] || store[fileName + '.ts'] || store[fileName + '.jsx'] || store[fileName + '.tsx'];
 
             return content;
         }

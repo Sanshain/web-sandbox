@@ -340,7 +340,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     }    
     
     window['__debug'] && console.log('htmlContent', htmlContent);
-
+    
     let html = createHtml(htmlContent, attrs);
 
     globalThis.__debug && console.log(optionalScripts);

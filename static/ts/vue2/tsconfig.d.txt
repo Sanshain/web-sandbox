@@ -101,11 +101,12 @@
     // "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "exclude": [
-    "./source/**/*",
-    "./node_modules/**/*"
+    // "./source/**/*",
+    // "./node_modules/**/*",
+    "./raw/**/*.ts"
   ],
   "include": [
-    "./static/ts/vue2/types.cut.d.ts"
+    // "./static/ts/vue2/types.cut.d.ts"
   ]
   // "include": [
   //   "./index.d.ts",

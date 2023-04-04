@@ -5,8 +5,10 @@
   "main": "ace.js",
   "types": "./types",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "types": "!! tsc source/main.js --declaration --allowJs --emitDeclarationOnly --outDir types"
+    "test": "echo \"Start live server or launch manually index.html to continue\" && exit 0",
+    "types": "!! tsc source/main.js --declaration --allowJs --emitDeclarationOnly --outDir types",
+    "build:types": "./node_modules/.bin/dts-bundle-generator ./static/ts/vue2/types.cut.d.ts -o ./static/ts/vue2/types.bundle.d.ts",
+    "prettier": "prettier --print-width 110"
   },
   "keywords": [],
   "author": "Sanshain",
@@ -15,13 +17,14 @@
     "emmet": "^2.3.6",
     "less-plugin-sass2less": "github:Sanshain/less-plugin-sass2less",
     "preact": "10.7.2",
-    "prettier": "^2.8.4",
     "tcp-bundler": "github:Sanshain/tcp-bundler#browser",
     "ts-a-editor": "github:Sanshain/TypeScriptEditor#feat__integrations"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
+    "dts-bundle-generator": "^8.0.0",
+    "prettier": "^2.8.7",
     "rollup": "^2.73.0",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-uglify": "^6.0.4",

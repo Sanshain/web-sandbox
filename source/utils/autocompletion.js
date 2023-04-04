@@ -206,12 +206,7 @@ export let keyWords = wordList.map(
 
 
 /**
- * @param {{
- *  completers: { 
- *      getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => void;
- *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
- *   }[];
- * }} editor : ace editor instanse
+ * @param {AceEditor} editor : ace editor instanse
  * @param {{ hint?: {desc: string, origin?: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
  */
 export function autocompleteExpand(editor, keyWordInfo) {

@@ -1,5 +1,3 @@
-
-
 //@ts-check
 
 /**
@@ -36,14 +34,64 @@
 // document.head.appendChild(link)
 // document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" id="link_css" href="./static/css/web-pground.css">')
 // document.querySelector('#link_css').onload = (e) => (console.log(e), alert(e))
-// alert(10)
+
 
 var __debug = true;
 
+let v2 = [
+    "common.d.ts", 
+    "index.d.ts", 
+    "jsx.d.ts", 
+    "ls.txt", 
+    "options.d.ts", 
+    "plugin.d.ts", 
+    "umd.d.ts", 
+    "v3-component-options.d.ts", 
+    "v3-component-props.d.ts", 
+    "v3-component-public-instance.d.ts", 
+    "v3-define-async-component.d.ts", 
+    "v3-define-component.d.ts", 
+    "v3-directive.d.ts", 
+    "v3-generated.d.ts", 
+    "v3-manual-apis.d.ts", 
+    "v3-setup-context.d.ts", 
+    "v3-setup-helpers.d.ts", 
+    "vnode.d.ts", 
+    "vue.d.ts",     
+]
+
+const additionalTypings = {
+    vue: {
+        2: [
+            // './static/ts/vue2/types.d.ts',
+            './static/ts/vue2/vue.d.ts'
+        ]
+        // .concat(v2.map(v => './static/ts/vue2/raw/' + v))
+        ,
+        3: [
+            './static/ts/vue3/vue.min.d.ts',
+            './static/ts/vue3/csstype.ts',
+        ],
+        clarifyframework(code) {
+            const isES = !!~code.indexOf('import ');
+            const ver = +Object.keys(this)[0] + +!!~code.indexOf('createApp')
+            return isES
+                ? this[ver]
+                : this[ver].map(l => l.replace('.d.ts', 'iife.d.ts'))
+        }
+    }
+}
+
+
 // TODO check debounce?
 
-//@ts-expect-error 
+
+//@ts-expect-error
 const editors = IDE.initialize([], {
+    // for ts editor:
+    aliases: {
+        vue: () => './static/ts/vue2/vue.d.ts',  // additionalTypings['vue'][additionalTypings['vue'].clarifyframework()][0]
+    },
     // tabAttachSelector: '.tab:last-child',
     tabAttachSelector: '.tab:last-child',
     // additionalFiles: {
@@ -186,7 +234,7 @@ const editors = IDE.initialize([], {
                  * 
                  * @param {{disable?: boolean, enable: boolean, editor: AceEditor, editors: EditorsEnv}} arg
                  */
-                onModeChange({ disable, enable, editor, editors }) {
+                onModeChange({ disable, enable, editor, editors }) {                    
 
                     if (enable || (enable === false && disable === false)) {
 
@@ -202,56 +250,82 @@ const editors = IDE.initialize([], {
                             libFiles: [
                                 "./static/js/preproc/typescript/4.9.5/lib.dom.d.ts",
                                 "./static/js/preproc/typescript/4.9.5/lib.es5.d.ts",
-                                "./static/js/preproc/typescript/4.9.5/lib.dom.iterable.d.ts"
+                                "./static/js/preproc/typescript/4.9.5/lib.dom.iterable.d.ts",
+                                "./static/js/preproc/typescript/4.9.5/es2015.core.d.ts",
                             ],
-                            signatureToolTip: true
-                        }
+                            signatureToolTip: true,
+                            autocompleteStart: 1
+                        }                        
+
+                        const tsEditorInitialize = () => {
+                            //@ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
+                            const [tsService, ace] = tsEditor.initialize(config);
+
+                            ace.setOptions({
+                                enableBasicAutocompletion: false,
+                                // enableSnippets: true,
+                                enableLiveAutocompletion: false,
+                            });
+                            //@ ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
+                            editors[2] = ace;
+                            this.runtimeService = tsService;
+
+                            return { tsService, ace };
+                        }                        
 
                         if (window['ts']) {
 
-                            if (!window['tsEditor']) {
-
-                                //TODO deny to add ts files before runtimeService will uploaded?
+                            if (window['tsEditor']) tsEditorInitialize()    // && editor.clearSelection()
+                            else {
+                                
+                                //TODO?? deny to add ts files before runtimeService will uploaded
 
                                 let scr = document.createElement('script')
-                                scr.src = './static/js/ts-editor/ts-editor.js'
+                                scr.src = './node_modules/ts-a-editor/build/ts-editor.js'   // scr.src = './static/js/ts-editor/ts-editor.js'
                                 scr.onload = () => {
 
-                                    //@ts-expect-error
-                                    const [tsService, ace] = tsEditor.initialize(config)                                    
-                                    ace.setOptions({
-                                        enableBasicAutocompletion: false,
-                                        // enableSnippets: true,
-                                        enableLiveAutocompletion: false,
-                                    });
-                                    editors[2] = ace;
-                                    this.runtimeService = tsService;
-
-                                    // if exists initial tabs:
-                                    
-                                    Object.entries(editors.fileStorage).forEach(([file, content]) => {
+                                    let compileMode = document.getElementById('compiler_mode')['value'];
+                                    if (additionalTypings[compileMode]) {
                                         
+                                        // TODO inside clarifyframework:
+                                        // TODO check root file instead of edittor:
+                                        let value = editor.getValue();
+                                        if (Array.isArray(additionalTypings[compileMode])) {                                            
+                                            config.aliasedLibFiles = {
+                                                [compileMode+ '.d.ts']: additionalTypings[compileMode][0]
+                                            }
+                                            config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1))
+                                        }
+                                        else {
+                                            // if object
+                                            // let libFiles = additionalTypings[compileMode].clarifyframework(value)
+                                            // console.log(libFiles);
+
+                                            const initialVersion = Object.keys(additionalTypings[compileMode])[0]
+                                            let libFiles = additionalTypings[compileMode][+initialVersion + +!!~value.indexOf('createApp')];
+
+                                            config.aliasedLibFiles = {
+                                                ['' + compileMode + '.d.ts']: libFiles[0]
+                                            }                                            
+                                            config.libFiles = config.libFiles.concat(libFiles.slice(1));
+                                        }                                         
+                                    }
+
+                                    const { tsService, ace } = tsEditorInitialize()
+                                    window['tsService']= tsService
+
+                                    /// if exists initial tabs:
+                                    Object.entries(editors.fileStorage).forEach(([file, content]) => {
+
                                         if (file != 'app.ts' && file.split('.').pop() == 'ts') {
-                                            tsService.loadContent(file, content, true)
-                                            debugger
-                                            ace.session.$worker.emit("addLibrary", { data: { name: file, content } });                                            
+                                            tsService.loadContent(file, content + '', true); debugger
+                                            //@ ts-expect-error
+                                            ace.session.$worker.emit("addLibrary", { data: { name: file, content } });
                                         }
                                     })
-
+                                    
                                 }
                                 document.head.appendChild(scr)
-                            }                            
-                            else {
-                                //@ts-expect-error
-                                const [tsService, ace] = tsEditor.initialize(config)
-                                ace.setOptions({
-                                    enableBasicAutocompletion: false,
-                                    // enableSnippets: true,
-                                    enableLiveAutocompletion: false,
-                                });
-                                editors[2] = ace;
-                                this.runtimeService = tsService;
-                                // editor.clearSelection()
                             }
 
                         }
@@ -272,13 +346,14 @@ const editors = IDE.initialize([], {
                     }
                     else if (window['tsEditor'] && disable) {
                         
-                        //@ts-ignore                        
+                        //@ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
                         const ace = tsEditor.dropMode(editor)
                         ace.setOptions({
                             enableBasicAutocompletion: true,
                             enableSnippets: true,
                             enableLiveAutocompletion: true,
-                        });                        
+                        });
+                        //@ ts-expect-error `find is uncompatible`
                         editors[2] = ace;
                     }
                     
