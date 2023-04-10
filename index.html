@@ -82,7 +82,35 @@
 
         }
 
-    
+
+        .ace-multi-cursor {
+            pointer-events: auto;
+        }
+        .ace_line {
+            pointer-events: auto;
+        }
+
+        .hint{
+            /* content: attr(data-type); */
+            color: #ddd;
+            background-color: #333E;
+            position: absolute;
+            top: 100%;
+            left: 1em;
+            z-index: 10;
+            width: fit-content;
+            /* max-width: 400px;  */
+            max-width: 550px; 
+            /* text-decoration: underline; */
+        }     
+
+        .hint .__keyword{ color: rgb(125, 173, 245); }
+        .hint .__type { color: rgb(146, 238, 250); }
+
+        /* .typescript-error{
+            position: absolute;
+            border-bottom: 1px solid red;
+        } */
     </style>
 </head>
 

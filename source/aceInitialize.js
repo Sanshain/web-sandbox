@@ -28,8 +28,10 @@ import { modes } from './features/base';
  *      setMode: (s: string) => void,
  *      replace: (range: Range, s: string) => unknown,
  *      insert: (pos: Position, v: string) => void,
+ *      getMarkers(front?: true): Record<number, {id: number, range: {start?: Position, end: Position}}>,
+ *      removeMarker(id: number),
  *      getMode: () => {
- *          $id: `ace/mode/{string}`
+ *          $id: `ace/mode/${string}`
  *      },
  *      $worker: {
  *          emit: (cmd: "addLibrary"|"removeLibrary"|"updateModule", {data: unknown}) => void
@@ -117,8 +119,8 @@ export default function initializeEditor(ace, editorOptions, values) {
         let mode = modes[i];
         // (i && !(i % 2)
         if (i == 2 && initialFramework % 2) {     //  javascript == 2   &&   syntax == 1 | 3 (preact|react)
-            // mode = syntax % 2 ? 'tsx' : mode;  // jsx?
-            mode = 'tsx';  // jsx
+            // mode = syntax % 2 ? 'tsx' : mode;  // jsx?            
+            mode = 'jsx';  // jsx
         }
         editor.session.setMode("ace/mode/" + mode);
         editor.setFontSize(fontSize);
@@ -231,6 +233,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                 {
                     name: "extend",
                     exec: function () {
+                        
                         let cursor = editor.getCursorPosition();
                         let row = cursor.row;
 

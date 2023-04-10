@@ -72,14 +72,36 @@ const additionalTypings = {
             './static/ts/vue3/vue.min.d.ts',
             './static/ts/vue3/csstype.ts',
         ],
-        clarifyframework(code) {
-            const isES = !!~code.indexOf('import ');
+        clarifyframework(code) {            
             const ver = +Object.keys(this)[0] + +!!~code.indexOf('createApp')
-            return isES
-                ? this[ver]
-                : this[ver].map(l => l.replace('.d.ts', 'iife.d.ts'))
+            // const isES = !!~code.indexOf('import ');
+            // return isES
+            //     ? this[ver]
+            //     : this[ver].map(l => l.replace('.d.ts', 'iife.d.ts'))
+            return this[ver]
         }
-    }
+    },
+    react: {
+        17: {
+            'react.d.ts': "/static/ts/react@17/index.d.ts",
+            "react-dom.d.ts": "/static/ts/react@17/react-dom.d.ts",
+            "react/jsx-runtime.d.ts": "/static/ts/react@17/jsx-runtime.d.ts",
+            // "react/jsx-dev-runtime.d.ts": "/static/ts/react@17/jsx-dev-runtime.d.ts",      
+        },
+        18: {
+            'react.d.ts': "/static/ts/react@18/index.d.ts",
+            "react/jsx-runtime.d.ts": "/static/ts/react@18/jsx-runtime.d.ts",
+            "react-dom.d.ts": "/static/ts/react@18/react-dom.d.ts",
+            "react-dom/client.d.ts": "/static/ts/react@18/client.d.ts",            
+        },
+        /**
+         * @param {string} code
+         */
+        clarifyframework(code) {            
+            const ver = +Object.keys(this)[0] + +!!~code.indexOf('createRoot')
+            return this[ver]
+        }        
+    }    
 }
 
 
@@ -234,10 +256,14 @@ const editors = IDE.initialize([], {
                  * 
                  * @param {{disable?: boolean, enable: boolean, editor: AceEditor, editors: EditorsEnv}} arg
                  */
-                onModeChange({ disable, enable, editor, editors }) {                    
+                onModeChange({ disable, enable, editor, editors }) {
 
                     if (enable || (enable === false && disable === false)) {
 
+                        /**
+                         * @typedef {Omit<Parameters<import('.').TypescriptEditor['initialize']>[0], 'editor'> & {editor: AceEditor}} Config
+                         * @type {Config}
+                         */
                         const config = {
                             // selector: editor.container.id,
                             // content: editor.getValue(),
@@ -254,75 +280,63 @@ const editors = IDE.initialize([], {
                                 "./static/js/preproc/typescript/4.9.5/es2015.core.d.ts",
                             ],
                             signatureToolTip: true,
+                            typeDefenitionOnHovering: true,  // { selector: 'ace_content'},
                             autocompleteStart: 1
                         }                        
+                        // Parameters<import('.').TypescriptEditor['initialize']>[0]
+                        const tsEditorInitialize = (/** @type {unknown} */ $config) => {
+                            
+                            //@ ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
 
-                        const tsEditorInitialize = () => {
-                            //@ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
-                            const [tsService, ace] = tsEditor.initialize(config);
+                            const [tsService, ace] = tsEditor.initialize($config);
 
                             ace.setOptions({
                                 enableBasicAutocompletion: false,
                                 // enableSnippets: true,
                                 enableLiveAutocompletion: false,
                             });
-                            //@ ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
+                            //@ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
                             editors[2] = ace;
                             this.runtimeService = tsService;
 
                             return { tsService, ace };
-                        }                        
+                        }
+
+                        
 
                         if (window['ts']) {
 
-                            if (window['tsEditor']) tsEditorInitialize()    // && editor.clearSelection()
+                            const compileMode = document.getElementById('compiler_mode')['value'];
+
+                            if (window['tsEditor']) tsEditorInitialize(uploadAdditionalLibs(compileMode, editor, config))    // && editor.clearSelection()
                             else {
                                 
                                 //TODO?? deny to add ts files before runtimeService will uploaded
 
                                 let scr = document.createElement('script')
                                 scr.src = './node_modules/ts-a-editor/build/ts-editor.js'   // scr.src = './static/js/ts-editor/ts-editor.js'
-                                scr.onload = () => {
+                                scr.onload = () => {                                    
 
-                                    let compileMode = document.getElementById('compiler_mode')['value'];
-                                    if (additionalTypings[compileMode]) {
-                                        
-                                        // TODO inside clarifyframework:
-                                        // TODO check root file instead of edittor:
-                                        let value = editor.getValue();
-                                        if (Array.isArray(additionalTypings[compileMode])) {                                            
-                                            config.aliasedLibFiles = {
-                                                [compileMode+ '.d.ts']: additionalTypings[compileMode][0]
-                                            }
-                                            config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1))
-                                        }
-                                        else {
-                                            // if object
-                                            // let libFiles = additionalTypings[compileMode].clarifyframework(value)
-                                            // console.log(libFiles);
+                                    const config$ = uploadAdditionalLibs(compileMode, editor, config);
 
-                                            const initialVersion = Object.keys(additionalTypings[compileMode])[0]
-                                            let libFiles = additionalTypings[compileMode][+initialVersion + +!!~value.indexOf('createApp')];
-
-                                            config.aliasedLibFiles = {
-                                                ['' + compileMode + '.d.ts']: libFiles[0]
-                                            }                                            
-                                            config.libFiles = config.libFiles.concat(libFiles.slice(1));
-                                        }                                         
-                                    }
-
-                                    const { tsService, ace } = tsEditorInitialize()
+                                    const { tsService, ace } = tsEditorInitialize(config$)
                                     window['tsService']= tsService
 
                                     /// if exists initial tabs:
                                     Object.entries(editors.fileStorage).forEach(([file, content]) => {
 
+                                        ///? if (!/app\.tsx?/.test(file) && ~['ts', 'tsx'].indexOf(file.split('.').pop())) {
+                                        
                                         if (file != 'app.ts' && file.split('.').pop() == 'ts') {
                                             tsService.loadContent(file, content + '', true); debugger
-                                            //@ ts-expect-error
+                                            //@ts-expect-error
                                             ace.session.$worker.emit("addLibrary", { data: { name: file, content } });
                                         }
                                     })
+
+                                    const mode = 'ace/mode/typescript'
+
+                                    if (editor.session.getMode().$id !== mode) editor.session.setMode(mode)
                                     
                                 }
                                 document.head.appendChild(scr)
@@ -353,7 +367,7 @@ const editors = IDE.initialize([], {
                             enableSnippets: true,
                             enableLiveAutocompletion: true,
                         });
-                        //@ ts-expect-error `find is uncompatible`
+                        //@ts-expect-error `find is uncompatible`
                         editors[2] = ace;
                     }
                     
@@ -403,6 +417,64 @@ window.addEventListener('DOMContentLoaded', function (event) {
 
 
 
+
+/**
+ * @param {string} compileMode
+ * @param {{ container?: HTMLElement; find?: (s: string | RegExp) => import("./source/aceInitialize").Range; session?: import("./source/aceInitialize").EditorSession; selection?: { setRange: (range: import("./source/aceInitialize").Range, selection?: boolean) => unknown; getCursor: () => import("./source/aceInitialize").Position; }; clearSelection?: () => void; moveCursorTo?: (line: number, col: number) => any; getValue: any; getSession?: () => import("./source/aceInitialize").EditorSession; focus?: () => any; gotoLine?: (line: number) => any; completers?: { getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => void; getDocTooltip: (item: { docHTML: string; caption: string; }) => void; }[]; }} editor
+ * @param {Omit<(
+ *      { editor?: AceAjax.Editor; selector?: undefined; } | { editor?: undefined; selector?: string; }) & { 
+ *      entryFile?: string; 
+ *      content?: string; 
+ *      libFiles?: string[];
+ *      aliasedLibFiles?: Record<string, string>; 
+ *      fileNavigator?: Record<string, string> & { _active: string; }; 
+ *      signatureToolTip?: boolean; 
+ *      typeDefenitionOnHovering?: boolean | { selector: string; }; 
+ *      autocompleteStart?: number; 
+ *      position?: AceAjax.Position; 
+ *      fontSize?: string; 
+ *      tabSize?: number; 
+ * }, "editor"> & { editor: import("./source/aceInitialize").AceEditor; }} config
+ */
+function uploadAdditionalLibs(compileMode, editor, config) {
+    if (additionalTypings[compileMode]) {
+
+        // TODO inside clarifyframework:
+        // TODO check root file instead of edittor:
+        let value = editor.getValue();
+        if (Array.isArray(additionalTypings[compileMode])) {
+            config.aliasedLibFiles = {
+                [compileMode + '.d.ts']: additionalTypings[compileMode][0]
+            };
+            config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1));
+        }
+        else {
+            // if object
+            // let libFiles = additionalTypings[compileMode].clarifyframework(value)
+            // console.log(libFiles);
+            const initialVersion = Object.keys(additionalTypings[compileMode])[0];
+            /**
+             * @type {string[]|Record<string, string>}
+             */
+            // let libFiles = additionalTypings[compileMode][+initialVersion + +!!~value.indexOf('createApp')];
+            let libFiles = additionalTypings[compileMode].clarifyframework(value);
+
+            if (Array.isArray(libFiles)) {
+
+                config.aliasedLibFiles = {
+                    ['' + compileMode + '.d.ts']: libFiles[0]
+                };
+                config.libFiles = config.libFiles.concat(libFiles.slice(1));
+            }
+            else {
+
+                config.aliasedLibFiles = libFiles;
+            }
+        }
+    }
+
+    return config
+}
 
 /**
  * @param {{ editor: any; mode?: string; prevMode?: string; }} event

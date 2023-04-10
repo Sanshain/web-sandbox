@@ -40,6 +40,7 @@ export { compilers, babelCompiler };
  *      modes?: [LangMode?, LangMode?, LangMode?],                                    // [object?, object?, object?]
  *      onfilerename?: Function, 
  *      onfileRemove?: (name: string) => void
+ *      frameworkID: number                                                           // 0 | 1 | 2 | 3
  * }}
  *      activeModes?: [number?, number?, number?],                                    // UNUSED - use getSelectedModeName now
  */
@@ -51,7 +52,8 @@ export const playgroundObject = {
     modes: null,
     // activeModes: [],
     onfilerename: null,
-    onfileRemove: null
+    onfileRemove: null,
+    frameworkID: 0
 }
 
 /**

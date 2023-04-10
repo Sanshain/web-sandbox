@@ -18,6 +18,7 @@ type LangMode = import("./source/main").LangMode;
 type AceEditor = import("./source/aceInitialize").AceEditor;
 type LanguageServiceHost = import("typescript").LanguageServiceHost;
 type ChoiceDetails = import("./source/ui/ChoiceMenu").ChoiceDetails;
+type TypescriptEditor = typeof TSEditor
 
 
 type Options = {
@@ -66,7 +67,6 @@ declare global{
         initialize: (arg: [string, string, string, (Storage | object)?], options: Options) => PlaygroundEditors
     }
 }
-
 
 
 

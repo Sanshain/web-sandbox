@@ -5,7 +5,10 @@
 
 const reactCompiler = {
     react: 'https://unpkg.com/react@17/umd/react.production.min.js',
+    // react: '/static/js/compiler_libs/react.production.min.js',
     reactDOM: 'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+    // reactDOM: 'https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js',
+    // reactDOM: '/static/js/compiler_libs/react-dom@17.production.min.js'
 }
 
 const vueCompiler = {
@@ -29,7 +32,10 @@ const preactCompiler = {
 
 
 export const babelCompiler = {
-    link: 'https://unpkg.com/@babel/standalone/babel.min.js',
+    // download babel
+    // link: 'https://unpkg.com/@babel/standalone/babel.min.js',
+    link: 'https://unpkg.com/@babel/standalone@7.21.4/babel.min.js',
+    // link: 'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.4/babel.min.js',
     mode: ' type="text/babel" '
 }
 
@@ -72,11 +78,15 @@ export const versionController = {
     react: {
         'createRoot': [
             'https://unpkg.com/react@18.2.0/umd/react.production.min.js',
-            'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js'
+            // 'https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js'
         ],
         'ReactDOM.render': [
             'https://unpkg.com/react@17/umd/react.production.min.js',
+            // '/static/js/compiler_libs/react.production.min.js',
             'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+            // 'https://cdnjs.cloudflare.com/ajax/libs/react-dom/17.0.2/umd/react-dom.production.min.js'
+            // '/static/js/compiler_libs/react-dom@17.production.min.js',
         ]
     }
 }
@@ -85,9 +95,11 @@ export const versionController = {
 export const compilers = {
     vanile: [],
     preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
-    vue: Object.values(vueCompiler),
-    react: [babelCompiler.link].concat(Object.values(reactCompiler)),    
+    vue: Object.values(vueCompiler), 
+    react: Object.values(reactCompiler).concat([babelCompiler.link]),    
 };
+
+console.log(compilers);
 
 
 export const defaultValues = [

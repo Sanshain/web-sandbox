@@ -62,7 +62,7 @@ span.ace_identifier {
 }
 
 span.ace_identifier:hover {
-    cursor: pointer !important;
+    /* cursor: pointer !important; */
 }
 
 .ace-monokai .ace_keyword {

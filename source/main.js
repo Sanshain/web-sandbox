@@ -51,6 +51,8 @@ let cachedEnvironment = null;
  */
 function updateEnvironment(environment, envName, entryPoint) {
 
+    const isJSX = Object.keys(compilers).indexOf(envName) % 2
+
     environment.splice(0, environment.length);
 
     if (versionController[envName] && !entryPoint && cachedEnvironment) {
@@ -60,6 +62,7 @@ function updateEnvironment(environment, envName, entryPoint) {
     }
     else if (versionController[envName] && entryPoint) {
         let entries = Object.entries(versionController[envName])
+        
         /**
          * @type {[string, [string]]?}
          */
@@ -71,7 +74,7 @@ function updateEnvironment(environment, envName, entryPoint) {
                 console.log(envName, 'version: ', verNum.pop())
             }
 
-            (cachedEnvironment = ver[1]).forEach(link => environment.push(link));
+            (cachedEnvironment = ver[1].concat(isJSX ? [babelCompiler.link] : [])).forEach(link => environment.push(link));
             return environment;
         }
     }
@@ -170,6 +173,7 @@ window.addEventListener('message', function (event) {
  *      additionalFiles?: Storage|object,                                                   // ? implemented?
  *      quickCompileMode?: boolean,                                                         // ? not implemented - the quick mode compilation via onmessages iver sandbox communication
  *      syntaxMode?: SyntaxMode,                                                            // index of initial selected  framawork 
+ *      frameworkJug?: string,                                                              // html selector for input element w actual framework
  *      clarifyframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode        // ? identifier rfamework on depend of source code
  * }?} options
  * @returns {ReturnType<initializeEditor>} {unknown[]}
@@ -182,7 +186,7 @@ export function initialize(values, options) {
      * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
      */
     let frameworkID = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem('mode') || '0');
-    frameworkID = (options.clarifyframework && values) ? options.clarifyframework(values[2], frameworkID) : frameworkID;
+    playgroundObject.frameworkID = frameworkID = (options.clarifyframework && values) ? options.clarifyframework(values[2], frameworkID) : frameworkID;
     console.log(frameworkID, 'syntaxMode');
 
     //@ts-ignore
@@ -191,7 +195,7 @@ export function initialize(values, options) {
     // js mode:
     const jsxMode = !!(frameworkID % 2);
     if (jsxMode) {
-        document.getElementById('jseditor').classList.add('dis_errors');
+        // document.getElementById('jseditor').classList.add('dis_errors');
     }
 
     playgroundObject.modes = options.modes;
@@ -271,7 +275,8 @@ export function initialize(values, options) {
                      * @type {LangMode[string]}
                      */
                     const modeOptions = mode[ev.detail.value] || {
-                        extension: '.js'
+                        extension: '.js',
+                        // mode: 'javascript'
                     };
                     // const link = options.modes[i][e.detail.value];
                     
@@ -299,7 +304,16 @@ export function initialize(values, options) {
                         
                         // upload to frame will in pageBuilder, here just is highlight change
                         (i === 1) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
-                        (i === 2) && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value));
+                                                
+                        if (i === 2) {
+                            const mode = playgroundObject.frameworkID % 2 ? 'jsx' : ((modeOptions && modeOptions.mode) || ev.detail.value)
+                            
+                            Object.values(editors[i].session.getMarkers(true)).forEach(m => editors[i].session.removeMarker(+m.id))
+
+                            editors[i].session.setMode("ace/mode/" + mode)
+                            // debugger
+                            // editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value))
+                        }                        
                     }
 
                             
