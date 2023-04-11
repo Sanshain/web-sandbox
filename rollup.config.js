@@ -4,7 +4,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from "rollup-plugin-terser";
 // import { uglify } from "rollup-plugin-uglify";
-
+import dts from "rollup-plugin-dts";
 
 
 // import typescript from '@rollup/plugin-typescript';
@@ -20,8 +20,13 @@ let modules = [
         inputFile: './source/libs/preact.js',
         outputFile: '_preact.js',
 
-        outputName: '_preact',
+        outputName: '_preact',        
     },
+    // {
+    //     inputFile: './source/libs/preact.d.ts',
+    //     outputFile: '_preact.d.ts',
+    //     plugins: [dts()]
+    // },    
     {
         inputFile: './source/main.js',
         outputFile: 'page_builder.js',
@@ -57,7 +62,7 @@ module.exports = modules.map(function (config) {
                 // fs: 'window'
             }
         },
-        plugins: [
+        plugins: config.plugins || [
             resolve({
                 browser: true
             }),
@@ -82,8 +87,7 @@ module.exports = modules.map(function (config) {
             //     output: {
             //         comments: false,
             //     }
-            // }),
-
+            // }),            
         ]
     }
 

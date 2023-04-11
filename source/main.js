@@ -61,6 +61,7 @@ function updateEnvironment(environment, envName, entryPoint) {
         return environment;
     }
     else if (versionController[envName] && entryPoint) {
+        
         let entries = Object.entries(versionController[envName])
         
         /**

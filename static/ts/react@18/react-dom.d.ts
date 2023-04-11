@@ -22,6 +22,8 @@ import {
     DOMAttributes, DOMElement, ReactNode, ReactPortal
 } from 'react';
 
+export { createRoot } from "react-dom/client";
+
 export function findDOMNode(instance: ReactInstance | null | undefined): Element | null | Text;
 export function unmountComponentAtNode(container: Element | DocumentFragment): boolean;
 

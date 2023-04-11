@@ -101,7 +101,18 @@ const additionalTypings = {
             const ver = +Object.keys(this)[0] + +!!~code.indexOf('createRoot')
             return this[ver]
         }        
-    }    
+    },
+    preact: {
+        10: {
+            'preact.d.ts': '/static/ts/preact/index.d.ts',
+            'internal.d.ts': '/static/ts/preact/internal.d.ts',
+            'jsx.d.ts': '/static/ts/preact/jsx.d.ts',
+            'preact/hooks.d.ts': '/static/ts/preact/hooks.d.ts',
+        },
+        clarifyframework(/** @type {string} */ code) {
+            return this[10];
+        }
+    }
 }
 
 
@@ -314,7 +325,7 @@ const editors = IDE.initialize([], {
                                 //TODO?? deny to add ts files before runtimeService will uploaded
 
                                 let scr = document.createElement('script')
-                                scr.src = './node_modules/ts-a-editor/build/ts-editor.js'   // scr.src = './static/js/ts-editor/ts-editor.js'
+                                scr.src = './node_modules/ts-a-editor/build/ts-editor.js'   // scr.src = './static/js/ts-editor/ts-editor.js'                                
                                 scr.onload = () => {                                    
 
                                     const config$ = uploadAdditionalLibs(compileMode, editor, config);
@@ -328,7 +339,7 @@ const editors = IDE.initialize([], {
                                         ///? if (!/app\.tsx?/.test(file) && ~['ts', 'tsx'].indexOf(file.split('.').pop())) {
                                         
                                         if (file != 'app.ts' && file.split('.').pop() == 'ts') {
-                                            tsService.loadContent(file, content + '', true); debugger
+                                            tsService.loadContent(file, content + '', true); 
                                             //@ts-expect-error
                                             ace.session.$worker.emit("addLibrary", { data: { name: file, content } });
                                         }
@@ -449,6 +460,7 @@ function uploadAdditionalLibs(compileMode, editor, config) {
             config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1));
         }
         else {
+            
             // if object
             // let libFiles = additionalTypings[compileMode].clarifyframework(value)
             // console.log(libFiles);

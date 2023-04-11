@@ -33,9 +33,9 @@ export interface Root {
  */
 export function createRoot(container: Element | DocumentFragment, options?: RootOptions): Root;
 
-declare global {
-    function createRoot(container: Element | DocumentFragment, options?: RootOptions): Root;
-}
+// declare global {
+//     function createRoot(container: Element | DocumentFragment, options?: RootOptions): Root;
+// }
 
 /**
  * Same as `createRoot()`, but is used to hydrate a container whose HTML contents were rendered by ReactDOMServer.
@@ -55,3 +55,5 @@ export function hydrateRoot(
     initialChildren: React.ReactNode,
     options?: HydrationOptions,
 ): Root;
+
+export as namespace ReactDOM;
