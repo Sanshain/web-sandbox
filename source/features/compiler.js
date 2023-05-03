@@ -2,6 +2,91 @@
 
 
 
+/**
+ * @typedef {import("../main").LangMode} LangMode
+ * @type {{
+ *      editors: import("../aceInitialize").EditorsEnv | [],                          // any[],
+ *      iframe: HTMLIFrameElement, 
+ *      curUrl: string, 
+ *      fileStorage: {[k: string]: string} | { _active: string, },                    // _entryPoint?: string = ? || { _active: number|string, },
+ *      modes?: [import("../main").LangMode?, LangMode?, LangMode?],                  // [object?, object?, object?]
+ *      onfilerename?: Function, 
+ *      onfileRemove?: (name: string) => void
+ *      frameworkID: number                                                           // 0 | 1 | 2 | 3
+ * }}
+ *      activeModes?: [number?, number?, number?],                                    // UNUSED - use getSelectedModeName now
+ */
+export const playgroundObject = {
+    editors: [],
+    iframe: null,
+    curUrl: null,
+    fileStorage: {
+        // _active: 0
+        _active: 'app.js'
+    },
+    modes: null,
+    // activeModes: [],
+    onfilerename: null,
+    onfileRemove: null,
+    frameworkID: 0
+}
+
+
+/**
+ * @type {{
+ *  [K: string] : {
+ *      links?: string[],
+ *      join?: (code: string, html: string, style?: string) => string,
+ *      onload?: (source: string, callback: Function) => unknown
+ *  }
+ * }}
+ */
+export const singleFileEnv = {
+    'svelte': {
+        links: ['../../build/svelte-compile.js'],
+        join(script, html, style) {
+            const svelteFileContent = html + '\n\n<style>\n\n' + style + '\n\n</style>\n\n<script>\n\n' + script + '\n\n</script>';
+            return svelteFileContent;
+        },
+        /**
+         * @param {(rawCode: string, getFile: (arg: string) => string) => {code: string;matches?: any[];}} svelteTransform
+         * @param {string} entryPointCode
+         * @param {Function} webCompile
+         */
+        onload(entryPointCode, webCompile) {
+            /**
+             * @type {(rawCode: string, getFile: (arg: string) => string) => {code: string, matches?: any[]}}
+             */
+            const svelteTransform = window['svelteTransform'];
+            if (svelteTransform) {
+                const svelteApp = svelteTransform(entryPointCode, function getFile(filename) {
+                    const file = playgroundObject.fileStorage[filename] || playgroundObject.fileStorage[filename.replace(/^\.\//m, '')]
+                    if (Array.isArray(file)) {
+                        // TODO Inject less compilation
+                        const style = file[1];
+                        // TODO get ts from modes instead of global                         
+                        const script = window['ts'] ? window['ts'].transpile(file[2]) : file[2]
+                        
+                        const svelteFileContent = file[0] + '\n\n<style>\n\n' + style + '\n\n</style>\n\n<script>\n\n' + script + '\n\n</script>'
+                        return svelteFileContent
+                    }
+                    else {
+                        throw new Error('Unexpected file format for `' + filename + '`')
+                    }
+                });
+
+                webCompile(svelteApp.code)
+
+                window.postMessage({svelteApp: svelteApp}, playgroundObject.curUrl)
+                window.postMessage({svelteApp: svelteApp}, '*')                
+            }
+        }
+    },
+    'vue': void 0,
+}
+
+export const singleFileTypes = Object.keys(singleFileEnv)
+
 
 const reactCompiler = {
     react: 'https://unpkg.com/react@17/umd/react.production.min.js',
@@ -92,14 +177,26 @@ export const versionController = {
 }
 
 
-export const compilers = {
-    vanile: [],
-    preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
-    vue: Object.values(vueCompiler), 
-    react: Object.values(reactCompiler).concat([babelCompiler.link]),    
+// export const sfeCompilers = {
+//     svelte(html, style, script) {
+//         svelteCompile(html + `<style>${style}</style><script>${script}</script>`)
+//     },
+//     vue: undefined
+// }
+
+
+export const compilersSet = {
+  vanile: [],
+  preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
+  vue: Object.values(vueCompiler),
+  react: Object.values(reactCompiler).concat([babelCompiler.link]),
+
+  // TODO CHANGE TO MORE UNIVERSAL PATH:
+
+  svelte: ["http://127.0.0.1:3001/build/svelte-runtime.js"],
 };
 
-console.log(compilers);
+console.log(compilersSet);
 
 
 export const defaultValues = [
@@ -127,7 +224,7 @@ export const defaultValues = [
         // v3:
         html: '<div id="app">\n\t<button @click="count++">\n\t\tCount is: {{ count }}\n\t</button>\n</div>',
         css: '#app button{ \n\tcolor: green; \n}',
-        javascript: "import { createApp } from 'vue'\n\ncreateApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')"
+        javascript: "import { createApp } from 'vue'\n\nVue.createApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')"
     },
     // react
     {
@@ -141,6 +238,14 @@ export const defaultValues = [
         javascript: "function App(){\n\n\tconst [count, setCount] = React.useState(0);\n" +
                     "\n\treturn <h1 onClick={()=>setCount(count+1)}>\n\t\tClick me: {count}!\n\t</h1>;\n}\n\nReactDOM.render(\n\t<App/>,\n\tdocument.getElementById('root')\n);"
     },
+    // svelte
+    {
+        html: '<h1>Hello {place}!</h1>',
+        // css: '#root{\n\tcolor: red;\n\tfont-family: arial;\n}\nh1{\n\tcursor: pointer;\n\tuser-select: none;\n}',
+        css: 'h1{ \n\tcolor: green; \n}',
+        // javascript: "const name = 'world'; \n\nReactDOM.render(\n\t<h1>Привет, {name}!</h1>, \n\tdocument.getElementById('root')\n);"
+        javascript: "let place = 'world'"        
+    }
 ]
 
 
@@ -197,3 +302,14 @@ export function spreadImports(code) {
 //         }
 //     }
 // }).mount('#app')
+
+
+window.onmessage = function (ev) {
+    console.log('rootWindow catched this one: ', ev);
+    // if from svelte => sent compiled code to evaluation
+
+    console.log(arguments);
+}
+
+
+export const averageCompilerOptions = {}

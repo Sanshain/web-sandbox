@@ -4,7 +4,7 @@ import { default as extend } from 'emmet';
 
 import { debounce, getSelectedModeName } from "./utils/utils";
 import { expand } from './features/expantion';
-import { compilers, defaultValues } from './features/compiler';
+import { compilersSet, defaultValues } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
 import { playgroundObject, webCompile } from './pageBuilder';
 import { fileAttach } from './features/tabs';
@@ -87,7 +87,7 @@ export default function initializeEditor(ace, editorOptions, values) {
      * @type {FrameworkID}
      */
     const initialFramework = editorOptions.frameworkID
-    const frameworksList = Object.keys(compilers)
+    const frameworksList = Object.keys(compilersSet)
 
     const Range = ace.require('ace/range').Range;
     const delay = 1500;
@@ -173,7 +173,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                 const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID], editors[2].getValue());
                 const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
 
-                webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false);
+                webCompile(jsxEnabled, frameworkEnvironment, void 0, {lessMode: editorOptions.quickCompileMode || false});
 
                 console.timeEnd('F9')
             }
@@ -189,7 +189,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                     ? editorOptions.controlSave(
                         event, webCompile.bind(null, jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false)
                     )
-                    : webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false));
+                    : webCompile(jsxEnabled, frameworkEnvironment, void 0, {lessMode: editorOptions.quickCompileMode || false}));
             }
             else if (event.ctrlKey && event.key === 'f'){
 
@@ -330,7 +330,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                     {
                         const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
                         const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
-                        webCompile(jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode)
+                        webCompile(jsxEnabled, frameworkEnvironment, void 0, {lessMode: editorOptions.quickCompileMode})
                     }
                     // if (e.command.name == "insertstring" && /^[\w.]$/.test(e.args)) {
                     //     editor.execCommand("startAutocomplete")
@@ -466,6 +466,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                                                 else {
                                                     let replacePattern = '(^' + token.value + ')|( ' + token.value + ')|(' + token.value + ' )';
                                                     console.log(replacePattern);
+                                                    debugger
                                                     playgroundObject.fileStorage[storeName] = module.replace(new RegExp(replacePattern, 'm'), function(substring, args) {
                                                         console.log(arguments);
                                                         return substring.replace(token.value, newValue);
@@ -560,7 +561,7 @@ export default function initializeEditor(ace, editorOptions, values) {
     // read modules:
 
     //@ts-ignore
-    let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || { _active: 0};
+    let fileStorage = editors.fileStorage = window.fileStorage = window['fileStore'] || playgroundObject.fileStorage || { _active: 0};
     // fileStorage    
     let modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem('_modules');
     

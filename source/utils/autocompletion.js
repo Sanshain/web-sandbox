@@ -211,6 +211,18 @@ export let keyWords = wordList.map(
  */
 export function autocompleteExpand(editor, keyWordInfo) {
 
+    
+    // добавление нового ключевого слова:
+    // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+    // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
+
+
+    // let moduleName = newTab.innerText.split('.')[0];
+    // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
+    // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
+
+
+
     let hint = keyWordInfo.hint;
     
     editor.completers.push({

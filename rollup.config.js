@@ -4,18 +4,37 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from "rollup-plugin-terser";
 // import { uglify } from "rollup-plugin-uglify";
+import typescript from '@rollup/plugin-typescript';
 import dts from "rollup-plugin-dts";
 
 
 // import typescript from '@rollup/plugin-typescript';
 
-let modules = [
-    // {
-    //     inputFile: './source/em_initialize.js',
-    //     outputFile: 'editor.js',
+const svelteEnv = [
+    {
+        inputFile: './source/libs/svelte-compiler.js',
+        outputFile: 'svelte-compile.js',
 
-    //     outputName: 'extend',
-    // },
+        outputName: 'svelteTransform',
+    },    
+    {
+        inputFile: './source/libs/svelte-runtime.js',
+        outputFile: 'svelte-runtime.js'
+    },    
+]
+
+
+/**
+ * @type {Array<{inputFile: string, outputFile: string, outputName?: string, plugins?: any}>}
+ */
+const modules = [
+    ...svelteEnv,
+    // {
+    //     inputFile: './index.ts',
+    //     outputFile: './index.js',
+        
+    //     outputName: 'IDE',
+    // },    
     {
         inputFile: './source/libs/preact.js',
         outputFile: '_preact.js',
@@ -53,7 +72,9 @@ module.exports = modules.map(function (config) {
     let r = {
         input: config.inputFile,
         output: {
-            file: './build/' + (config.outputFile || config.inputFile.split('/').pop()),
+            file: config.outputFile && config.outputFile.startsWith('./')
+                ? config.outputFile
+                : ('./build/' + (config.outputFile || config.inputFile.split('/').pop())),
             format: 'iife',
             name: config.outputName,
             sourcemap: true,
@@ -73,7 +94,11 @@ module.exports = modules.map(function (config) {
             //     // tsconfig: false, 
             //     lib: ["es6", "dom"], //es5
             //     target: "es5",
-            //     sourceMap: true
+            //     sourceMap: true,
+            //     exclude: [
+            //         'node_modules/**/*',
+            //         'node_modules_linux/**/*'
+            //     ]
             // }),
 
             // terser({

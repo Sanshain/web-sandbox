@@ -75,20 +75,20 @@ declare global{
 // set `disableSourceOfProjectReferenceRedirect: true`
 
 
-// declare const ts: typeof tsc;
+declare const ts: typeof tsc;
 
-// declare const procCompiler: {
-//     compileToSass: (s: string) => string,
-//     compileToLess: (s: string) => string
-// }
+declare const procCompiler: {
+    compileToSass: (s: string) => string,
+    compileToLess: (s: string) => string
+}
 
-// declare var IDE: {
-//     initialize: (arg: [string, string, string, (Storage | object)?], options: Options) => PlaygroundEditors
-// }
+declare var IDE: {
+    initialize: (arg: [string, string, string, (Storage | object)?], options: Options) => PlaygroundEditors
+}
 
-// declare const less: {
-//     render(code: string, options: Record<string, unknown>, clb: (er: unknown, result: { css: string }) => void)
-// }
+declare const less: {
+    render(code: string, options: Record<string, unknown>, clb: (er: unknown, result: { css: string }) => void)
+}
 
-// declare const sassToCss: (code: string) => string
+declare const sassToCss: (code: string) => string
 

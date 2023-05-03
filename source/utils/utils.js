@@ -56,6 +56,7 @@ function renameOccurrences(prevName, fullname, editor) {
 
     for (let file in playgroundObject.fileStorage) {
         if (typeof playgroundObject.fileStorage[file] === 'string') {
+            debugger
             playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname);
         }
     }
@@ -76,3 +77,44 @@ export function getSelectedModeName(i) {
     let mode = playgroundObject.editors[i].session.getMode().$id;
     return mode.split('/').pop()
 }
+
+/**
+ * Get file name extension
+ * @param {string} name - origin filename
+ * @returns {string} - filename extension
+ */
+export function getExtension(name) {
+    return name.split('.').pop()
+}
+
+
+/**
+ * @param {string} link
+ * @param {{ onload?: (this: GlobalEventHandlers, ev: Event) => any; async?: boolean; }} options
+ */
+export function uploadScript(link, options) {
+        
+    let script = document.createElement('script');
+    if (options.onload) {
+        script.onload = options.onload;
+    }
+    script.async = !options.async
+    script.src = link;
+    document.head.appendChild(script);
+}
+
+
+/**
+ * upload scripts
+ * @param {string[]} links
+ * @param {(this: GlobalEventHandlers, ev: Event) => any} onloaded
+ */
+export function loadScripts(links, onloaded){
+    links.forEach((link, i) => {
+        uploadScript(link, {
+            async: false,
+            onload: (links.length - 1 === i) ? onloaded : void 0
+        })
+    });
+}
+

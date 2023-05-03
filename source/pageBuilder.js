@@ -1,6 +1,6 @@
 // @ts-check
 
-import { babelCompiler, compilers, spreadImports } from "./features/compiler";
+import { averageCompilerOptions, babelCompiler, compilersSet, playgroundObject, spreadImports } from "./features/compiler";
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator";
 import { commonStorage, getLangMode } from './utils/utils';
 
@@ -12,12 +12,14 @@ import { modes as baseModes, modes } from './features/base';
 import initializeEditor from './aceInitialize';
 
 
+
 /**
  * @typedef {{
  *      tag?: BaseTags[number], external?: boolean, attributes?: string
  * }} CodeTarget
  * 
- * @typedef {LangMode[string]} Mode
+ * @typedef {import("./main").LangMode} LangMode
+ * @typedef {import("..").LangMode[string]} Mode
  * 
  * @_typedef {{
  *  src: string|string[], 
@@ -29,32 +31,9 @@ import initializeEditor from './aceInitialize';
 
 
 
-export { compilers, babelCompiler };
+export { compilersSet as compilers, babelCompiler, playgroundObject };
 
-/**
- * @type {{
- *      editors: import("./aceInitialize").EditorsEnv | [],                           // any[],
- *      iframe: HTMLIFrameElement, 
- *      curUrl: string, 
- *      fileStorage: {[k: string]: string} | { _active: number|string },
- *      modes?: [LangMode?, LangMode?, LangMode?],                                    // [object?, object?, object?]
- *      onfilerename?: Function, 
- *      onfileRemove?: (name: string) => void
- *      frameworkID: number                                                           // 0 | 1 | 2 | 3
- * }}
- *      activeModes?: [number?, number?, number?],                                    // UNUSED - use getSelectedModeName now
- */
-export const playgroundObject = {
-    editors: [],
-    iframe: null,
-    curUrl: null,
-    fileStorage: { _active: 0 },
-    modes: null,
-    // activeModes: [],
-    onfilerename: null,
-    onfileRemove: null,
-    frameworkID: 0
-}
+
 
 /**
  * @typedef {BaseTags[number] | 'link'} KeyTags
@@ -112,13 +91,15 @@ function createHtml({ body, style, script, link }, attrs) {
  * @param {Array<string|[string]>} [additionalScripts] - дополнительные скрипты, которые будут добавлены на новую страницу (react, vue, preact...). Если массив - это inline script
  * @param {string} [scriptType] - атрибут тега скрипт, который будет добавлен в к тегу script на созданной странице (type=)
  * @param {{
- *  onload: Function,
+ *  onload?: Function,
+ *  appCode?: string
  * }} [options] - onload callback (may be add previewClass?: string)
  * @returns {[HTMLElement, string]}
  */
 export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
-    // alert(99)
+    options = options || {}
+
     if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
         const fileStorage = playgroundObject.fileStorage || window['fileStore'];
         let activeTab = document.querySelector('.tabs .tab.active');
@@ -130,7 +111,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     }
     
     let _fs = (playgroundObject.fileStorage || window['fileStore'] || {});
-    let appCode = _fs['app.js'] || _fs['app.ts'] || playgroundObject.fileStorage[undefined + ''];
+    let appCode = options.appCode || _fs['app.js'] || _fs['app.ts'] || playgroundObject.fileStorage[undefined + ''];
     // globalThis.__debug && console.log('appCode');
 
 
@@ -182,16 +163,19 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
 
 
-    let buildJS = (/** @type {string} */ code) => {        
+    const buildJS = (/** @type {string} */ code) => {        
 
-        // convert to js:   
+        // convert to js:
 
         code = buildAndTranspile(code, currentLang);
 
         // 
         let globalReinitializer = generateGlobalInintializer(code);
 
-        code = 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+        if (!options.appCode) {
+            code = 'window.addEventListener("' + (scriptType ? 'load' : 'DOMContentLoaded') + '", function(){' + code + '\n\n' + globalReinitializer + '\n});';
+            // TODO change `options.appCode` to `!scriptType` and `scriptType ? 'load' : 'DOMContentLoaded' to `load`
+        }        
 
         // customLOG
         const terminalJar = document.querySelector('.console .lines');
@@ -259,7 +243,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
         script: scriptType
     }
 
-    // compilerSubModes дополняем:
+    // TODO IMPOSE ORDER (refactor and add @desc for each func):
+    /// compilerSubModes дополняем (this block updates Environments and inject resources):
     if (playgroundObject.modes && playgroundObject.modes.length) playgroundObject.editors.forEach((editor, i) => {
 
         /**
@@ -315,6 +300,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     
     /// TODO? @import 'style.css' to style html tag from link file?
     
+    debugger
     let htmlContent = baseTags.reduce((acc, el, i, arr) => (
         (
             acc[el] = i < 2
@@ -361,6 +347,9 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     let frame = document.createElement('iframe');
     frame.sandbox.add('allow-scripts')
     frame.sandbox.add('allow-modals')
+    // frame.contentWindow.onmessage = function (ev) {
+    //     console.log(ev, arguments);
+    // }
 
     // делает контекст небезопасным (!)
     // frame.sandbox.add('allow-same-origin')
@@ -532,15 +521,20 @@ function buildAndTranspile(code, currentLang) {
 }
 
 /**
+ * @description Create page and save virtual files to thr localStorag
+ * 
  * // obsolete @ param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
- * @param {boolean} jsxMode ///! param {number} compilerMode
- * @param {string[]} compilerModes - list of script libs to attach to generated page
- *
+ * TODO: move to end or as option:
+ * @param {boolean} isJsx ///! param {number} compilerMode - 
+ * @param {string[]} libList - list of script libs to attach to generated page
+ * @param {string} [sourceCode=undefined] - optional argument (for SFC)
+ * 
  * TODO: options: {storage (localStorage|sessionStorage), fileStore}
- * @param {boolean|undefined} [less] - less compile mode (Not implemented yet. TODO: via postMessage)
+ * @param {{lessMode?: boolean|undefined, scriptMode?: string}} [compileOptions=undefined] - less compile mode (Not implemented yet. TODO: via postMessage)
  */
-export function webCompile(jsxMode, compilerModes, less) {
+export function webCompile(isJsx, libList, sourceCode, compileOptions) {
 
+    compileOptions = compileOptions || averageCompilerOptions;
     globalThis.__debug && console.log('compile');
 
     // [iframe, curUrl] = createPage(curUrl);
@@ -562,7 +556,7 @@ export function webCompile(jsxMode, compilerModes, less) {
         // }
     }
 
-    if (iframe.contentDocument && less) {
+    if (iframe.contentDocument && compileOptions && compileOptions.lessMode) {
 
         //// !with sandbox never will performed. Legacy content:
         
@@ -594,10 +588,11 @@ export function webCompile(jsxMode, compilerModes, less) {
         let script = iframe.contentDocument.createElement('script');
         
         globalThis.__debug && console.log('less compilation')
-        globalThis.__debug && console.log(jsxMode)
-        globalThis.__debug && console.log(compilerModes);
+        globalThis.__debug && console.log(isJsx)
+        globalThis.__debug && console.log(libList);
 
-        if (jsxMode) {
+
+        if (isJsx) {
             
             // add additional scripts:
 
@@ -611,8 +606,11 @@ export function webCompile(jsxMode, compilerModes, less) {
 
             script.type = "text/babel";
         }
+        // else if (compileOptions.scriptMode) {            
+        //     script.type = compileOptions.scriptMode;
+        // }
 
-        let code = playgroundObject.fileStorage['app.js'] || playgroundObject.fileStorage['app.ts'] || editors[2].getValue();
+        let code = sourceCode || playgroundObject.fileStorage['app.js'] || playgroundObject.fileStorage['app.ts'] || editors[2].getValue();
 
         const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()];
         code = buildAndTranspile(code, currentLang);
@@ -627,7 +625,13 @@ export function webCompile(jsxMode, compilerModes, less) {
         // globalThis.__debug && console.log(compilerMode);
         // globalThis.__debug && console.log(Object.values(compilers)[compilerMode]);
         // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
-        let [iframe, curUrl] = createPage(playgroundObject.curUrl, compilerModes, jsxMode ? babelCompiler.mode : undefined);
+        
+        const [iframe, curUrl] = createPage(playgroundObject.curUrl, libList,
+            compileOptions.scriptMode || (isJsx ? babelCompiler.mode : undefined),
+            {
+                appCode: sourceCode
+            }
+        );
         
         //@ts-expect-error
         playgroundObject.iframe = iframe;

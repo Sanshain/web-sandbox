@@ -5,8 +5,8 @@ import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 
 import { expand } from "./features/expantion";
 import { initResizers } from "./features/resizing";
-import { babelCompiler, compilers, defaultValues, versionController } from "./features/compiler";
-import { commonStorage } from "./utils/utils";
+import { babelCompiler, compilersSet, defaultValues, singleFileEnv, versionController } from "./features/compiler";
+import { commonStorage, loadScripts, getExtension } from './utils/utils';
 import { fileAttach } from "./features/tabs";
 
 import { ChoiceMenu } from "./ui/ChoiceMenu";
@@ -34,7 +34,7 @@ import "./features/consoleDebug";
  */
 
 /**
- * @type { Array<keyof compilers>}
+ * @type { Array<keyof compilersSet>}
  */
 const frameworkEnvironment = []
 
@@ -46,12 +46,12 @@ let cachedEnvironment = null;
 /**
  * @description Do full environment cleaning and filling from scratch
  * @param {string[]} environment - environment - list of external (or internal) scripts or another resources to load content
- * @param {keyof compilers} envName - framework environment name
+ * @param {keyof compilersSet} envName - framework environment name
  * @param {string} [entryPoint=''] - code
  */
 function updateEnvironment(environment, envName, entryPoint) {
 
-    const isJSX = Object.keys(compilers).indexOf(envName) % 2
+    const isJSX = Object.keys(compilersSet).indexOf(envName) % 2
 
     environment.splice(0, environment.length);
 
@@ -81,7 +81,7 @@ function updateEnvironment(environment, envName, entryPoint) {
     }
     
 
-    const libs = compilers[envName] || [];
+    const libs = compilersSet[envName] || [];
     
     libs.forEach((/** @type {string} */ lib) => {
 
@@ -202,10 +202,12 @@ export function initialize(values, options) {
     playgroundObject.modes = options.modes;
     playgroundObject.onfilerename = options.onfilerename
     playgroundObject.onfileRemove = options.onfileRemove
+
+    const frameworkName = Object.keys(compilersSet)[frameworkID];
     
     updateEnvironment(frameworkEnvironment,
         //@ts-expect-error
-        Object.keys(compilers)[frameworkID],
+        frameworkName,
         values[2] || commonStorage.getItem(frameworkID + '__' + modes[2]) 
     )
 
@@ -369,6 +371,8 @@ export function initialize(values, options) {
                     
                     if (tabs) {
 
+                        // TODO .vue and .svelte support
+
                         // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined
 
                         if (Object.keys(playgroundObject.fileStorage).length > 1) {
@@ -407,7 +411,7 @@ export function initialize(values, options) {
 
                                 for (let file in playgroundObject.fileStorage) {
                                     if (typeof playgroundObject.fileStorage[file] === 'string') {
-                                        // debugger;
+                                        debugger;
                                         playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(extensions[0], extensions[1]);
                                     }
                                 }
@@ -504,9 +508,31 @@ export function initialize(values, options) {
 
 
     document.querySelector('.play').addEventListener('click', () => {
-        const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilers)[frameworkID], editors[2].getValue());
-        webCompile(jsxMode, frameworkEnvironment)
+        const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilersSet)[frameworkID], editors[2].getValue());
+        // console.log(frameworkName);        
+        let extension =  frameworkName.toLowerCase() || getExtension(playgroundObject.fileStorage._active);
+        
+        if (singleFileEnv[extension]) {
+            
+            // svelte
+            loadScripts(singleFileEnv[extension].links, () => {
+                const entryPoint = 'app.' + extension;
+                debugger
+                // const content = (playgroundObject.fileStorage._active == entryPoint) ? editors[2].getValue() : playgroundObject.fileStorage[entryPoint] ;
+                const content = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue())
+                singleFileEnv[extension].onload(content, (vanileCode) => {
+                    // этот код требуется переместить внутрь и все отрефакторить
+                    webCompile(jsxMode, frameworkEnvironment, vanileCode, {
+                        scriptMode: ' type="text/svelte"'
+                    })
+                })                
+            })
+        }
+        else {
+            webCompile(jsxMode, frameworkEnvironment)
+        }
     });
+
     document.querySelector('.expand')['onclick'] = (/** @type {{ currentTarget: any; }} */ e) => expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined);
     document.getElementById('compiler_mode').onchange = function (event) {
 

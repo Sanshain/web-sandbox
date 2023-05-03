@@ -1,4 +1,7 @@
 //@ts-check
+/// <reference path="index.d.ts" />
+
+// import { svelteTransform } from "svelte-compiler";
 
 /**
  * @typedef {import("./source/main").SyntaxMode} SyntaxMode
@@ -121,11 +124,12 @@ const additionalTypings = {
 
 //@ts-expect-error
 const editors = IDE.initialize([], {
-    // for ts editor:
-    aliases: {
-        vue: () => './static/ts/vue2/vue.d.ts',  // additionalTypings['vue'][additionalTypings['vue'].clarifyframework()][0]
-    },
-    // tabAttachSelector: '.tab:last-child',
+    /// for ts editor:
+    // look up additionalTypings instead of this one:
+    // aliases: {
+    //     vue: () => './static/ts/vue2/vue.d.ts',  // additionalTypings['vue'][additionalTypings['vue'].clarifyframework()][0]
+    // },
+
     tabAttachSelector: '.tab:last-child',
     // additionalFiles: {
     //     'dd.js': 'export var r = 5;'
@@ -135,7 +139,7 @@ const editors = IDE.initialize([], {
     // },
 
     /**
-     * @param {{editor: {getValue: () => string, setValue: (s: string) => void}, mode: string, prevMode?: string}} event
+     * @param {{editor: AceEditor, mode: string, prevMode?: string}} event
      */
     onModeChange(event) {
 
@@ -157,22 +161,22 @@ const editors = IDE.initialize([], {
                 const code = event.editor.getValue()
 
                 // если в css были изменения, то less = css
-                if (sessionStorage.getItem('__css') !== getPureCode(code)) event.editor.setValue(code);
+                if (sessionStorage.getItem('__css') !== getPureCode(code)) event.editor.session.setValue(code);
                 else {
                     // иначе возвращаем less
                     let scssCode = sessionStorage.getItem('__less')
-                    event.editor.setValue(scssCode || code);
+                    event.editor.session.setValue(scssCode || code);
                 }
             }
             else if (event.prevMode === 'css' && event.mode == 'scss') {
 
                 const code = event.editor.getValue()
 
-                if (sessionStorage.getItem('__css') !== getPureCode(code)) event.editor.setValue(code);
+                if (sessionStorage.getItem('__css') !== getPureCode(code)) event.editor.session.setValue(code);
                 else {
 
                     let scssCode = sessionStorage.getItem('__scss')
-                    event.editor.setValue(scssCode || code);
+                    event.editor.session.setValue(scssCode || code);
                 }
 
             }
@@ -192,14 +196,14 @@ const editors = IDE.initialize([], {
 
                 /// possible options:
                 // {"javascriptEnabled":false,"depends":false,"compress":false,"lint":false,"paths":[],"color":true,"strictImports":false,"insecure":false,"rootpath":"","rewriteUrls":false,"math":1,"strictUnits":false,"globalVars":null,"modifyVars":null,"urlArgs":"","isFileProtocol":false,"async":false,"fileAsync":false,"poll":1500,"env":"production","useFileCache":true,"onReady":true,"plugins":[],"logLevel":1,"loggers":[{ }],"mime":"text/css"}
-                //@ts-ignore
+                
                 less.render(code, {}, function (e, result) {
 
                     let css = result.css
                         .replace('/* less */', '/* less */' + (indent || ' ').split('\n').slice(1).join('\n'))
                         .replace('}\n', '}\n\n')
 
-                    event.editor.setValue(css)
+                    event.editor.session.setValue(css)
                     sessionStorage.setItem('__css', getPureCode(css))
                 })
 
@@ -340,7 +344,8 @@ const editors = IDE.initialize([], {
                                         
                                         if (file != 'app.ts' && file.split('.').pop() == 'ts') {
                                             tsService.loadContent(file, content + '', true); 
-                                            //@ts-expect-error
+                                            //-@ts-expect-error
+                                            //@ts-ignore                                            
                                             ace.session.$worker.emit("addLibrary", { data: { name: file, content } });
                                         }
                                     })
@@ -403,8 +408,9 @@ const editors = IDE.initialize([], {
     onControlSave: function (event) {
         // alert(99)
     },
-    onfilerename: function (prevName, name, rnCallback) {
+    onfilerename: function (prevName, name, renameOccurrences) {
         alert(99)
+        renameOccurrences()
     },
     onfileRemove: function (name) {
 
