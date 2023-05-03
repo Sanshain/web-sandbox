@@ -1,6 +1,6 @@
 // @ts-check
 
-import initializeEditor from "./aceInitialize";
+import initializeEditor, { compileSingleFileComponent } from "./aceInitialize";
 import { createPage, webCompile, playgroundObject } from "./pageBuilder";
 
 import { expand } from "./features/expantion";
@@ -97,12 +97,16 @@ function updateEnvironment(environment, envName, entryPoint) {
 
 window.addEventListener('message', function (event) {
     
-    console.log(event.data);
+   console.log('root.onmessage << ', event.data);
+   if (!event.data.value) {
+      return
+   }
     
     // let value = event.data.value;
     let consoleJar = document.querySelector('.console .lines');
     if (consoleJar) {
-        let line = consoleJar.appendChild(document.createElement('div'));        
+       let line = consoleJar.appendChild(document.createElement('div'));
+       
         // line.innerText = event.data.value;
         let snipElem = line.appendChild(document.createElement('div'));
         snipElem.textContent = '> ' + typeof event.data.value === 'object'
@@ -514,19 +518,7 @@ export function initialize(values, options) {
         
         if (singleFileEnv[extension]) {
             
-            // svelte
-            loadScripts(singleFileEnv[extension].links, () => {
-                const entryPoint = 'app.' + extension;
-                debugger
-                // const content = (playgroundObject.fileStorage._active == entryPoint) ? editors[2].getValue() : playgroundObject.fileStorage[entryPoint] ;
-                const content = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue())
-                singleFileEnv[extension].onload(content, (vanileCode) => {
-                    // этот код требуется переместить внутрь и все отрефакторить
-                    webCompile(jsxMode, frameworkEnvironment, vanileCode, {
-                        scriptMode: ' type="text/svelte"'
-                    })
-                })                
-            })
+           compileSingleFileComponent(extension, frameworkEnvironment, editors)         
         }
         else {
             webCompile(jsxMode, frameworkEnvironment)

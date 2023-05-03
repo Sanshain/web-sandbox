@@ -299,8 +299,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
     
     /// TODO? @import 'style.css' to style html tag from link file?
-    
-    debugger
+        
     let htmlContent = baseTags.reduce((acc, el, i, arr) => (
         (
             acc[el] = i < 2
@@ -521,7 +520,7 @@ function buildAndTranspile(code, currentLang) {
 }
 
 /**
- * @description Create page and save virtual files to thr localStorag
+ * @description Create page and save virtual files to a appropriate storage
  * 
  * // obsolete @ param {(url: string) => [HTMLIFrameElement, string]} [createPageFunc]
  * TODO: move to end or as option:

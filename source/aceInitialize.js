@@ -2,11 +2,11 @@
 
 import { default as extend } from 'emmet';
 
-import { debounce, getSelectedModeName } from "./utils/utils";
+import { debounce, getExtension, getSelectedModeName, loadScripts } from "./utils/utils";
 import { expand } from './features/expantion';
-import { compilersSet, defaultValues } from './features/compiler';
+import { compilersSet, defaultValues, singleFileEnv, playgroundObject } from './features/compiler';
 import { domFuncs, keyWords } from './utils/autocompletion';
-import { playgroundObject, webCompile } from './pageBuilder';
+import { webCompile } from './pageBuilder';
 import { fileAttach } from './features/tabs';
 import { modes } from './features/base';
 
@@ -168,28 +168,34 @@ export default function initializeEditor(ace, editorOptions, values) {
             {
                 console.time('F9')
 
-                event.preventDefault();
-                // binding is drop !!
-                const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID], editors[2].getValue());
-                const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
+               event.preventDefault();
+               
+               startApp(frameworksList, editorOptions, editors);
 
-                webCompile(jsxEnabled, frameworkEnvironment, void 0, {lessMode: editorOptions.quickCompileMode || false});
-
-                console.timeEnd('F9')
+               console.timeEnd('F9')
             }
             else if (event.ctrlKey && event.keyCode === 83) {
                 
                 // ctrl + s
-                console.log(editorOptions);
+               //  console.log(editorOptions);
                 
-                const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID]);
-                const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
+               event.preventDefault();
 
-                event.preventDefault(), (editorOptions.controlSave
-                    ? editorOptions.controlSave(
-                        event, webCompile.bind(null, jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode || false)
-                    )
-                    : webCompile(jsxEnabled, frameworkEnvironment, void 0, {lessMode: editorOptions.quickCompileMode || false}));
+               const frameworkName = frameworksList[editorOptions.frameworkID];
+
+               const frameworkEnvironment = editorOptions.updateEnv(frameworkName);
+               const jsxEnabled = Boolean(editorOptions.frameworkID % 2);               
+
+               const extension = typeFromExtention(frameworkName);               
+
+               const webCompileFunc = singleFileEnv[extension]
+                  ? compileSingleFileComponent.bind(null, extension, frameworkEnvironment, editors)
+                  : webCompile.bind(null, jsxEnabled, frameworkEnvironment, void 0, { lessMode: editorOptions.quickCompileMode || false })
+
+               if (editorOptions.controlSave) editorOptions.controlSave(event, webCompileFunc)
+               else {
+                  webCompileFunc()
+               }
             }
             else if (event.ctrlKey && event.key === 'f'){
 
@@ -618,5 +624,57 @@ export default function initializeEditor(ace, editorOptions, values) {
 
     return editors;
 
+}
+
+
+/**
+ * @param {string[]} frameworksList
+ * @param {{compileFunc?: Function;frameworkID: any;controlSave?: (ev: any, compileFunc: Function) => void;storage?: Storage;quickCompileMode: any;modes?: any[];frameworkEnvironment?: string[];updateEnv: any;}} editorOptions
+ * @param {(isJsx: boolean, libList: string[], sourceCode?: string, compileOptions?: { lessMode?: boolean; scriptMode?: string; }) => void} [webCompileFunc]
+ */
+function startApp(frameworksList, editorOptions, webCompileFunc) {
+
+   const editors = playgroundObject.editors;
+
+   const frameworkName = frameworksList[editorOptions.frameworkID];
+   // binding is drop !!
+   const frameworkEnvironment = editorOptions.updateEnv(frameworkName, editors[2].getValue());
+   const jsxEnabled = Boolean(editorOptions.frameworkID % 2);
+
+   const extension = typeFromExtention(frameworkName);
+   if (singleFileEnv[extension]) {
+      // svelte
+      compileSingleFileComponent(extension, frameworkEnvironment, editors);
+   } else {
+      const compileFunc = webCompileFunc || webCompile;
+      compileFunc(jsxEnabled, frameworkEnvironment, void 0, { lessMode: editorOptions.quickCompileMode || false });
+   }
+}
+
+/**
+ * @param {string} frameworkName
+ */
+function typeFromExtention(frameworkName) {
+   return frameworkName.toLowerCase() || getExtension(playgroundObject.fileStorage._active);
+}
+
+/**
+ * @param {string} extension
+ * @param {string[]} frameworkEnvironment
+ * @param {{ getValue: () => string; }[]} editors
+ */
+export function compileSingleFileComponent(extension, frameworkEnvironment, editors) {
+   loadScripts(singleFileEnv[extension].links, () => {
+      const entryPoint = "app." + extension;
+
+      // const content = (playgroundObject.fileStorage._active == entryPoint) ? editors[2].getValue() : playgroundObject.fileStorage[entryPoint] ;
+      const content = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue());
+      singleFileEnv[extension].onload(content, (/** @type {string} */ vanileCode) => {
+         // этот код требуется переместить внутрь и все отрефакторить
+         webCompile(false, frameworkEnvironment, vanileCode, {
+            scriptMode: singleFileEnv[extension].mode,
+         });
+      });
+   });
 }
 

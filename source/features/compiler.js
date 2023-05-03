@@ -36,6 +36,7 @@ export const playgroundObject = {
  * @type {{
  *  [K: string] : {
  *      links?: string[],
+ *      mode?: string,
  *      join?: (code: string, html: string, style?: string) => string,
  *      onload?: (source: string, callback: Function) => unknown
  *  }
@@ -44,6 +45,7 @@ export const playgroundObject = {
 export const singleFileEnv = {
     'svelte': {
         links: ['../../build/svelte-compile.js'],
+        mode: ' type="text/svelte"',
         join(script, html, style) {
             const svelteFileContent = html + '\n\n<style>\n\n' + style + '\n\n</style>\n\n<script>\n\n' + script + '\n\n</script>';
             return svelteFileContent;

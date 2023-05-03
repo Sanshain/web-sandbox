@@ -405,7 +405,9 @@ const editors = IDE.initialize([], {
             },
         })
     ],
-    onControlSave: function (event) {
+   onControlSave: function (event, webCompile) {
+      console.log(event);
+      webCompile()
         // alert(99)
     },
     onfilerename: function (prevName, name, renameOccurrences) {
