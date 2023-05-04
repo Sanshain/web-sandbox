@@ -101,13 +101,18 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
     options = options || {}
 
     if ((playgroundObject.fileStorage || window['fileStore']) && playgroundObject.editors) {
-        const fileStorage = playgroundObject.fileStorage || window['fileStore'];
-        let activeTab = document.querySelector('.tabs .tab.active');
-        // update current tab content:
+       const fileStorage = playgroundObject.fileStorage || window['fileStore'];
+       let activeTab = document.querySelector('.tabs .tab.active');
+       // update current tab content:
 
-        if (fileStorage) {
-            fileStorage[fileStorage.innerText] = playgroundObject.editors[2].getValue()
-        }        
+      //  if (fileStorage) {
+      //    fileStorage[fileStorage._active] = playgroundObject.editors[2].getValue();
+      //  }
+
+       if (activeTab) {
+          fileStorage[activeTab["innerText"]] = playgroundObject.editors[2].getValue()
+       }
+       
     }
     
     let _fs = (playgroundObject.fileStorage || window['fileStore'] || {});

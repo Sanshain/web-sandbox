@@ -375,6 +375,8 @@ export function initialize(values, options) {
                     
                     if (tabs) {
 
+                        debugger
+                       
                         // TODO .vue and .svelte support
 
                         // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined
