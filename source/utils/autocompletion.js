@@ -207,7 +207,17 @@ export let keyWords = wordList.map(
 
 /**
  * @param {AceEditor} editor : ace editor instanse
- * @param {{ hint?: {desc: string, origin?: string, sign: {[x: string]: {type: string, description: string}}}; name: string; template?: string; meta?: 'function'|'property'; }} keyWordInfo
+ * @param {{ 
+ *    hint?: {
+ *       desc: string, 
+ *       origin?: string, 
+ *       sign: {
+ *          [x: string]: {type: string, description: string}}
+ *       }; 
+ *       name: string; 
+ *       template?: string; 
+ *       meta?: 'function'|'property'; 
+ * }} keyWordInfo
  */
 export function autocompleteExpand(editor, keyWordInfo) {
 
@@ -249,6 +259,67 @@ export function autocompleteExpand(editor, keyWordInfo) {
         }
     })
 }
+
+
+
+
+export const quickCompleter = {
+
+   /**
+    * @description autocomplete update:
+    * @param {`export ${string}`[]} exports
+    * @param {string[]} [defaultExport]
+    */
+   importsUpdate(exports, defaultExport) {
+      
+      exports.forEach((/** @type {string} */ ex) => {
+         let exprWords = ex.split(" ")
+         let caption = exprWords.pop()
+         let meta = exprWords.pop()
+         keyWords.push({
+            caption,
+            value: caption,
+            meta,
+            type: "",
+            snippet: undefined
+         })
+      })
+
+      // extension changing:
+      // if (importSnippet.template.endsWith(".ts") && !fileStore['app.ts']) {
+      //     // autocomplete refactoring:
+      //     importSnippet.name = importSnippet.template = importSnippet.template.replace(prevTabName + '"', title + '"');
+      // }
+      // let actualExt = prevTabName.split('.').pop();
+      // if (!title.endsWith(actualExt)) {
+      //     // autocomplete refactoring:
+      //     importSnippet.name = importSnippet.template = importSnippet.template.replace(title + "'",prevTabName + "'");
+      //     // code refactoring:
+      //     // let importFilename = importSnippet.template.split('from ').pop()
+      //     // console.log('importFilename', importFilename);
+      //     fileStore['app.' + actualExt] = fileStore['app.' + actualExt].replace(title + "'", prevTabName + "'");
+      //     //@ts-ignore
+      //     title = prevTabName;
+      // }
+      // let newComplete = exports.map((/** @type {string} */ exp) => exp.split(' ').pop()).join(', ');
+      // importSnippet.name = importSnippet.template = importSnippet.template.replace(
+      //     new RegExp('(\\\{ \\\$\\\{1\\\} \\\})|(\\\{ [\\\w\\\d_, ]* \\\})'), '{ ' + newComplete + ' }'
+      // );
+      // console.log('{ ' + newComplete + ' }');
+      // console.log(importSnippet.template);
+      // if (defaultExport) {
+      //     // editors[2].session.$mode.$highlightRules.$keywordList.unshift("import " + defaultExport.pop() + " from './" + newTab.innerText + "'");
+      //     keyWords.push({
+      //         caption: defaultExport[1],
+      //         value: defaultExport[1],
+      //         meta: 'function',
+      //         type: '',
+      //         snippet: undefined,  // (defaultExport[1] + '({$1})')
+      //     })
+      // }
+   }
+}
+
 
 
 

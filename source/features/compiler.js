@@ -44,6 +44,7 @@ export const playgroundObject = {
  *      links?: string[],
  *      mode?: string,
  *      join?: (code: string, html: string, style?: string) => string,
+ *      split?: (code: string) => [string, string, string],
  *      onload?: (source: string, callback: Function) => unknown
  *  }
  * }}
@@ -52,11 +53,34 @@ export const singleFileEnv = {
    svelte: {
       links: ["../../build/svelte-compile.js"],
       mode: ' type="text/svelte"',
+      /**
+       * @description join all scripts to the single file
+       * @param {string} script 
+       * @param {string} html 
+       * @param {string} style 
+       * @returns 
+       */
       join(script, html, style) {
-         const svelteFileContent = html + "\n\n<style>\n\n" + style + "\n\n</style>\n\n<script>\n\n" + script + "\n\n</script>"
+
+         const svelteFileContent = html + "\n\n<style>\n\n" + style + "\n\n</style>\n\n<script>\n\n" + script + "\n\n</script>";
          return svelteFileContent
       },
+      split(code) {
+         let script = '', style = '';
+
+         code = code.replace(/\<script(?: lang=['"]ts['"])?\>(?<code>[\s\S]*?)\<\/script\>/, function (source, _script) {
+            script = _script || '//';
+            return ''
+         });
+         const html = code.replace(/\<style(?: lang=['"]\w+['"])?\>(?<style>[\s\S]*?)\<\/style\>/, function (source, _style) {
+            style = _style || '';
+            return ''
+         });
+         return [html, style, script];
+
+      },
       /**
+       * @description svelte code transforms and occurs on `this.links` scripts loaded
        * @param {(rawCode: string, getFile: (arg: string) => string) => {code: string;matches?: any[];}} svelteTransform
        * @param {string} entryPointCode
        * @param {Function} webCompile
@@ -67,17 +91,16 @@ export const singleFileEnv = {
           */
          const svelteTransform = window["svelteTransform"]
          if (svelteTransform) {
+            
             const svelteApp = svelteTransform(entryPointCode, function getFile(filename) {
-               const file =
-                  playgroundObject.fileStorage[filename] || playgroundObject.fileStorage[filename.replace(/^\.\//m, "")]
+               const file = playgroundObject.fileStorage[filename] || playgroundObject.fileStorage[filename.replace(/^\.\//m, "")]
                if (Array.isArray(file)) {
                   // TODO Inject less compilation
                   const style = file[1]
                   // TODO get ts from modes instead of global
                   const script = window["ts"] ? window["ts"].transpile(file[2]) : file[2]
 
-                  const svelteFileContent =
-                     file[0] + "\n\n<style>\n\n" + style + "\n\n</style>\n\n<script>\n\n" + script + "\n\n</script>"
+                  const svelteFileContent = file[0] + "\n\n<style>\n\n" + style + "\n\n</style>\n\n<script>\n\n" + script + "\n\n</script>"
                   return svelteFileContent
                } else {
                   throw new Error("Unexpected file format for `" + filename + "`")
@@ -95,6 +118,8 @@ export const singleFileEnv = {
 }
 
 export const singleFileTypes = Object.keys(singleFileEnv)
+
+
 
 const reactCompiler = {
    react: "https://unpkg.com/react@17/umd/react.production.min.js",
@@ -201,7 +226,9 @@ export const compilersSet = {
    svelte: ["http://127.0.0.1:3001/build/svelte-runtime.js"],
 }
 
-console.log(compilersSet)
+export const compilerNames = Object.keys(compilersSet);
+
+
 
 export const defaultValues = [
    // html
@@ -312,3 +339,4 @@ window.onmessage = function (ev) {
 }
 
 export const averageCompilerOptions = {}
+

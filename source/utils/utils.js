@@ -1,6 +1,8 @@
 //@ts-check
 
-import { playgroundObject } from "../pageBuilder";
+import { playgroundObject } from "../features/compiler";
+
+
 
 export const commonStorage = sessionStorage;
 
@@ -84,7 +86,14 @@ export function getSelectedModeName(i) {
  * @returns {string} - filename extension
  */
 export function getExtension(name) {
-    return name.split('.').pop()
+    return name ? name.split('.').pop() : ''
+}
+
+/**
+ * @param {string} frameworkName - framework name or file name with appropriate extension
+ */
+export function typeFromExtention(frameworkName) {
+   return frameworkName.toLowerCase() || getExtension(playgroundObject.fileStorage._active)
 }
 
 
@@ -117,4 +126,6 @@ export function loadScripts(links, onloaded){
         })
     });
 }
+
+
 

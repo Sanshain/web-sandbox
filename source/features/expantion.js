@@ -1,6 +1,7 @@
 // @ts-check
 
-import { createPage, playgroundObject } from "../pageBuilder";
+import { createPage } from "../pageBuilder";
+import { playgroundObject } from './compiler';
 
 
 /**
@@ -11,7 +12,7 @@ import { createPage, playgroundObject } from "../pageBuilder";
 export function expand(event, additionalScripts, scriptType) {
 
     let [iframe, curUrl] = createPage(playgroundObject.curUrl, additionalScripts, scriptType);
-
+      
     playgroundObject.iframe = iframe;
     playgroundObject.curUrl = curUrl;
 
