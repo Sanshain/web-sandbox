@@ -49,7 +49,7 @@ export function saveFile(prevFileName, editors) {
       fileStore[prevFileName] = editors[2].getValue()      
    } //
    else {
-      fileStore[prevFileName] = editors.map((editor) => editor.getValue())
+      fileStore[prevFileName] = editors.map((/** @type {{ getValue: () => string; }} */ editor) => editor.getValue())
       //% singleFileEnv[frameworkName].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue()) ||      
    }
 
@@ -64,14 +64,14 @@ export function readFromFile(activeTabName) {
    const fileStore = playgroundObject.fileStorage;
    const editors = playgroundObject.editors;
 
-   if (Array.isArray(fileStore[activeTabName])) {
-      fileStore[activeTabName].forEach((code, i) => {         
-         editors[i].session.setValue(fileStore[activeTabName][i])
-      })
-      return fileStore[activeTabName][2]
+   const activeFile = fileStore[activeTabName];
+   if (Array.isArray(activeFile)) {
+
+      activeFile.forEach((code, i) => { editors[i].session.setValue(activeFile[i]) })
+      return activeFile[2];
    }
    else {
-      const content = fileStore[activeTabName]
+      const content = activeFile
       editors[2].session.setValue(content)
       return content;
    }

@@ -604,7 +604,7 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
 
       const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()]
       
-      code = buildAndTranspile(code, currentLang)
+      code = buildAndTranspile(typeof code == 'string' ? code : code[2], currentLang)
       
       let globalReinitializer = generateGlobalInintializer(code)
 

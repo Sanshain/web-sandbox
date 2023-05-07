@@ -184,9 +184,10 @@ function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
          delete fileStore[prevName]
 
          for (let file in playgroundObject.fileStorage) {
-            if (typeof playgroundObject.fileStorage[file] === "string") {
+            const fileContent = playgroundObject.fileStorage[file]
+            if (typeof fileContent === "string") {
                debugger
-               playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(prevName, fullname)
+               playgroundObject.fileStorage[file] = fileContent.replace(prevName, fullname)
             }
          }
 
@@ -220,9 +221,11 @@ function switchTab(ev, activeTabName) {
       prevTab.classList.toggle("active")
 
       const r = fs.saveFile(prevTabName, editors) // fileStore[prevTabName] = editors[2].getValue()
-      if (typeof r === "string") {
-         const exports = fileStore[prevTabName].match(/export (function|const|let|class) (\w+)/g) || []
-         const mainExport = fileStore[prevTabName].match(/export default function (?:\w+)/) || []
+      const closedFile = fileStore[prevTabName]
+      if (typeof closedFile === "string") {
+         
+         const exports = closedFile.match(/export (function|const|let|class) (\w+)/g) || []
+         const mainExport = closedFile.match(/export default function (?:\w+)/) || []
 
          quickCompleter.importsUpdate(exports, mainExport)
       }
@@ -246,7 +249,7 @@ function switchTab(ev, activeTabName) {
 
       // langModes[selMode].runtimeService.addScript(title, content)
       // langModes[selMode].runtimeService.loadContent(title, content, true)
-      langModes[selMode].runtimeService.updateFile(activeTabName, content)
+      langModes[selMode].runtimeService.updateFile(activeTabName, typeof content == 'string' ? content : content[2])
 
       // playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: title, content } });
       playgroundObject.editors[2].getSession().$worker.emit("updateModule", { data: { name: activeTabName, content } })

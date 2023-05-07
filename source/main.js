@@ -386,9 +386,10 @@ export function initialize(values, options) {
                         // imports refactoring:
 
                         for (let file in playgroundObject.fileStorage) {
-                           if (typeof playgroundObject.fileStorage[file] === "string") {
+                           const fileContent = playgroundObject.fileStorage[file];
+                           if (typeof fileContent === "string") {
                               
-                              playgroundObject.fileStorage[file] = playgroundObject.fileStorage[file].replace(
+                              playgroundObject.fileStorage[file] = fileContent.replace(
                                  extensions[0],
                                  extensions[1]
                               )

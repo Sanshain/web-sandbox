@@ -264,14 +264,13 @@ export function autocompleteExpand(editor, keyWordInfo) {
 
 
 export const quickCompleter = {
-
    /**
     * @description autocomplete update:
-    * @param {`export ${string}`[]} exports
+    * @$_param {`export ${string}`[]} exports
+    * @param {string[]} exports
     * @param {string[]} [defaultExport]
     */
    importsUpdate(exports, defaultExport) {
-      
       exports.forEach((/** @type {string} */ ex) => {
          let exprWords = ex.split(" ")
          let caption = exprWords.pop()

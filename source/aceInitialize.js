@@ -117,8 +117,7 @@ export default function initializeEditor(ace, editorOptions, values) {
 
          playgroundObject.modes[i][mode]
 
-         let value =
-            values[i] ||
+         let value = values[i] ||
             (editorOptions.storage || localStorage).getItem(initialFramework + "__" + modes[i]) ||
             defaultValues[initialFramework][modes[i]]
          if (value) {
@@ -451,7 +450,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                                     let storeName = match[1]
                                     let module = playgroundObject.fileStorage[storeName]
                                     if (!module) alert("Связанный модуль " + storeName + " не найден")
-                                    else {
+                                    else if (typeof module === 'string') {
                                        let replacePattern = "(^" + token.value + ")|( " + token.value + ")|(" + token.value + " )"
                                        console.log(replacePattern)
                                        debugger
@@ -462,6 +461,9 @@ export default function initializeEditor(ace, editorOptions, values) {
                                              return substring.replace(token.value, newValue)
                                           }
                                        )
+                                    }
+                                    else {
+                                       debugger
                                     }
                                  }
                               }
@@ -509,7 +511,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                                     alert("Отсутвует модуль " + filename)
                                     return
                                  }
-                                 let submatch = module.match(pattern)
+                                 let submatch = (typeof module === "string" ? module : module[2]).match(pattern) 
                                  if (submatch) {
                                     // переключаемся на эту вкладку
                                     // let tabIndex = Object.keys(playgroundObject.fileStorage).indexOf(filename)
@@ -523,7 +525,7 @@ export default function initializeEditor(ace, editorOptions, values) {
 
                                     console.log(submatch)
                                     // переходим к определению
-                                    linesCount = module.slice(0, match.index).split("\n").length - 1
+                                    linesCount = (typeof module === "string" ? module : module[2]).slice(0, match.index).split("\n").length - 1
                                     editor.moveCursorTo(linesCount, 8 + submatch[1].length)
                                  }
                               }
@@ -545,6 +547,7 @@ export default function initializeEditor(ace, editorOptions, values) {
    
    const fileStorage = (editors.fileStorage = window["fileStorage"] = window["fileStore"] || playgroundObject.fileStorage || { _active: 0 })
    
+   debugger
    const modulesStorage = values[3] || (editorOptions.storage || localStorage).getItem("_modules");           // files storage from outside
 
    /// включаем вкладки:
@@ -560,46 +563,58 @@ export default function initializeEditor(ace, editorOptions, values) {
    if (modulesStorage) {
       // create tabs:
 
-      let _modules = typeof modulesStorage === "object" ? modulesStorage : JSON.parse(modulesStorage)
-      let fileCreateTab = document.querySelector(".tabs .tab:last-child")      
+      
 
-      if (fileCreateTab) {
-         
-         for (const key in _modules) {
-            if (Object.hasOwnProperty.call(_modules, key)) {
-               
-               
-               fileStorage[key] = _modules[key]
-               
-               // skip entry point
-               if (/app\.(j|t)sx?/.test(key) || key == void 0 + "" || key === ('App.' + compilerNames[editorOptions.frameworkID])) continue
-                                                
-               // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
-               if (compilerNames[editorOptions.frameworkID] && key === globalStore) {
-                  // debugger
-                  continue
-               }
-               fileAttach({ target: fileCreateTab, file: key, editors })
-               
-               // editors[2].setValue(_modules[key]) // set editor value
-               // // clear selection
-               // editors[2].session.selection.setRange(new Range(0, 0, 0, 0))
-            }
-         }
-
-         let activeTab = document.querySelector(".tabs .tab.active")
-         activeTab && activeTab.classList.toggle("active")
-
-         document.querySelector(".tabs .tab").classList.add("active")
-      }
-
-      playgroundObject.fileStorage = fileStorage
+      playgroundObject.fileStorage = bootFileStorage(modulesStorage, fileStorage, editorOptions.frameworkID)
    }
 
    // initResizers()
 
    return editors
 }
+
+
+
+/**
+ * @param {string} modulesStorage
+ * @param {typeof playgroundObject.fileStorage} fileStorage
+ * @param {string | number} frameworkID
+ * @returns {typeof playgroundObject.fileStorage}
+ */
+function bootFileStorage(modulesStorage, fileStorage, frameworkID) {
+   let _modules = typeof modulesStorage === "object" ? modulesStorage : JSON.parse(modulesStorage)
+   let fileCreateTab = document.querySelector(".tabs .tab:last-child")
+
+   if (fileCreateTab) {
+      for (const key in _modules) {
+         if (Object.hasOwnProperty.call(_modules, key)) {
+            fileStorage[key] = _modules[key]
+
+            // skip entry point
+            if (/app\.(j|t)sx?/.test(key) || key == void 0 + "" || key === "App." + compilerNames[frameworkID]) continue
+
+            // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
+            if (compilerNames[frameworkID] && key === globalStore) {
+               // debugger
+               continue
+            }
+            fileAttach({ target: fileCreateTab, file: key, editors })
+
+            // editors[2].setValue(_modules[key]) // set editor value
+            // // clear selection
+            // editors[2].session.selection.setRange(new Range(0, 0, 0, 0))
+         }
+      }
+
+      let activeTab = document.querySelector(".tabs .tab.active")
+      activeTab && activeTab.classList.toggle("active")
+
+      document.querySelector(".tabs .tab").classList.add("active")
+   }
+
+   return fileStorage;
+}
+
 
 /**
  * @param {string[]} frameworksList
@@ -615,7 +630,7 @@ function startApp(frameworksList, editorOptions, webCompileFunc) {
    const jsxEnabled = Boolean(editorOptions.frameworkID % 2)
 
    const extension = typeFromExtention(frameworkName)
-   debugger;
+   // debugger;
    if (singleFileEnv[extension]) {
       // svelte
       compileSingleFileComponent(extension, frameworkEnvironment, editors)
@@ -635,8 +650,7 @@ function startApp(frameworksList, editorOptions, webCompileFunc) {
 export function compileSingleFileComponent(extension, frameworkEnvironment, editors) {
    loadScripts(singleFileEnv[extension].links, () => {
       const entryPoint = "App." + extension
-
-      debugger
+      
       // const content = (playgroundObject.fileStorage._active == entryPoint) ? editors[2].getValue() : playgroundObject.fileStorage[entryPoint];
       // const sourceData = playgroundObject.fileStorage[entryPoint] || editors.map(ed => ed.getValue()) [
       //    editors[2].getValue(),
@@ -645,19 +659,26 @@ export function compileSingleFileComponent(extension, frameworkEnvironment, edit
       // ];
 
       if (playgroundObject.fileStorage._active !== entryPoint) {
-         if (typeof playgroundObject.fileStorage[entryPoint] === 'string') var content = playgroundObject.fileStorage[entryPoint]
-         else {
-            const sourceData = playgroundObject.fileStorage[entryPoint]
-            var content = singleFileEnv[extension].join(sourceData[2], sourceData[0], sourceData[1])
+
+         const entryFile = playgroundObject.fileStorage[entryPoint];
+
+         if (Array.isArray(entryFile)) {
+            var fileContent = singleFileEnv[extension].join(entryFile[2], entryFile[0], entryFile[1])
          }
+         else if (typeof entryFile === 'string') {
+            var fileContent = entryFile
+         }
+         else {            
+            var fileContent = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue())
+         }         
       } //
       else {
-         var content = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue());
+         var fileContent = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue());
       }
 
 
       // const content = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue())
-      singleFileEnv[extension].onload(content, (/** @type {string} */ vanileCode) => {
+      singleFileEnv[extension].onload(fileContent, (/** @type {string} */ vanileCode) => {
          // этот код требуется переместить внутрь и все отрефакторить
          webCompile(false, frameworkEnvironment, vanileCode, {
             scriptMode: singleFileEnv[extension].mode,

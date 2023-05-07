@@ -397,7 +397,7 @@ window.addEventListener("DOMContentLoaded", function (event) {
  *      content?: string;
  *      libFiles?: string[];
  *      aliasedLibFiles?: Record<string, string>;
- *      fileNavigator?: Record<string, string> & { _active: string; };
+ *      fileNavigator?: Record<string, string | string[]> & { _active: string; };
  *      signatureToolTip?: boolean;
  *      typeDefenitionOnHovering?: boolean | { selector: string; };
  *      autocompleteStart?: number;

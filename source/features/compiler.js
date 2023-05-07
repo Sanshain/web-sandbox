@@ -3,16 +3,16 @@
 /**
  * @typedef {import("../main").LangMode} LangMode
  * @type {{
- *      editors: import("../aceInitialize").EditorsEnv | [],                          // any[],
+ *      editors: import("../aceInitialize").EditorsEnv | [],                                             // any[],
  *      iframe: HTMLIFrameElement,
  *      curUrl: string,
- *      fileStorage: {[k: string]: string} | { _active: string, },                    // _entryPoint?: string = ? || { _active: number|string, },
- *      modes?: [import("../main").LangMode?, LangMode?, LangMode?],                  // [object?, object?, object?]
+ *      fileStorage: {[k: string]: string | string[]} & { _active: string, },                            // _entryPoint?: string = ? || { _active: number|string, },
+ *      modes?: [import("../main").LangMode?, LangMode?, LangMode?],                                     // [object?, object?, object?]
  *      onfilerename?: Function,
  *      onfileRemove?: (name: string) => void
- *      frameworkID: number                                                           // 0 | 1 | 2 | 3
+ *      frameworkID: number                                                                              // 0 | 1 | 2 | 3
  * }}
- *      activeModes?: [number?, number?, number?],                                    // UNUSED - use getSelectedModeName now
+ *      activeModes?: [number?, number?, number?],                                                       // UNUSED - use getSelectedModeName now
  */
 export const playgroundObject = {
    editors: [],

@@ -7,7 +7,7 @@ import { singleFileTypes } from "../compiler";
 
 
 /**
- * @param {{ [k: string]: string; } | { _active: string | number; }} fileStore
+ * @param {{ [k: string]: string | [string, string, string]; } | { _active: string | number; }} fileStore
  * @param {string} activeTabName - new tab name
  */
 export function createEditorFile(fileStore, activeTabName) {
