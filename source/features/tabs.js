@@ -2,7 +2,8 @@
 
 import { playgroundObject } from "../pageBuilder"
 import { autocompleteExpand, keyWords, quickCompleter } from "../utils/autocompletion"
-import { getExtension, getSelectedModeName } from "../utils/utils"
+import { getExtension, getSelectedModeName, isTSMode } from "../utils/utils"
+import { compilerNames, singleFileTypes } from "./compiler"
 import { createEditorFile } from "./fs/editor"
 import * as fs from "./fs/store"
 
@@ -38,11 +39,13 @@ const menuPoints = {
    }
 }
 
-// var fileStore = { _active: 0 };
 
 /**
+ * 
+ * 
+ * 
  * attach new file
- * @param {{ file?: string; target: any; editors?: object[] }} event
+ * @param {{ file?: string; target: any; editors?: AceAjax.Editor[] }} event
  */
 export function fileAttach(event) {
    let fileStore = playgroundObject.fileStorage
@@ -51,25 +54,15 @@ export function fileAttach(event) {
 
    /** @type {import("../aceInitialize").EditorsEnv} */
    const editors = event["editors"] || window["editors"]
-   const filename = event.file || prompt("Enter file name:")
 
-   if (!filename) return
+   let activeTabName = nameValidate(event.file || prompt("Enter file name:"), event.editors) || ""
 
-   let ext = getExtension(fileStore._active)
-   ext = "." + (ext || (fileStore["app.ts"] || editors[2].session.getLine(0).match(/typescript/) ? "ts" : "js"))
+   if (!activeTabName) return alert("Invalid file name format")
 
-   // TODO further?
-   // const isJsx = playgroundObject.frameworkID % 2;
-   // if (isJsx) {
-   //    ext += 'x'
-   // }
-
-   /** @type {string} */
-   let activeTabName = ~filename.indexOf(".") ? filename : filename + ext
+   /// Проверяем имя файла на exists():
 
    if (!event.file && ~Object.keys(fileStore).indexOf(activeTabName)) {
-      alert("Файл с таким именем уже существует")
-      return
+      return alert("Файл с таким именем уже существует")
    }
 
    window.__debug && console.log("create new Tab")
@@ -80,38 +73,33 @@ export function fileAttach(event) {
 
    const origTab = target.parentElement.querySelector(".tab.active") || target.parentElement.children[0]
 
-   /**
-    * Rename existing file
-    * @param {MouseEvent} ev
-    * @returns
-    */
-   origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ ev) {
-      if (!playgroundObject.onfilerename) {
-         return console.warn("Specify onfilerename callback argument to activate the feature!")
+   {
+      /**
+       * Rename existing file
+       * @param {MouseEvent} ev
+       * @returns
+       */
+      origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ ev) {
+         if (!playgroundObject.onfilerename) return console.warn("Specify onfilerename callback argument to activate the feature!")
+
+         const prevName = ev.target.innerText
+
+         if (prevName.match(/app\.\ws/)) return
+
+         const fileInfo = prevName.split(".")
+         let filename = prompt("Enter new file name:", fileInfo[0])
+
+         if (filename === fileInfo[0]) return
+         ;({ activeTabName, fileStore } = renameTab({ filename, fileInfo, prevName, ev, activeTabName }))
       }
 
-      const prevName = ev.target.innerText
-      if (prevName.match(/app\.\ws/)) {
-         return
-      }
-
-      const fileInfo = prevName.split(".")
-      let filename = prompt("Enter new file name:", fileInfo[0])
-
-      if (filename === fileInfo[0]) return
-      ;({ activeTabName, fileStore } = renameTab({ filename, fileInfo, prevName, ev, activeTabName }))
+      /**
+       * Toggle among active tabs
+       * @param {MouseEvent} ev
+       * @returns
+       */
+      origTab.onclick = origTab.onclick || ((ev) => ({ activeTabName, fileStore } = toggleTab(ev, activeTabName)))
    }
-
-   /**
-    * Toggle among active tabs
-    * @param {MouseEvent} ev
-    * @returns
-    */
-   origTab.onclick =
-      origTab.onclick ||
-      function toggleTab(/** @type {{ target: HTMLElement }} */ ev) {
-         ;({ activeTabName, fileStore } = switchTab(ev, activeTabName))
-      }
 
    /// создание нового таба:
 
@@ -130,18 +118,17 @@ export function fileAttach(event) {
    target.parentElement.insertBefore(newTab, target)
    editors[2].focus()
 
-   if (!event.file) {
-      createEditorFile(fileStore, activeTabName)
-   }
+   !event.file && createEditorFile(fileStore, activeTabName)
 }
 
 /**
+ *
+ *
  * @param {{ cloneNode: () => HTMLDivElement; onclick: any; ondblclick: any; }} origTab
  * @param {string} activeTabName
  * @returns {HTMLElement & {oncontextmenu: any}}
  */
 function createNewTab(origTab, activeTabName) {
-   
    let newTab = origTab.cloneNode()
    newTab.innerText = activeTabName
 
@@ -152,7 +139,7 @@ function createNewTab(origTab, activeTabName) {
    newTab.style.marginRight = "1.25em"
    newTab.onclick = origTab.onclick
    newTab.ondblclick = origTab.ondblclick
-   return newTab;
+   return newTab
 }
 
 function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
@@ -203,13 +190,14 @@ function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
  * @param {{ target: HTMLElement; }} ev
  * @param {string} activeTabName
  */
-function switchTab(ev, activeTabName) {
-
+function toggleTab(ev, activeTabName) {
    var fileStore = playgroundObject.fileStorage
-   const editors = playgroundObject.editors   
+
+   const editors = playgroundObject.editors
    const prevTab = document.querySelector(".tab.active")
 
    globalThis.__debug && console.log("toggle tab...")
+
 
    /// prev tab saving:
 
@@ -223,7 +211,6 @@ function switchTab(ev, activeTabName) {
       const r = fs.saveFile(prevTabName, editors) // fileStore[prevTabName] = editors[2].getValue()
       const closedFile = fileStore[prevTabName]
       if (typeof closedFile === "string") {
-         
          const exports = closedFile.match(/export (function|const|let|class) (\w+)/g) || []
          const mainExport = closedFile.match(/export default function (?:\w+)/) || []
 
@@ -235,10 +222,9 @@ function switchTab(ev, activeTabName) {
 
    ev.target.classList.add("active")
 
-   activeTabName = ev.target.innerText
-   fileStore._active = activeTabName
+   const scriptCode = fs.readFromFile((activeTabName = ev.target.innerText))
 
-   const scriptCode = fs.readFromFile(activeTabName)
+   fileStore._active = activeTabName
 
    /// now update TSServ:
 
@@ -249,7 +235,7 @@ function switchTab(ev, activeTabName) {
 
       // langModes[selMode].runtimeService.addScript(title, content)
       // langModes[selMode].runtimeService.loadContent(title, content, true)
-      langModes[selMode].runtimeService.updateFile(activeTabName, typeof content == 'string' ? content : content[2])
+      langModes[selMode].runtimeService.updateFile(activeTabName, typeof content == "string" ? content : content[2])
 
       // playgroundObject.editors[2].getSession().$worker.emit("addLibrary", { data: { name: title, content } });
       playgroundObject.editors[2].getSession().$worker.emit("updateModule", { data: { name: activeTabName, content } })
@@ -299,4 +285,50 @@ function onContextMenu(e) {
    contextMenu.focus()
 
    return false
+}
+
+/**
+ * Validate file name
+ * @param {string} name
+ * @param {AceAjax.Editor[]} [editors] 
+ * @returns {string | false} - valid file name or false 
+ */
+function nameValidate(name, editors) {
+   //
+   if (!name) return false
+
+   const match = name.match(/[\d\w\-]+(?:\.(?<ext>\w+))?/)
+   if (!match) return false
+   else {
+      //
+      const ext = match.groups.ext
+      const frameworkName = compilerNames[playgroundObject.frameworkID]
+      
+      if (!ext) {
+         if (~singleFileTypes.indexOf(frameworkName)) return name + "." + frameworkName
+         else {
+            ///
+
+            // const isJsx = playgroundObject.frameworkID % 2;                                                 // TODO further?
+            // if (isJsx) { ext += 'x' }
+            return name + (isTSMode(editors) ? ".ts" : ".js")
+         }
+      } //
+      else {
+         /// vanila extension checking:
+
+         if ((isTSMode(editors) ? /ts(x)?/ : /js/).test(ext)) return name
+
+         /// framework extension checking:
+
+         if (~singleFileTypes.indexOf(frameworkName) && ext === frameworkName) return name;
+      }
+   }
+   
+   return false
+
+   // let ext = getExtension(fileStore._active)
+   // ext = "." + (ext || (fileStore["app.ts"] || editors[2].session.getLine(0).match(/typescript/) ? "ts" : "js"))
+
+   // let activeTabName = ~filename.indexOf(".") ? filename : filename + ext
 }

@@ -1,22 +1,21 @@
 // @ts-check
 
 import {
-    averageCompilerOptions,
-    babelCompiler,
-    compilersSet,
-    playgroundObject,
-    singleFileEnv,
-    spreadImports,
-    compilerNames
-} from './features/compiler';
+   averageCompilerOptions,
+   babelCompiler,
+   compilersSet,
+   playgroundObject,
+   singleFileEnv,
+   spreadImports,
+   compilerNames
+} from "./features/compiler"
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator"
-import { commonStorage, getLangMode, typeFromExtention, getExtension } from './utils/utils';
+import { commonStorage, getLangMode, typeFromExtention, getExtension } from "./utils/utils"
 
 // TODO REMOVE:
 import { ChoiceMenu } from "./ui/ChoiceMenu"
 import { modes as baseModes, modes } from "./features/base"
 // import initializeEditor from './aceInitialize';
-import { options } from '../node_modules_linux/preact/dist/preact';
 
 /**
  * @typedef {{
@@ -96,30 +95,37 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
    if ((playgroundObject.fileStorage || window["fileStore"]) && playgroundObject.editors) {
       const fileStorage = playgroundObject.fileStorage || window["fileStore"]
       let activeTab = document.querySelector(".tabs .tab.active")
-      
+
       /// update current file storage with tab content:
 
       //  if (fileStorage) {
       //    fileStorage[fileStorage._active] = playgroundObject.editors[2].getValue();
       //  }
-      if (singleFileEnv[options.frameworkName]) {
-         
-         const singleFileExt = typeFromExtention(options.frameworkName);
+      if (activeTab && singleFileEnv[options.frameworkName]) {
+         // const singleFileExt = options.frameworkName // typeFromExtention(options.frameworkName)
 
-         if (activeTab && singleFileExt !== getExtension(activeTab["innerText"])) {
-            
-            const appTitle = activeTab["innerText"].replace(/\.\w+$/m, "." + singleFileExt);            
+         // debugger
+         if (options.frameworkName === getExtension(activeTab["innerText"])) {
 
-            fileStorage._active = activeTab["innerText"] = appTitle.charAt(0).toUpperCase() + appTitle.slice(1)
-            
-            fileStorage[fileStorage._active] = singleFileEnv[options.frameworkName].join(
-               playgroundObject.editors[2].getValue(),
-               playgroundObject.editors[0].getValue(),
-               playgroundObject.editors[1].getValue()
-            )
-         }         
-      }
-      else if (activeTab) {
+            fileStorage[activeTab["innerText"]] = playgroundObject.editors.map((ed) => ed.getValue());
+            fileStorage._active = activeTab["innerText"]
+
+            // fileStorage._active = activeTab["innerText"]
+            // fileStorage[fileStorage._active] = singleFileEnv[options.frameworkName].join(
+            //    playgroundObject.editors[2].getValue(),
+            //    playgroundObject.editors[0].getValue(),
+            //    playgroundObject.editors[1].getValue()
+            // )
+         } else if (activeTab) {
+            fileStorage[activeTab["innerText"]] = playgroundObject.editors[2].getValue()
+         }
+         // if (activeTab && options.frameworkName !== getExtension(activeTab["innerText"])) {
+
+         //    const appTitle = activeTab["innerText"].replace(/\.\w+$/m, "." + options.frameworkName)
+
+         //    fileStorage._active = activeTab["innerText"] = appTitle.charAt(0).toUpperCase() + appTitle.slice(1)
+         // }
+      } else if (activeTab) {
          fileStorage[activeTab["innerText"]] = playgroundObject.editors[2].getValue()
       }
    }
@@ -173,8 +179,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
    const buildJS = (/** @type {string} */ code) => {
       // convert to js:
-            
-      code = buildAndTranspile(code, currentLang)      
+
+      code = buildAndTranspile(code, currentLang)
 
       //
       let globalReinitializer = generateGlobalInintializer(code)
@@ -266,9 +272,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
             let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
             if (actualMode && actualMode.inside === true) {
                // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
-               ;[].slice
-                  .call(typeof actualMode.src === "string" ? [actualMode.src] : actualMode.src)
-                  .forEach((el) => additionalScripts.push(el))
+               ;[].slice.call(typeof actualMode.src === "string" ? [actualMode.src] : actualMode.src).forEach((el) => additionalScripts.push(el))
                // дополнительные скрипты. В частности less
                window["__debug"] && console.log(additionalScripts)
             }
@@ -292,10 +296,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
                   let link = URL.createObjectURL(blob)
 
                   // actualMode.target.attributes = actualMode.target.attributes.replace('{}', link)
-                  actualMode.target.attributes = actualMode.target.attributes.replace(
-                     /href\="[\:\w\d-\{\}/\.]+"/,
-                     'href="' + link + '"'
-                  )
+                  actualMode.target.attributes = actualMode.target.attributes.replace(/href\="[\:\w\d-\{\}/\.]+"/, 'href="' + link + '"')
 
                   window["__debug"] && console.log(link)
 
@@ -310,9 +311,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
    /// TODO? @import 'style.css' to style html tag from link file?
 
    let htmlContent = baseTags.reduce(
-      (acc, el, i, arr) => (
-         (acc[el] = i < 2 ? (isPaired(el) ? editors[i].getValue() : null) : buildJS(appCode || editors[i].getValue())), acc
-      ),
+      (acc, el, i, arr) => ((acc[el] = i < 2 ? (isPaired(el) ? editors[i].getValue() : null) : buildJS(appCode || editors[i].getValue())), acc),
       {}
    )
 
@@ -393,10 +392,7 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
          let id = (Math.random() + "").slice(2) // link.split('/').pop()
 
          // forming html
-         let elemHTML = ('<___ id="' + id + '"' + attributes + (isPaired(baseTag) ? "><___/>" : " />")).replace(
-            /\<___/g,
-            "<" + baseTag
-         )
+         let elemHTML = ('<___ id="' + id + '"' + attributes + (isPaired(baseTag) ? "><___/>" : " />")).replace(/\<___/g, "<" + baseTag)
 
          if (!isExternalContent) {
             elemHTML = elemHTML.replace("><" + baseTag + "/>", ">" + content + "<" + baseTag + "/>")
@@ -462,11 +458,7 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
       .replace("actualMode.target.external", actualMode.target.external + "")
       .replace(
          "actualMode.src",
-         actualMode.src
-            ? typeof actualMode.src === "string"
-               ? '"' + actualMode.src + '"'
-               : '["' + actualMode.src.join('", "') + '"]'
-            : null
+         actualMode.src ? (typeof actualMode.src === "string" ? '"' + actualMode.src + '"' : '["' + actualMode.src.join('", "') + '"]') : null
       )
 
    scriptDetails = "(" + scriptDetails + ")()"
@@ -521,110 +513,48 @@ function buildAndTranspile(code, currentLang) {
  * TODO: move to end or as option:
  * @param {boolean} isJsx ///! param {number} compilerMode -
  * @param {string[]} libList - list of script libs to attach to generated page
- * @param {string} [sourceCode=undefined] - optional argument (for SFC)
+ * @param {string} [sourceCode=undefined] - optional argument (for SFC after preprocessing) - intended to next compilation
  *
  * TODO: options: {storage (localStorage|sessionStorage), fileStore}
- * @param {{lessMode?: boolean|undefined, scriptMode?: string, frameworkName?: string}} [compileOptions=undefined] - 
+ * @param {{
+ *    lessMode?: boolean,                          // flag to frame content update without new iframe recreation through content update (not implemented yet)
+ *    scriptMode?: string,                         // script tag type
+ *    originalCode?: string[],                     // origin code [of SFC] (if the sourceСode differs from the original) - intended to store inside FileStorage
+ *    frameworkName?: string                       // framework name
+ * }} [compileOptions=undefined] -
  * (less compile mode does not implemented yet. TODO: via postMessage)
  */
 export function webCompile(isJsx, libList, sourceCode, compileOptions) {
-   
    compileOptions = compileOptions || averageCompilerOptions
    globalThis.__debug && console.log("compile")
 
    // [iframe, curUrl] = createPage(curUrl);
-   // globalThis.__debug && console.log(iframe);
 
    let iframe = playgroundObject.iframe,
       editors = playgroundObject.editors
 
    const fileStorage = playgroundObject.fileStorage || window["fileStore"]
-   //@ts-ignore
+
    if (Object.keys(fileStorage || {}).length) {
       let activeTab = document.querySelector(".tabs .tab.active")
-      //@ts-ignore
-      if (activeTab) fileStorage[activeTab.innerText] = editors[2].getValue()
-      // else {
-      //     fileStorage[undefined + ''] = editors[2].getValue()
-      // }
+      // debugger
+      //@ts-expect-error [?.innerText]
+      /// update active file before proprocessing:
+      if (activeTab) fileStorage[activeTab.innerText] = compileOptions.originalCode || editors[2].getValue()
    }
 
-   if (iframe && iframe.contentDocument && compileOptions && compileOptions.lessMode) {
-      //// !with sandbox never will performed. Legacy content:
-
-      /**
-       * attantion: because from deleted scripts, working handlers may remain on the page, which will spoil the picture
-       * (it may be safe to change styles only or for frameworks that completely overwrite html). With a full html record , it is quite an option
-       */
-
-      iframe.contentDocument.body.innerHTML = editors[0].getValue()
-      iframe.contentDocument.head.querySelector("style").innerHTML = editors[1].getValue()
-
-      /////// remove last script:
-
-      let lastScript = [].slice.call(iframe.contentDocument.querySelectorAll("script")).pop()
-      lastScript && lastScript.parentElement.removeChild(lastScript)
-
-      ////////
-
-      // let lastScripts = iframe.contentDocument.querySelectorAll('script');
-      // lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
-      // {
-      //     element.parentElement.removeChild(element);
-      // });
-
-      /////////
-
-      // [].slice.call(document.querySelector('iframe').contentDocument.getElementsByTagName('script')).pop()
-
-      let script = iframe.contentDocument.createElement("script")
-
-      globalThis.__debug && console.log("less compilation")
-      globalThis.__debug && console.log(isJsx)
-      globalThis.__debug && console.log(libList)
-
-      if (isJsx) {
-         // add additional scripts:
-
-         // for (let i = 0; i < compilerMode.length; i++) {
-         //     const link = compilerMode[i];
-
-         //     let jsxCompiler = iframe.contentDocument.createElement('script');
-         //     jsxCompiler.src = link;
-         //     iframe.contentDocument.body.appendChild(jsxCompiler);
-         // }
-
-         script.type = "text/babel"
-      }
-      // else if (compileOptions.scriptMode) {
-      //     script.type = compileOptions.scriptMode;
-      // }
-
-      let code = sourceCode || playgroundObject.fileStorage["app.js"] || playgroundObject.fileStorage["app.ts"] || editors[2].getValue()
-
-      const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()]
-      
-      code = buildAndTranspile(typeof code == 'string' ? code : code[2], currentLang)
-      
-      let globalReinitializer = generateGlobalInintializer(code)
-
-      script.innerHTML = "(function(){" + code + ";\n\n" + globalReinitializer + "\n})()"
-      iframe.contentDocument.body.appendChild(script)
-      // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
-   } else {
+   if (iframe && iframe.contentDocument && compileOptions && compileOptions.lessMode) lightRerender(iframe, editors, isJsx, libList, sourceCode)
+   else {
       // globalThis.__debug && console.log(compilerMode);
       // globalThis.__debug && console.log(Object.values(compilers)[compilerMode]);
       // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
 
-      const [iframe, curUrl] = createPage(
-         playgroundObject.curUrl,
-         libList,
-         compileOptions.scriptMode || (isJsx ? babelCompiler.mode : undefined),
-         {
-            appCode: sourceCode,
-            frameworkName: compileOptions.frameworkName
-         }
-      )
+      const scriptTagType = compileOptions.scriptMode || (isJsx ? babelCompiler.mode : undefined)
+      
+      const [iframe, curUrl] = createPage(playgroundObject.curUrl, libList, scriptTagType, {
+         appCode: sourceCode,
+         frameworkName: compileOptions.frameworkName
+      })
 
       playgroundObject.iframe = iframe
       playgroundObject.curUrl = curUrl
@@ -639,7 +569,7 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
 
    let modulesStore = {}
 
-   console.log("save modules...")
+   console.log("save modules...")   
 
    if (fileStorage && Object.keys(fileStorage).length > 1) {
       for (let i = 0; i < Object.keys(fileStorage).length; i++) {
@@ -648,7 +578,7 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
          modulesStore[fileName] = fileStorage[fileName]
       }
 
-      // js multitabs:
+      // js multitabs:      
       ;(commonStorage || localStorage).setItem("_modules", JSON.stringify(modulesStore))
       globalThis.__debug && console.log("save modules...")
    }
@@ -661,4 +591,63 @@ function getLang() {
    let appCode = fs["app.js"] || fs["app.ts"] || playgroundObject.fileStorage[undefined + ""]
    const langMode = getLangMode(appCode)
    return langMode
+}
+
+/**
+ * attantion: because from deleted scripts, working handlers may remain on the page, which will spoil the picture
+ * (it may be safe to change styles only or for frameworks that completely overwrite html). With a full html record , it is quite an option
+ * @deprecated - !with sandbox never will performed. Legacy content (may be TODO with (post|on)message)
+ * @param {HTMLIFrameElement} iframe
+ * @param {{ getValue: () => any; }[]} editors
+ * @param {boolean} isJsx
+ * @param {string[]} libList
+ * @param {string} sourceCode
+ */
+function lightRerender(iframe, editors, isJsx, libList, sourceCode) {
+   iframe.contentDocument.body.innerHTML = editors[0].getValue()
+   iframe.contentDocument.head.querySelector("style").innerHTML = editors[1].getValue()
+
+   /////// remove last script:
+   let lastScript = [].slice.call(iframe.contentDocument.querySelectorAll("script")).pop()
+   lastScript && lastScript.parentElement.removeChild(lastScript)
+
+   ////////
+   // let lastScripts = iframe.contentDocument.querySelectorAll('script');
+   // lastScripts && lastScripts.length && Array.prototype.slice.call(lastScripts).forEach((/** @type {{ parentElement: { removeChild: (arg: any) => void; }; }} */ element) =>
+   // {
+   //     element.parentElement.removeChild(element);
+   // });
+   /////////
+   // [].slice.call(document.querySelector('iframe').contentDocument.getElementsByTagName('script')).pop()
+   let script = iframe.contentDocument.createElement("script")
+
+   globalThis.__debug && console.log("less compilation")
+   globalThis.__debug && console.log(isJsx)
+   globalThis.__debug && console.log(libList)
+
+   if (isJsx) {
+      // add additional scripts:
+      // for (let i = 0; i < compilerMode.length; i++) {
+      //     const link = compilerMode[i];
+      //     let jsxCompiler = iframe.contentDocument.createElement('script');
+      //     jsxCompiler.src = link;
+      //     iframe.contentDocument.body.appendChild(jsxCompiler);
+      // }
+      script.type = "text/babel"
+   }
+   // else if (compileOptions.scriptMode) {
+   //     script.type = compileOptions.scriptMode;
+   // }
+   let code = sourceCode || playgroundObject.fileStorage["app.js"] || playgroundObject.fileStorage["app.ts"] || editors[2].getValue()
+
+   const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()]
+
+   code = buildAndTranspile(typeof code == "string" ? code : code[2], currentLang)
+
+   let globalReinitializer = generateGlobalInintializer(code)
+
+   script.innerHTML = "(function(){" + code + ";\n\n" + globalReinitializer + "\n})()"
+   iframe.contentDocument.body.appendChild(script)
+
+   // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
 }

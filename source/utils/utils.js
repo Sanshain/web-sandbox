@@ -1,6 +1,6 @@
 //@ts-check
 
-import { playgroundObject } from "../features/compiler"
+import { playgroundObject, compilerNames, singleFileTypes } from "../features/compiler"
 
 export const commonStorage = sessionStorage
 
@@ -30,7 +30,7 @@ export function debounce(func, delay) {
  * @returns {string|null}
  */
 export function getLangMode(code) {
-   let langModeMatch = code.match(/\/\* ([\w \n]+) \*\//)
+   let langModeMatch = (typeof code === "string" ? code : code[2]).match(/\/\* ([\w \n]+) \*\//)
 
    return langModeMatch ? langModeMatch.pop() : null
 }
@@ -58,7 +58,7 @@ function renameOccurrences(prevName, fullname, editor) {
 }
 
 /**
- * Extract mode name from playgroundObject.editors[i]
+ * Extract Ace mode name from playgroundObject.editors[i]
  * @param {number} i
  * @example {'css'|'less'|'scss'|'javascript'|'typescript'|'html'}
  * @return {string}
@@ -76,6 +76,57 @@ export function getSelectedModeName(i) {
  */
 export function getExtension(name) {
    return name ? name.split(".").pop() : ""
+}
+
+/**
+ * @description Detect single file framework or false (null)
+ * @returns {string|null}
+ */
+export function isSingleFC() {
+   const frameworkName = compilerNames[playgroundObject.frameworkID]
+   return ~singleFileTypes.indexOf(frameworkName) ? frameworkName : null
+}
+
+/**
+ * @description Detect framework name
+ * @returns {string}
+ */
+export function getFrameworkName() {
+   const frameworkName = compilerNames[playgroundObject.frameworkID]
+   return frameworkName;
+}
+
+/**
+ * @returns {boolean}
+ * @param {AceAjax.Editor[]} editors
+ */
+export function isTSMode(editors) {
+   //
+
+   /// Option ONE:
+
+   
+   // TODO provide for the case when entrypoint is not focused:
+   return !!(editors || playgroundObject.editors)[2].session.getLine(0).match(/typescript/)
+
+   /// Option TWO:
+
+   const langSelect = (editors || playgroundObject.editors)[2].container.querySelector("choice-menu")
+   return langSelect["selectedItem"] === "typescript"
+
+   /// Option THREE:
+
+   const fileStorage = playgroundObject.fileStorage
+   const frameworkName = compilerNames[playgroundObject.frameworkID]
+
+   if (~singleFileTypes.indexOf(frameworkName)) {
+      var entryPointCode = playgroundObject.fileStorage["App." + frameworkName][2]
+   } else {
+      //@ts-expect-error {string}
+      var entryPointCode = Object.values(fileStorage)[1]
+   }
+
+   return !!entryPointCode.match(/typescript/)
 }
 
 /**

@@ -11,6 +11,7 @@
  *      onfilerename?: Function,
  *      onfileRemove?: (name: string) => void
  *      frameworkID: number                                                                              // 0 | 1 | 2 | 3
+ *      entryPointName: string
  * }}
  *      activeModes?: [number?, number?, number?],                                                       // UNUSED - use getSelectedModeName now
  */
@@ -25,7 +26,12 @@ export const playgroundObject = {
       },
       {
          set(target, prop, value) {
-            // debugger;
+            // if (prop === '$global') {
+            //    debugger
+            // }
+            // else {
+            //    debugger
+            // }
             target[prop] = value;
             return true
          },
@@ -36,6 +42,17 @@ export const playgroundObject = {
    onfilerename: null,
    onfileRemove: null,
    frameworkID: 0,
+   get entryPointName() {
+      const framweworkName = compilerNames[this.frameworkID];
+      if (~singleFileTypes.indexOf(framweworkName)) return 'App.' + framweworkName;
+      else {
+         let m = this.fileStorage._active.match(/\.ts(x)?$/m)
+         if (m) return 'app' + m.pop()
+         else {
+            return 'app.js'
+         }
+      }
+   }
 }
 
 /**

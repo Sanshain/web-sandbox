@@ -1,12 +1,20 @@
 // @ts-check
 
 import initializeEditor, { compileSingleFileComponent } from "./aceInitialize"
-import { createPage, webCompile, playgroundObject } from "./pageBuilder"
+import { createPage, webCompile } from './pageBuilder';
 
 import { expand } from "./features/expantion"
 import { initResizers } from "./features/resizing"
-import { babelCompiler, compilersSet, defaultValues, singleFileEnv, versionController } from "./features/compiler"
-import { commonStorage, loadScripts, getExtension, typeFromExtention } from "./utils/utils"
+import {
+    babelCompiler,
+    compilersSet,
+    defaultValues,
+    singleFileEnv,
+    versionController,
+    playgroundObject,
+    compilerNames
+} from './features/compiler';
+import { commonStorage, loadScripts, getExtension, typeFromExtention, isSingleFC } from "./utils/utils"
 import { fileAttach } from "./features/tabs"
 
 import { ChoiceMenu } from "./ui/ChoiceMenu"
@@ -24,6 +32,7 @@ import { modes } from "./features/base.js"
 // })
 
 import "./features/consoleDebug"
+import { saveFile, saveScript } from './features/fs/store';
 
 /**
  * @typedef {import("./ui/ChoiceMenu").ChoiceDetails} ChoiceDetails
@@ -176,15 +185,11 @@ export function initialize(values, options) {
    /**
     * @type {number} - 0 | 1 | 2 | 3 - its mean vanile|preact|vue|react
     */
-   let frameworkID = options.syntaxMode != undefined
-      ? options.syntaxMode
-      : Number.parseInt((commonStorage || localStorage).getItem("mode") || "0")
-   
-   playgroundObject.frameworkID = frameworkID = options.clarifyframework && values
-      ? options.clarifyframework(values[2], frameworkID)
-      : frameworkID
-   
-   window.location.hash.startsWith('#debug') && console.log("frameworkID", frameworkID)
+   let frameworkID = options.syntaxMode != undefined ? options.syntaxMode : Number.parseInt((commonStorage || localStorage).getItem("mode") || "0")
+
+   playgroundObject.frameworkID = frameworkID = options.clarifyframework && values ? options.clarifyframework(values[2], frameworkID) : frameworkID
+
+   window.location.hash.startsWith("#debug") && console.log("frameworkID", frameworkID)
 
    //@ts-expect-error
    document.getElementById("compiler_mode").selectedIndex = frameworkID
@@ -234,17 +239,17 @@ export function initialize(values, options) {
    }
 
    if (options.additionalFiles) {
-      //@ts-ignore
+      // @ts-expect-error
       values = values || []
       values[3] = options.additionalFiles
    }
 
-   // @ts-ignore
+   // @ts-expect-error
    let editors = (playgroundObject.editors = initializeEditor(ace, editorOptions, values))
 
    /**
-   * Choice arg settings:
-   */
+    * Choice arg settings:
+    */
    if (options.modes) {
       !customElements.get("choice-menu") && customElements.define("choice-menu", ChoiceMenu)
       console.log(options.modes)
@@ -266,168 +271,10 @@ export function initialize(values, options) {
                 * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
                 * @type {LangMode[string]}
                 */
-               const modeOptions = mode[ev.detail.value] || {
-                  extension: ".js"
-                  // mode: 'javascript'
-               }
-               // const link = options.modes[i][e.detail.value];
-
-               window.__debug && console.log(ev.detail.value)
-               
-               options.onModeChange && options.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })
-
-               if (options.modes[i]) {
-                  let langmode = options.modes[i][ev.detail.value] || options.modes[i][ev.detail.previousValue]
-
-                  if (langmode && langmode.onModeChange) {
-                     let currentMode = (modeOptions.mode || "").split("/").pop() || modes[i]
-
-                     langmode.onModeChange({
-                        disable: currentMode === ev.detail.value,
-                        enable: currentMode === ev.detail.previousValue,
-                        editor: editors[i],
-                        editors: editors
-                     })
-                  }
-               }
-
-               if (!(options.modes[i] && options.modes[i][ev.detail.value] && options.modes[i][ev.detail.value].onModeChange)) {
-                  // upload to frame will in pageBuilder, here just is highlight change
-                  i === 1 && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value))
-
-                  if (i === 2) {
-                     const mode = playgroundObject.frameworkID % 2 ? "jsx" : (modeOptions && modeOptions.mode) || ev.detail.value
-
-                     Object.values(editors[i].session.getMarkers(true)).forEach((m) => editors[i].session.removeMarker(+m.id))
-
-                     editors[i].session.setMode("ace/mode/" + mode)                     
-                     // editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value))
-                  }
-               }
-
-               // MULTITABS MODE:
-
-               if (i && i - 1) {
-                  const multitabs = modeOptions && modeOptions.tabs
-                  var tabs = document.querySelector(".tabs") //  + (multitabs ? '' : '.enabled')
-                  if (tabs) {
-                     //@ts-ignore
-                     tabs.style.transition = null
-                     if (multitabs) {
-                        if (!tabs.classList.contains("enabled")) {
-                           // enable tab:
-                           tabs.classList.add("enabled")
-                        } else {
-                           // switch to first tab:
-                           //@ts-ignore
-                           tabs.children[0] && tabs.children[0].click()
-                        }
-                     } else if (!multitabs && tabs.classList.contains("enabled")) {
-                        tabs.classList.remove("enabled")
-                     }
-                  }
-               }
-
-               // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:
-
-               //@ts-ignore
-               var Range = ace.require("ace/range").Range
-
-               let markLine = editors[i].session.getLine(0)
-               const markValue = "/* " + ev.detail.value + " */"
-
-               if (markLine.startsWith("/*")) {
-                  editors[i].session.replace(new Range(0, 0, 0, markLine.length), markValue)
-               } else {
-                  editors[i].session.insert({ row: 0, column: 0 }, markValue + "\n\n")
-               }
-
-               editors[i].clearSelection()
-
-               // RENAME FILES:
-
-               console.log("rename")
-
-               if (tabs) {                  
-
-                  // TODO .vue and .svelte support
-
-                  // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined
-
-                  if (Object.keys(playgroundObject.fileStorage).length > 1) {
-                     if (!playgroundObject.fileStorage["app" + modeOptions.extension]) {
-                        // rename tabs:
-
-                        const jsPattern = /([\w_\d]+)\.js(x)?$/m
-                        const tsPattern = /([\w_\d]+)\.ts(x)?$/m
-
-                        ;[].slice.call(tabs.querySelectorAll(".tab")).forEach((/** @type {HTMLElement} */ element) => {
-                           if (modeOptions.extension) {
-                              if (!element.innerText.endsWith(modeOptions.extension)) {
-                                 element.innerText = element.innerText.replace(jsPattern, "$1.ts$2")
-                              }
-                           } else if (!element.innerText.endsWith(".js")) {
-                              element.innerText = element.innerText.replace(tsPattern, "$1.js$2")
-                           }
-                        })
-
-                        // file name rename:
-
-                        /**
-                         * @type {[RegExp, string]}
-                         */
-                        const extensions = modeOptions.extension ? [jsPattern, "$1.ts$2"] : [tsPattern, "$1.js$2"]
-
-                        let storageFiles = Object.keys(playgroundObject.fileStorage).map((k) => ({
-                           [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k]
-                        }))
-                        playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
-
-                        // imports refactoring:
-
-                        for (let file in playgroundObject.fileStorage) {
-                           const fileContent = playgroundObject.fileStorage[file];
-                           if (typeof fileContent === "string") {
-                              
-                              playgroundObject.fileStorage[file] = fileContent.replace(
-                                 extensions[0],
-                                 extensions[1]
-                              )
-                           }
-                        }
-
-                        let cursor = editors[2].selection.getCursor()
-                        editors[2].session.setValue(
-                           editors[2].session.getValue().replace(
-                              new RegExp(extensions[0].toString().slice(1, -2).replace("$", "(['\"])$"), "m"),
-                              extensions[1] + "$3"
-                           )
-                        )
-                        editors[2].moveCursorTo(cursor.row, cursor.column)
-
-                        // let pos = editors[2].find(new RegExp(extensions[0].toString().slice(1, -2).replace('$', '([\'"])$'), 'm'))
-                        /// replace value idoes not applying as regex value (with groups $1, $2 etc)
-                        // pos && editors[2].getSession().replace(pos, extensions[1])
-                     }
-                  }
-
-                  if (modeOptions.extension) {
-                     /**
-                      * @type {HTMLElement}
-                      */
-                     //@ts-expect-error
-                     const firstTab = tabs.children[0]
-
-                     if (!~firstTab.innerText.indexOf(modeOptions.extension, firstTab.innerText.length - modeOptions.extension.length)
-                     ) {
-                        firstTab.innerText = firstTab.innerText.split(".").shift() + modeOptions.extension
-                     }
-                  }
-               }
+               onLangModeChanged(mode, ev, { globalOptions: options, editors, i })
             })
 
-            // const value = editors[i].getValue()
-            const markLine = editors[i].session.getLine(0)
+            const markLine = editors[i].session.getLine(0) // editors[i].getValue()
 
             const list = settingsElement.appendChild(document.createElement("ul"))
             items.forEach((point, j) => {
@@ -440,14 +287,7 @@ export function initialize(values, options) {
                else if (mark) {
                   // mark[1]
                   settingsElement.selectedElement = itemElement
-                  settingsElement.dispatchEvent(
-                     new CustomEvent("selected_changed", {
-                        detail: {
-                           // id: itemElement.id,
-                           value: point
-                        }
-                     })
-                  )
+                  settingsElement.dispatchEvent(new CustomEvent("selected_changed", { detail: { value: point } }))
                }
             })
          }
@@ -477,6 +317,17 @@ export function initialize(values, options) {
       save && save.classList.toggle("hidden")
    }
 
+   // tabs initial renaming:
+   
+   const tabs = document.querySelector(".tabs");
+   if (tabs) {
+      const firstTab = tabs.children[0]
+      const frameworkExtension = isSingleFC()
+      if (frameworkExtension && firstTab) {
+         firstTab['innerText'] = 'App.' + frameworkExtension
+      }
+   }
+
    const extension = typeFromExtention(frameworkName)
    if (singleFileEnv[extension]) {
       compileSingleFileComponent(extension, frameworkEnvironment, editors)
@@ -487,24 +338,24 @@ export function initialize(values, options) {
       }) // editorOptions
 
       playgroundObject.iframe = iframe
-      playgroundObject.curUrl = curUrl  
+      playgroundObject.curUrl = curUrl
    }
 
    document.querySelector(".play").addEventListener("click", () => {
-      
-      const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilersSet)[frameworkID], editors[2].getValue())      
-      const extension = typeFromExtention(frameworkName);
+      const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilersSet)[frameworkID], editors[2].getValue())
+      const extension = typeFromExtention(frameworkName)
 
-      if (singleFileEnv[extension]) compileSingleFileComponent(extension, frameworkEnvironment, editors)      
+      if (singleFileEnv[extension]) compileSingleFileComponent(extension, frameworkEnvironment, editors)
       else {
-
          webCompile(jsxMode, frameworkEnvironment)
       }
-
    })
 
-   document.querySelector(".expand")["onclick"] = (/** @type {{ currentTarget: any; }} */ e) =>
+   document.querySelector(".expand")["onclick"] = (/** @type {{ currentTarget: any; }} */ e) => {
+      //
       expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined)
+   }
+
    document.getElementById("compiler_mode").onchange = function (event) {
       // @ts-ignore
       ;(editorOptions.storage || localStorage).setItem("mode", event.target.selectedIndex)
@@ -524,7 +375,8 @@ export function initialize(values, options) {
       // console.log(event.target.selectedIndex);
    }
 
-   options.tabAttachSelector && document.querySelector(options.tabAttachSelector).addEventListener("click", function (e) {
+   options.tabAttachSelector &&
+      document.querySelector(options.tabAttachSelector).addEventListener("click", function (e) {
          e["editors"] = editors
          fileAttach(e)
       })
@@ -535,4 +387,190 @@ export function initialize(values, options) {
    return editors
 }
 
+/**
+ * 
+ * @param {LangMode} mode 
+ * @param {CustomEvent<ChoiceDetails>} ev 
+ * @param {{
+ *    globalOptions: Parameters<initialize>[1], 
+ *    editors: EditorsEnv, 
+ *    i: number
+ * }} options 
+ */
+function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
+   const modeOptions = mode[ev.detail.value] || {
+      extension: ".js"
+      // mode: 'javascript'
+   }
+   // const link = options.modes[i][e.detail.value];
+   window.__debug && console.log(ev.detail.value)
+
+   globalOptions.onModeChange && globalOptions.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })
+
+   if (globalOptions.modes[i]) {
+      let langmode = globalOptions.modes[i][ev.detail.value] || globalOptions.modes[i][ev.detail.previousValue]
+
+      if (langmode && langmode.onModeChange) {
+         let currentMode = (modeOptions.mode || "").split("/").pop() || modes[i]
+
+         langmode.onModeChange({
+            disable: currentMode === ev.detail.value,
+            enable: currentMode === ev.detail.previousValue,
+            editor: editors[i],
+            editors: editors
+         })
+      }
+   }
+
+   if (!(globalOptions.modes[i] && globalOptions.modes[i][ev.detail.value] && globalOptions.modes[i][ev.detail.value].onModeChange)) {
+      // upload to frame will in pageBuilder, here just is highlight change
+      i === 1 && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value))
+
+      if (i === 2) {
+         const mode = playgroundObject.frameworkID % 2 ? "jsx" : (modeOptions && modeOptions.mode) || ev.detail.value
+
+         Object.values(editors[i].session.getMarkers(true)).forEach((m) => editors[i].session.removeMarker(+m.id))
+
+         editors[i].session.setMode("ace/mode/" + mode)
+         // editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value))
+      }
+   }
+
+   // MULTITABS visible MODE:
+   if (i && i - 1) {
+      const multitabs = modeOptions && modeOptions.tabs
+      var tabs = document.querySelector(".tabs") //  + (multitabs ? '' : '.enabled')
+      if (tabs) {
+         //@ts-ignore
+         tabs.style.transition = null
+         if (multitabs) {
+            if (!tabs.classList.contains("enabled")) {
+               // enable tab:
+               tabs.classList.add("enabled")
+            } else {
+               // switch to first tab:
+               // debugger
+               //@ts-expect-erro r
+               // tabs.children[0] && tabs.children[0].click()
+            }
+         } else if (!multitabs && tabs.classList.contains("enabled")) {
+            tabs.classList.remove("enabled")
+         }
+      }
+   }
+
+   // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:
+   //@ts-ignore
+   var Range = ace.require("ace/range").Range
+
+   // let markLine = editors[i].session.getLine(0)
+   let _markLineJug = playgroundObject.fileStorage[playgroundObject.entryPointName];
+   const markedContent = typeof _markLineJug == 'string' ? _markLineJug : _markLineJug[2]
+   const markValue = "/* " + ev.detail.value + " */"
+
+   const saveRoot = saveScript.bind(null, playgroundObject.entryPointName);
+   if (markedContent.startsWith("/*")) {
+      // editors[i].session.replace(new Range(0, 0, 0, markedContent.length), markValue)      
+      saveRoot(markedContent.replace(/\/\*[\s\S]+?\*\//m, markValue))
+   } //
+   else {
+      // editors[i].session.insert({ row: 0, column: 0 }, markValue + "\n\n")
+      saveRoot(markValue + "\n\n" + markedContent)
+   }
+
+   // editors[i].clearSelection()
+
+   // RENAME FILES:
+   if (tabs) {
+      //
+      console.log("initial tab rename")
+
+      renameTabs(tabs, { editors: editors, extension: modeOptions.extension })
+   }
+}
+
+
+
+/**
+ *
+ * @param {*} tabs
+ * @param {{
+ *    editors: [AceEditor, AceEditor, AceEditor],
+ *    extension?: string
+ * }} options
+ */
+function renameTabs(tabs, options) {
+   // TODO .vue and .svelte support
+
+   // const fraworkExtName = isSingleFC()
+
+   // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined
+   // debugger
+
+   if (Object.keys(playgroundObject.fileStorage).length > 1) {
+
+      if (!playgroundObject.fileStorage["app" + options.extension]) {
+         // rename tabs:
+         const jsPattern = /([\w_\d]+)\.js(x)?$/m
+         const tsPattern = /([\w_\d]+)\.ts(x)?$/m
+         ;[].slice.call(tabs.querySelectorAll(".tab")).forEach((/** @type {HTMLElement} */ element) => {
+            if (options.extension) {
+               if (!element.innerText.endsWith(options.extension)) {
+                  element.innerText = element.innerText.replace(jsPattern, "$1.ts$2")
+               }
+            } else if (!element.innerText.endsWith(".js")) {
+               element.innerText = element.innerText.replace(tsPattern, "$1.js$2")
+            }
+         })
+
+         // file name rename:
+         /**
+          * @type {[RegExp, string]}
+          */
+         const extensions = options.extension ? [jsPattern, "$1.ts$2"] : [tsPattern, "$1.js$2"]
+
+         let storageFiles = Object.keys(playgroundObject.fileStorage).map((k) => ({
+            [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k]
+         }))
+         playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
+
+         // imports refactoring:
+         for (let file in playgroundObject.fileStorage) {
+            const fileContent = playgroundObject.fileStorage[file]
+            if (typeof fileContent === "string") {
+               playgroundObject.fileStorage[file] = fileContent.replace(extensions[0], extensions[1])
+            }
+         }
+
+         let cursor = options.editors[2].selection.getCursor()
+         options.editors[2].session.setValue(
+            options.editors[2].session
+               .getValue()
+               .replace(new RegExp(extensions[0].toString().slice(1, -2).replace("$", "(['\"])$"), "m"), extensions[1] + "$3")
+         )
+         options.editors[2].moveCursorTo(cursor.row, cursor.column)
+
+         // let pos = editors[2].find(new RegExp(extensions[0].toString().slice(1, -2).replace('$', '([\'"])$'), 'm'))
+         /// replace value idoes not applying as regex value (with groups $1, $2 etc)
+         // pos && editors[2].getSession().replace(pos, extensions[1])
+      }
+   }
+
+   if (options.extension) {
+      /**
+       * @type {HTMLElement}
+       */
+      const firstTab = tabs.children[0]
+
+      // if (fraworkExtName) firstTab.innerText = "App." + fraworkExtName
+      const nameChunks = firstTab.innerText.split(".")
+      const currentExtension = nameChunks.pop();      
+
+      // if (!~firstTab.innerText.indexOf(options.extension, firstTab.innerText.length - options.extension.length)) {
+      if (!~[options.extension.slice(1), compilerNames[playgroundObject.frameworkID]].indexOf(currentExtension)) {
+         // firstTab.innerText = firstTab.innerText.split(".").shift() + options.extension         
+         firstTab.innerText = nameChunks.shift() + options.extension
+      }
+   }
+}
 // export const {editors}
