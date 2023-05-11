@@ -393,7 +393,7 @@ export function initialize(values, options) {
  * @param {CustomEvent<ChoiceDetails>} ev 
  * @param {{
  *    globalOptions: Parameters<initialize>[1], 
- *    editors: EditorsEnv, 
+ *    editors: import("./aceInitialize").EditorsEnv, 
  *    i: number
  * }} options 
  */
@@ -403,7 +403,7 @@ function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
       // mode: 'javascript'
    }
    // const link = options.modes[i][e.detail.value];
-   window.__debug && console.log(ev.detail.value)
+   window['__debug'] && console.log(ev.detail.value)
 
    globalOptions.onModeChange && globalOptions.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })
 
@@ -464,18 +464,26 @@ function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
    var Range = ace.require("ace/range").Range
 
    // let markLine = editors[i].session.getLine(0)
-   let _markLineJug = playgroundObject.fileStorage[playgroundObject.entryPointName];
-   const markedContent = typeof _markLineJug == 'string' ? _markLineJug : _markLineJug[2]
+   const entryPointName = playgroundObject.entryPointName;
+
+   const _markedContentJug = playgroundObject.fileStorage[entryPointName];
+   const markedContent = typeof _markedContentJug == 'string' ? _markedContentJug : _markedContentJug[2]
    const markValue = "/* " + ev.detail.value + " */"
 
-   const saveRoot = saveScript.bind(null, playgroundObject.entryPointName);
-   if (markedContent.startsWith("/*")) {
-      // editors[i].session.replace(new Range(0, 0, 0, markedContent.length), markValue)      
+   const saveRoot = saveScript.bind(null, entryPointName);
+   if (markedContent.startsWith("/*")) {      
       saveRoot(markedContent.replace(/\/\*[\s\S]+?\*\//m, markValue))
+
+      if (playgroundObject.fileStorage._active === entryPointName) {
+         editors[i].session.replace(new Range(0, 0, 0, markedContent.length), markValue)      
+      }
    } //
-   else {
-      // editors[i].session.insert({ row: 0, column: 0 }, markValue + "\n\n")
+   else {      
       saveRoot(markValue + "\n\n" + markedContent)
+
+      if (playgroundObject.fileStorage._active === entryPointName) {
+         editors[i].session.insert({ row: 0, column: 0 }, markValue + "\n\n")
+      }      
    }
 
    // editors[i].clearSelection()

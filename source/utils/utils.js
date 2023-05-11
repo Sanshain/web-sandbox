@@ -98,7 +98,7 @@ export function getFrameworkName() {
 
 /**
  * @returns {boolean}
- * @param {AceAjax.Editor[]} editors
+ * @param {AceAjax.Editor[]} [editors]
  */
 export function isTSMode(editors) {
    //
@@ -107,7 +107,12 @@ export function isTSMode(editors) {
 
    
    // TODO provide for the case when entrypoint is not focused:
-   return !!(editors || playgroundObject.editors)[2].session.getLine(0).match(/typescript/)
+   if (editors) return !!(editors || playgroundObject.editors)[2].session.getLine(0).match(/typescript/)
+   else {
+      const file = playgroundObject.fileStorage[playgroundObject.entryPointName]
+      const content = typeof file === 'string' ? file : file[2];
+      return content.startsWith('/* typescript */')
+   }
 
    /// Option TWO:
 

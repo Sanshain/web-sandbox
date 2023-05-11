@@ -1,8 +1,7 @@
 //@ts-check
 
-import { playgroundObject } from "../../pageBuilder"
 import { getSelectedModeName, getExtension, isSingleFC, getFrameworkName } from "../../utils/utils"
-import { singleFileTypes } from "../compiler"
+import { playgroundObject, singleFileTypes } from "../compiler"
 
 
    export const cssKeyWords = ["red", "green", "blue", "gray", "lightgray", "lightblue", "orange", "white", "black", "none"]
@@ -25,7 +24,7 @@ export function createEditorFile(fileStore, activeTabName) {
       editors[2].session.setValue("")
 
       /**
-       * @type {{insertSnippet: (editor: AceEditor, snippet: string) => void}}
+       * @type {{insertSnippet: (editor: import("../../..").AceEditor, snippet: string) => void}}
        */
       const snippetManager = ace.require("ace/snippets").snippetManager
 

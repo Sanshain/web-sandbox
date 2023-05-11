@@ -1,9 +1,9 @@
 //@ts-check
 
-import { playgroundObject } from "../pageBuilder"
+
 import { autocompleteExpand, keyWords, quickCompleter } from "../utils/autocompletion"
 import { getExtension, getSelectedModeName, isTSMode } from "../utils/utils"
-import { compilerNames, singleFileTypes } from "./compiler"
+import { compilerNames, playgroundObject, singleFileTypes } from "./compiler"
 import { createEditorFile } from "./fs/editor"
 import * as fs from "./fs/store"
 
@@ -65,7 +65,7 @@ export function fileAttach(event) {
       return alert("Файл с таким именем уже существует")
    }
 
-   window.__debug && console.log("create new Tab")
+   window['__debug'] && console.log("create new Tab")
 
    const target = event.target
 
@@ -79,17 +79,32 @@ export function fileAttach(event) {
        * @param {MouseEvent} ev
        * @returns
        */
-      origTab.ondblclick = function (/** @type {{ target: { innerText: string; }; }} */ ev) {
+      origTab.ondblclick = function onrename(/** @type {{ target: { innerText: string; }; }} */ ev) {
          if (!playgroundObject.onfilerename) return console.warn("Specify onfilerename callback argument to activate the feature!")
 
-         const prevName = ev.target.innerText
+         const prevName = ev.target.innerText;
 
-         if (prevName.match(/app\.\ws/)) return
+         if (prevName === playgroundObject.entryPointName) return;
+         // if (prevName.match(/app\.\ws/)) return
 
          const fileInfo = prevName.split(".")
+         const ext = fileInfo.pop();
          let filename = prompt("Enter new file name:", fileInfo[0])
 
          if (filename === fileInfo[0]) return
+         if (getExtension(filename) !== ext) {
+            if (confirm("Are you sure you want to change the extension for the file?")) {
+               fileInfo[1] = getExtension(filename);
+               
+               ; ({ activeTabName, fileStore } = renameTab({ filename, fileInfo, prevName, ev, activeTabName }))
+               
+               return;
+            }
+            else {
+               return onrename(ev)
+            }
+         }
+            
          ;({ activeTabName, fileStore } = renameTab({ filename, fileInfo, prevName, ev, activeTabName }))
       }
 
@@ -143,11 +158,15 @@ function createNewTab(origTab, activeTabName) {
 }
 
 function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
-   let { editors, fileStorage: fileStore } = playgroundObject
+   let { editors, fileStorage: fileStore } = playgroundObject   
 
    if (!filename) alert("Имя файла должно содержать буквы (хотя бы одну)")
-   else {
-      const fullname = [filename, fileInfo[1]].join(".")
+   else {      
+      const fullname = [fileInfo[0], fileInfo[1]].join(".")      
+      if (!nameValidate(fullname)) {
+         alert('Wrong file format')
+         return { activeTabName, fileStore }
+      }
       function standardBehavior() {
          ev.target.innerText = fullname
          renameOccurrences(prevName, fullname)
@@ -173,8 +192,14 @@ function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
          for (let file in playgroundObject.fileStorage) {
             const fileContent = playgroundObject.fileStorage[file]
             if (typeof fileContent === "string") {
-               debugger
-               playgroundObject.fileStorage[file] = fileContent.replace(prevName, fullname)
+               // debugger
+               if (getExtension(fullname).startsWith('ts')) {
+                  // TODO alse reverse replace: .ts => svelte
+                  playgroundObject.fileStorage[file] = fileContent.replace(prevName, fullname.split('.').shift())   
+               }
+               else {
+                  playgroundObject.fileStorage[file] = fileContent.replace(prevName, fullname)                    
+               }
             }
          }
 

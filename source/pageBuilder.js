@@ -33,7 +33,7 @@ import { modes as baseModes, modes } from "./features/base"
  * }} Mode
  */
 
-export { compilersSet as compilers, babelCompiler, playgroundObject }
+export { compilersSet as compilers, babelCompiler }
 
 /**
  * @typedef {BaseTags[number] | 'link'} KeyTags

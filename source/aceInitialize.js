@@ -41,6 +41,7 @@ import { cssKeyWords } from "./features/fs/editor"
  *  container: HTMLElement,
  *  find: (s: string|RegExp) => Range,
  *  session: EditorSession,
+ *  resize(),
  *  selection: {
  *      setRange: (range: Range, selection?: boolean) => unknown;
  *      getCursor: () => Position

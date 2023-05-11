@@ -1,6 +1,8 @@
 //@ts-check
 
-import { playgroundObject } from "../pageBuilder";
+import { playgroundObject } from "./compiler";
+
+
 
 
 let hrSplitter = document.querySelector('.h_line');
@@ -57,7 +59,7 @@ export function initResizers() {
     container.addEventListener('mouseup', function (event) {
         if (hoSeized || allSeized) {
             
-            playgroundObject.editors.forEach(function(/** @type {{ resize: () => void; }} */ elem) {
+            playgroundObject.editors.forEach(function(elem) {
                 elem.resize();
                 console.log('resize...');
             })
