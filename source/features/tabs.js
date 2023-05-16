@@ -193,7 +193,7 @@ function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
             const fileContent = playgroundObject.fileStorage[file]
             if (typeof fileContent === "string") {
                // debugger
-               if (getExtension(fullname).startsWith('ts')) {
+               if (getExtension(fullname).startsWith('ts')) {                  
                   // TODO alse reverse replace: .ts => svelte
                   playgroundObject.fileStorage[file] = fileContent.replace(prevName, fullname.split('.').shift())   
                }
@@ -201,9 +201,8 @@ function renameTab({ filename, fileInfo, prevName, ev, activeTabName }) {
                   playgroundObject.fileStorage[file] = fileContent.replace(prevName, fullname)                    
                }
             }
-         }
-
-         let pos = editors[2].find(prevName + "'")
+         }         
+         let pos = editors[2].find(prevName + "'")         
          pos && editors[2].getSession().replace(pos, fullname + "'")
       }
    }

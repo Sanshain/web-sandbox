@@ -6,7 +6,7 @@ import {
    compilersSet,
    playgroundObject,
    singleFileEnv,
-   spreadImports,
+   spreadImports as spreadGlobalImports,
    compilerNames
 } from "./features/compiler"
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator"
@@ -24,7 +24,10 @@ import { modes as baseModes, modes } from "./features/base"
  *
  * @typedef {import("./main").LangMode} LangMode
  * @typedef {import("..").LangMode[string]} Mode
- *
+ * @typedef {import("svelte-compiler/types/app").SourceMap} SourceMap
+ * @typedef {import('sourcemap-codec').SourceMapMappings} SourceMapMappings
+ * @typedef {Record<string, import("svelte-compiler/types/app").SourceMap> & {Root: SourceMap & {mappingsSchema?: SourceMapMappings}}} Maps
+ * 
  * @_typedef {{
  *  src: string|string[],
  *  inside?: boolean,
@@ -86,6 +89,7 @@ function createHtml({ body, style, script, link }, attrs) {
  *  frameworkName?: string,
  *  onload?: Function,
  *  appCode?: string
+ *    maps?: Maps
  * }} [options] - onload callback (may be add previewClass?: string)
  * @returns {[HTMLIFrameElement, string]}
  */
@@ -107,7 +111,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
          // debugger
          if (options.frameworkName === getExtension(activeTab["innerText"])) {
 
-            fileStorage[activeTab["innerText"]] = playgroundObject.editors.map((ed) => ed.getValue());
+            fileStorage[activeTab["innerText"]] = playgroundObject.editors.map((/** @type {{ getValue: () => any; }} */ ed) => ed.getValue());
             fileStorage._active = activeTab["innerText"]
 
             // fileStorage._active = activeTab["innerText"]
@@ -179,8 +183,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
    const buildJS = (/** @type {string} */ code) => {
       // convert to js:
-
-      code = buildAndTranspile(code, currentLang)
+      code = buildAndTranspile(code, { maps: options.maps, currentLang})
 
       //
       let globalReinitializer = generateGlobalInintializer(code)
@@ -255,7 +258,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
    const attrs = {
       script: scriptType
-   }
+   }   
 
    // TODO IMPOSE ORDER (refactor and add @desc for each func):
    /// compilerSubModes дополняем (this block updates Environments and inject resources):
@@ -272,7 +275,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
             let actualMode = playgroundObject.modes[i][modeMenu.selectedElement.innerText]
             if (actualMode && actualMode.inside === true) {
                // additionalScripts = (additionalScripts || []).concat(typeof actualMode.src === 'string' ? [actualMode.src] : actualMode.src);
-               ;[].slice.call(typeof actualMode.src === "string" ? [actualMode.src] : actualMode.src).forEach((el) => additionalScripts.push(el))
+               ;[].slice.call(typeof actualMode.src === "string" ? [actualMode.src] : actualMode.src).forEach((/** @type {string | [string]} */ el) => additionalScripts.push(el))
                // дополнительные скрипты. В частности less
                window["__debug"] && console.log(additionalScripts)
             }
@@ -484,24 +487,41 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
 
 /**
  * @param {string} code
- * @_param {{ prehandling: (arg0: string) => string; }} currentLang
- * @param {Mode} currentLang
+ * @_param {{ prehandling: (arg0: string) => string; }} currentLang 
+ * @param {{
+ *    currentLang: Mode, 
+ *    maps?: Maps
+ * }} [options]
  */
-function buildAndTranspile(code, currentLang) {
-   if (window["simplestBundler"]) {
-      // TODO add extensions if is absent (inside itself simplestBundler):
-      code = window["simplestBundler"].default(code, playgroundObject.fileStorage || window["fileStore"])
+function buildAndTranspile(code, options) {
+   if (window["pageBundler"]) {
+      
+      /**
+       * @type {import('./utils/builder').default}
+       */
+      const neoBuild = window["pageBundler"]['default'];
+
+      let sourceMap = null
+
+      // TODO add extensions if is absent (inside itself simplestBundler): ?      
+      code = neoBuild(code, playgroundObject.fileStorage || window["fileStore"], {
+         entryPoint: 'App.svelte',
+         advanced: { require: "same as imports" },
+         maps: options.maps
+      })
+      // result.
+
       globalThis.__debug && console.log("build...")
    } else {
       console.warn("bundler is absent")
       // alert('Warn/ look logs')
    }
 
-   code = spreadImports(code)
+   code = spreadGlobalImports(code)
 
    // ts transpilation:
-   if (currentLang && currentLang.prehandling) {
-      code = currentLang.prehandling(code)
+   if (options.currentLang && options.currentLang.prehandling) {
+      code = options.currentLang.prehandling(code)
    }
    return code
 }
@@ -517,10 +537,11 @@ function buildAndTranspile(code, currentLang) {
  *
  * TODO: options: {storage (localStorage|sessionStorage), fileStore}
  * @param {{
- *    lessMode?: boolean,                          // flag to frame content update without new iframe recreation through content update (not implemented yet)
- *    scriptMode?: string,                         // script tag type
- *    originalCode?: string[],                     // origin code [of SFC] (if the sourceСode differs from the original) - intended to store inside FileStorage
- *    frameworkName?: string                       // framework name
+ *    lessMode?: boolean,                                         // flag to frame content update without new iframe recreation through content update (not implemented yet)
+ *    scriptMode?: string,                                        // script tag type
+ *    originalCode?: string[],                                    // origin code [of SFC] (if the sourceСode differs from the original) - intended to store inside FileStorage
+ *    frameworkName?: string                                      // framework name,
+ *    maps?: Maps
  * }} [compileOptions=undefined] -
  * (less compile mode does not implemented yet. TODO: via postMessage)
  */
@@ -550,10 +571,11 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
       // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
 
       const scriptTagType = compileOptions.scriptMode || (isJsx ? babelCompiler.mode : undefined)
-      
+
       const [iframe, curUrl] = createPage(playgroundObject.curUrl, libList, scriptTagType, {
          appCode: sourceCode,
-         frameworkName: compileOptions.frameworkName
+         frameworkName: compileOptions.frameworkName,
+         maps: compileOptions.maps
       })
 
       playgroundObject.iframe = iframe
@@ -562,14 +584,14 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
 
    let compiler = Number.parseInt((commonStorage || localStorage).getItem("mode") || "0")
 
-   // just sandbox feature:
-   ;(commonStorage || localStorage).setItem(compiler + "__html", editors[0].getValue())
-   ;(commonStorage || localStorage).setItem(compiler + "__css", editors[1].getValue())
-   ;(commonStorage || localStorage).setItem(compiler + "__javascript", editors[2].getValue())
+      // just sandbox feature:
+      ; (commonStorage || localStorage).setItem(compiler + "__html", editors[0].getValue())
+      ; (commonStorage || localStorage).setItem(compiler + "__css", editors[1].getValue())
+      ; (commonStorage || localStorage).setItem(compiler + "__javascript", editors[2].getValue())
 
    let modulesStore = {}
 
-   console.log("save modules...")   
+   console.log("save modules...")
 
    if (fileStorage && Object.keys(fileStorage).length > 1) {
       for (let i = 0; i < Object.keys(fileStorage).length; i++) {
@@ -579,7 +601,7 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
       }
 
       // js multitabs:      
-      ;(commonStorage || localStorage).setItem("_modules", JSON.stringify(modulesStore))
+      ; (commonStorage || localStorage).setItem("_modules", JSON.stringify(modulesStore))
       globalThis.__debug && console.log("save modules...")
    }
 
@@ -642,7 +664,7 @@ function lightRerender(iframe, editors, isJsx, libList, sourceCode) {
 
    const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()]
 
-   code = buildAndTranspile(typeof code == "string" ? code : code[2], currentLang)
+   code = buildAndTranspile(typeof code == "string" ? code : code[2], {currentLang})
 
    let globalReinitializer = generateGlobalInintializer(code)
 

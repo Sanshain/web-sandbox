@@ -103,7 +103,7 @@ export default function initializeEditor(ace, editorOptions, values) {
    /// read modules:
 
    const fileStorage = (window["fileStorage"] = window["fileStore"] || playgroundObject.fileStorage || { _active: 0 })
-
+   
    const modulesStorage = values[3] || JSON.parse((editorOptions.storage || localStorage).getItem("_modules")) // files storage from outside
 
    let editors = [].slice.call(document.querySelectorAll(".editor")).map(initializeEditor)
@@ -117,11 +117,12 @@ export default function initializeEditor(ace, editorOptions, values) {
       if (i == 2 && initialFramework % 2) {
          //  javascript == 2   &&   syntax == 1 | 3 (preact|react)
          // mode = syntax % 2 ? 'tsx' : mode;  // jsx?
+         
+         //@ts-expect-error
          mode = "jsx" // jsx
       }
       editor.session.setMode("ace/mode/" + mode)
       editor.setFontSize(fontSize)      
-
       
       let value = values[i];
       
@@ -470,7 +471,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                                        new RegExp(replacePattern, "m"),
                                        function (substring, args) {
                                           console.log(arguments)
-                                          return substring.replace(token.value, newValue)
+                                          return substring.replace(token.value, newValue || "")
                                        }
                                     )
                                  } else {
@@ -524,7 +525,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                               let submatch = (typeof module === "string" ? module : module[2]).match(pattern)
                               if (submatch) {
                                  // переключаемся на эту вкладку
-                                 // let tabIndex = Object.keys(playgroundObject.fileStorage).indexOf(filename)
+                                 // let tabIndex = Object.keys(playgroundObject.fileStorage).indexOf(filename)                                 
                                  const tabs = document.querySelector(".tabs").children
                                  let activeTab = [].slice
                                     .call(tabs)
@@ -556,8 +557,8 @@ export default function initializeEditor(ace, editorOptions, values) {
    editors.fileStorage = fileStorage
 
    /// включаем вкладки:
-
-   // prettier-ignore
+   
+   // prettier-ignore   
    if (~Object.keys(playgroundObject.modes[2]).slice(1).map((w) => "/* " + w + " */").indexOf(editors[2].session.getLine(0))) {
       
       const tabs = document.querySelector(".tabs")
@@ -598,13 +599,13 @@ function bootFileStorage(modulesStorage, fileStorage, options) {
          if (Object.hasOwnProperty.call(_modules, key)) {
             fileStorage[key] = _modules[key]
 
-            // skip entry point
+            // skip entry point            
             if (!entryPoint && (/app\.(j|t)sx?/.test(key) || key == void 0 + "" || key === "App." + compilerNames[options.frameworkID])) {
                entryPoint = key
                continue
             }
 
-            // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));
+            // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));            
             if (compilerNames[options.frameworkID] && key === globalStore) {
                // debugger
                continue
@@ -619,7 +620,7 @@ function bootFileStorage(modulesStorage, fileStorage, options) {
 
       let activeTab = document.querySelector(".tabs .tab.active")
       activeTab && activeTab.classList.toggle("active")
-
+      
       document.querySelector(".tabs .tab").classList.add("active")
    }
 
@@ -635,6 +636,7 @@ function startApp(frameworksList, editorOptions, webCompileFunc) {
    const editors = playgroundObject.editors
 
    const frameworkName = frameworksList[editorOptions.frameworkID]
+   
    // binding is drop !!
    const frameworkEnvironment = editorOptions.updateEnv(frameworkName, editors[2].getValue())
    const jsxEnabled = Boolean(editorOptions.frameworkID % 2)
@@ -642,6 +644,7 @@ function startApp(frameworksList, editorOptions, webCompileFunc) {
    const extension = typeFromExtention(frameworkName)
 
    if (singleFileEnv[extension]) {
+      //@ts-expect-error
       // svelte
       compileSingleFileComponent(extension, frameworkEnvironment, editors)
    } else {
@@ -651,12 +654,15 @@ function startApp(frameworksList, editorOptions, webCompileFunc) {
 }
 
 /**
- * @param {string} extension
+ * @param {"svelte"|"vue"} extension - string - "svelte"|"vue"
  * @param {string[]} frameworkEnvironment
  * @param {{ getValue: () => string; }[]} editors
  */
 export function compileSingleFileComponent(extension, frameworkEnvironment, editors) {
-   loadScripts(singleFileEnv[extension].links, () => {
+
+   const singleFileHandler = singleFileEnv[extension];
+      
+   loadScripts(singleFileHandler.links, () => {
       const entryPoint = "App." + extension
 
       // const content = (playgroundObject.fileStorage._active == entryPoint) ? editors[2].getValue() : playgroundObject.fileStorage[entryPoint];
@@ -669,30 +675,32 @@ export function compileSingleFileComponent(extension, frameworkEnvironment, edit
       if (playgroundObject.fileStorage._active !== entryPoint) {
          var entryFile = playgroundObject.fileStorage[entryPoint]
 
-         if (Array.isArray(entryFile)) {
+         if (Array.isArray(entryFile)) { 
             var fileContent = singleFileEnv[extension].join(entryFile[2], entryFile[0], entryFile[1])
          } else if (typeof entryFile === "string") {
             var fileContent = entryFile
          } else {
-            var activeFile = editors.map((ed) => ed.getValue())
+            var activeFile = editors.map((ed) => ed.getValue()) 
             var fileContent = singleFileEnv[extension].join(activeFile[2], activeFile[0], activeFile[1])
          }
       } //
       else {
          // var activeFile = [editors[2].getValue(), editors[0].getValue(), editors[1].getValue()]
-         var activeFile = editors.map((ed) => ed.getValue())
+         var activeFile = editors.map((ed) => ed.getValue()) 
          var fileContent = singleFileEnv[extension].join(activeFile[2], activeFile[0], activeFile[1])
          // var fileContent = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue());
       }
 
       // const content = singleFileEnv[extension].join(editors[2].getValue(), editors[0].getValue(), editors[1].getValue())
-      singleFileEnv[extension].onload(fileContent, (/** @type {string} */ vanileCode) => {
+      
+      singleFileEnv[extension].onload(fileContent, (/** @type {string} */ vanileCode, /** @type {any} */ maps) => {
          // этот код требуется переместить внутрь и все отрефакторить
 
          webCompile(false, frameworkEnvironment, vanileCode, {
-            originalCode: activeFile,
+            originalCode: activeFile,            
             scriptMode: singleFileEnv[extension].mode,
-            frameworkName: extension
+            frameworkName: extension,
+            maps,
          })
       })
    })

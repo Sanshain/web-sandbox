@@ -2,7 +2,7 @@
 
 
 import * as tsc from "typescript";
-import tsEditor from "ts-a-editor";
+// import tsEditor from "ts-a-editor";
 // export { default as tsEditor } from "ts-a-editor";
 import type { default as TSEditor } from "ts-a-editor";
 

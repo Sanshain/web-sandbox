@@ -265,7 +265,7 @@ export function initialize(values, options) {
             const settingsElement = editors[i].container.appendChild(document.createElement("choice-menu"))
             settingsElement.className = "settings"
 
-            //@ts-expect-error
+            //_ts-expect-error
             settingsElement.addEventListener("selected_changed", (/** @type { CustomEvent<ChoiceDetails> } */ ev) => {
                /**
                 * @_type {{src?: string, tabs?: true, mode?: 'html'|'css'|'javascript', extension?: string}}
@@ -330,6 +330,7 @@ export function initialize(values, options) {
 
    const extension = typeFromExtention(frameworkName)
    if (singleFileEnv[extension]) {
+      //@ts-expect-error
       compileSingleFileComponent(extension, frameworkEnvironment, editors)
    } //
    else {
@@ -345,6 +346,7 @@ export function initialize(values, options) {
       const frameworkEnvironment = editorOptions.updateEnv(Object.keys(compilersSet)[frameworkID], editors[2].getValue())
       const extension = typeFromExtention(frameworkName)
 
+      //@ts-expect-error
       if (singleFileEnv[extension]) compileSingleFileComponent(extension, frameworkEnvironment, editors)
       else {
          webCompile(jsxMode, frameworkEnvironment)

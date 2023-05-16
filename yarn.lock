@@ -1055,6 +1055,11 @@
   "resolved" "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz"
   "version" "1.4.0"
 
+"neo-builder@^2.2.12":
+  "integrity" "sha512-OX3qvCWflAI9R+3TwMkgwtu1kz37QSl9iBIX6u53cIVXQdkyr+ekodnbFG0YKUfDniPMbBSMArAixJw2MeH6fw=="
+  "resolved" "https://registry.npmjs.org/neo-builder/-/neo-builder-2.2.12.tgz"
+  "version" "2.2.12"
+
 "nopt@~3.0.1":
   "integrity" "sha512-4GUt3kSEYmk4ITxzB/b9vaIDfUVWN/Ml1Fwl11IlnIG2iaJ9O6WXZ9SrYM9NLI8OCBieN2Y8SWC2oJV0RQ7qYg=="
   "resolved" "https://registry.npmjs.org/nopt/-/nopt-3.0.6.tgz"
@@ -1355,7 +1360,7 @@
   "version" "1.0.0"
 
 "svelte-compiler@github:Sanshain/svelte-compiler#2.x":
-  "resolved" "git+ssh://git@github.com/Sanshain/svelte-compiler.git#fc3c3675dffc87be4ccc184c9621d6ff5f4ff00f"
+  "resolved" "git+ssh://git@github.com/Sanshain/svelte-compiler.git#042de9b63770122b36cc56852898cd0e63fe63fa"
   "version" "1.0.0"
   dependencies:
     "svelte" "^3.49.0"

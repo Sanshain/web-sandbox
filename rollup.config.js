@@ -15,12 +15,13 @@ const svelteEnv = [
         inputFile: './source/libs/svelte-compiler.js',
         outputFile: 'svelte-compile.js',
 
-        outputName: 'svelteTransform',
-    },    
+        //   outputName: 'svelteTransform',
+        outputName: 'svelteCompiler',
+    },
     {
         inputFile: './source/libs/svelte-runtime.js',
         outputFile: 'svelte-runtime.js'
-    },    
+    },
 ]
 
 
@@ -32,14 +33,14 @@ const modules = [
     // {
     //     inputFile: './index.ts',
     //     outputFile: './index.js',
-        
+
     //     outputName: 'IDE',
     // },    
     {
         inputFile: './source/libs/preact.js',
         outputFile: '_preact.js',
 
-        outputName: '_preact',        
+        outputName: '_preact',
     },
     // {
     //     inputFile: './source/libs/preact.d.ts',
@@ -49,7 +50,7 @@ const modules = [
     {
         inputFile: './source/main.js',
         outputFile: 'page_builder.js',
-        
+
         outputName: 'IDE',
     },
     {
@@ -59,16 +60,21 @@ const modules = [
 
         outputName: 'pageBuilder',
     },
+    //  {
+    //      inputFile: './source/utils/bundler.js',
+    //      outputFile: 'bundler.js',
+    //      outputName: 'simplestBundler'
+    //  },
     {
-        inputFile: './source/utils/bundler.js',
+        inputFile: './source/utils/builder.js',
         outputFile: 'bundler.js',
-        outputName: 'simplestBundler'
+        outputName: 'pageBundler'
     }
 ]
 
 
 module.exports = modules.map(function (config) {
-    
+
     let r = {
         input: config.inputFile,
         output: {
@@ -80,6 +86,7 @@ module.exports = modules.map(function (config) {
             sourcemap: true,
             globals: {
                 fs: undefined + '',
+                path: 'null'
                 // fs: 'window'
             }
         },

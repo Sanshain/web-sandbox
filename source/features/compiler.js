@@ -1,11 +1,13 @@
 //@ts-check
 
+import { encode } from "sourcemap-codec";
+
 /**
  * @typedef {import("../main").LangMode} LangMode
  * @type {{
  *      editors: import("../aceInitialize").EditorsEnv | [],                                             // any[],
- *      iframe: HTMLIFrameElement,
- *      curUrl: string,
+ *      iframe?: HTMLIFrameElement,
+ *      curUrl?: string,
  *      fileStorage: {[k: string]: string | string[]} & { _active: string, },                            // _entryPoint?: string = ? || { _active: number|string, },
  *      modes?: [import("../main").LangMode?, LangMode?, LangMode?],                                     // [object?, object?, object?]
  *      onfilerename?: Function,
@@ -17,8 +19,8 @@
  */
 export const playgroundObject = {
    editors: [],
-   iframe: null,
-   curUrl: null,
+   iframe: void 0,
+   curUrl: void 0,
    fileStorage: new Proxy(
       {
          // _active: 0
@@ -37,10 +39,10 @@ export const playgroundObject = {
          },
       }
    ),
-   modes: null,
+   modes: void 0,
    // activeModes: [],
-   onfilerename: null,
-   onfileRemove: null,
+   onfilerename: void 0,
+   onfileRemove: void 0,
    frameworkID: 0,
    get entryPointName() {
       const framweworkName = compilerNames[this.frameworkID];
@@ -57,13 +59,13 @@ export const playgroundObject = {
 
 /**
  * @type {{
- *  [K: string] : {
+ *  [K in "svelte"|"vue"] : {
  *      links?: string[],
  *      mode?: string,
- *      join?: (code: string, html: string, style?: string) => string,
+ *      join?: (code: string, html: string, style: string) => string,
  *      split?: (code: string) => [string, string, string],
  *      onload?: (source: string, callback: Function) => unknown
- *  }
+ *  } | undefined
  * }}
  */
 export const singleFileEnv = {
@@ -104,29 +106,58 @@ export const singleFileEnv = {
        */
       onload(entryPointCode, webCompile) {
          /**
-          * @type {(rawCode: string, getFile: (arg: string) => string) => {code: string, matches?: any[]}}
-          */
-         const svelteTransform = window["svelteTransform"]
-         if (svelteTransform) {
-            
-            const svelteApp = svelteTransform(entryPointCode, function getFile(filename) {
-               const file = playgroundObject.fileStorage[filename] || playgroundObject.fileStorage[filename.replace(/^\.\//m, "")]
-               if (Array.isArray(file)) {
-                  // TODO Inject less compilation
-                  const style = file[1]
-                  // TODO get ts from modes instead of global
-                  const script = window["ts"] ? window["ts"].transpile(file[2]) : file[2]
+          * @type {(rawCode: string, opts: {sourceMaps?: boolean | 'js', getFile?: (arg: string) => string}) => {
+          *    code: string, 
+          *    matches?: any[],
+          *    maps?: Record<string, {
+          *       mappings: string,
+          *       sources: string[],
+          *       sourcesContent: string[],
+          *       names?: string[]
+          *    }>
+          * }}
+         */
 
-                  const svelteFileContent = file[0] + "\n\n<style>\n\n" + style + "\n\n</style>\n\n<script>\n\n" + script + "\n\n</script>"
-                  return svelteFileContent
-               } else {
-                  throw new Error("Unexpected file format for `" + filename + "`")
+         /**
+          * @type {{
+          *    transform: import("svelte-compiler").svelteTransform,
+          *    mergeMaps: import("svelte-compiler").mergeSvelteMaps,
+          * }}
+          */
+         // const svelteTransform = window["svelteTransform"]
+         const svelteCompiler = window["svelteCompiler"];
+         if (svelteCompiler) {
+
+            const svelteApp = svelteCompiler.transform(entryPointCode, {
+               sourceMaps: 'js',
+               getFile(filename) {
+                  const file = playgroundObject.fileStorage[filename] || playgroundObject.fileStorage[filename.replace(/^\.\//m, "")]
+                  if (Array.isArray(file)) {
+                     // TODO Inject less compilation
+                     const style = file[1]
+                     // TODO get ts from modes instead of global
+                     const script = window["ts"] ? window["ts"].transpile(file[2]) : file[2]
+
+                     const svelteFileContent = file[0] + "\n\n<style>\n\n" + style + "\n\n</style>\n\n<script>\n\n" + script + "\n\n</script>"
+                     return svelteFileContent
+                  }
+                  else {
+                     throw new Error("Unexpected file format for `" + filename + "`")
+                  }
                }
             })
 
-            webCompile(svelteApp.code)
+            const rootMapping = svelteCompiler.mergeMaps(entryPointCode, svelteApp.maps);
+            if (svelteApp.maps) {
+               svelteApp.maps.Root.sources[0] = 'App.svelte';
+               // svelteApp.maps['Root'].mappings = encode(rootMapping); // if w/o require 
+               svelteApp.maps['Root']['mappingsSchema'] = rootMapping
+            }
 
-            window.postMessage({ svelteApp: svelteApp }, playgroundObject.curUrl)
+
+            webCompile(svelteApp.code, svelteApp.maps)
+
+            window.postMessage({ svelteApp: svelteApp }, playgroundObject.curUrl || '')
             window.postMessage({ svelteApp: svelteApp }, "*")
          }
       },

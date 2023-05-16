@@ -249,7 +249,7 @@ const editors = IDE.initialize([], {
                onModeChange({ disable, enable, editor, editors }) {
                   if (enable || (enable === false && disable === false)) {
                      /**
-                      * @typedef {Omit<Parameters<import('.').TypescriptEditor['initialize']>[0], 'editor'> & {editor: AceEditor}} Config
+                      * @typedef {Omit<Parameters<import("./index").TypescriptEditor['initialize']>[0], 'editor'> & {editor: AceEditor}} Config
                       * @type {Config}
                       */
                      const config = {
@@ -273,8 +273,8 @@ const editors = IDE.initialize([], {
                      }
                      // Parameters<import('.').TypescriptEditor['initialize']>[0]
                      const tsEditorInitialize = (/** @type {unknown} */ $config) => {
-                        //@ ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
-
+                        
+                        //_ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
                         const [tsService, ace] = tsEditor.initialize($config)
 
                         ace.setOptions({
@@ -290,7 +290,8 @@ const editors = IDE.initialize([], {
                      }
 
                      if (window["ts"]) {
-                        const compileMode = document.getElementById("compiler_mode")["value"]
+
+                        const compileMode = (document.getElementById("compiler_mode") || {})["value"]
 
                         if (window["tsEditor"])
                            tsEditorInitialize(uploadAdditionalLibs(compileMode, editor, config)) // && editor.clearSelection()
@@ -414,7 +415,7 @@ function uploadAdditionalLibs(compileMode, editor, config) {
       if (Array.isArray(additionalTypings[compileMode])) {
          config.aliasedLibFiles = {
             [compileMode + ".d.ts"]: additionalTypings[compileMode][0]
-         }
+         }         
          config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1))
       } else {
          // if object
@@ -431,7 +432,7 @@ function uploadAdditionalLibs(compileMode, editor, config) {
             config.aliasedLibFiles = {
                ["" + compileMode + ".d.ts"]: libFiles[0]
             }
-            config.libFiles = config.libFiles.concat(libFiles.slice(1))
+            config.libFiles = (config.libFiles || []).concat(libFiles.slice(1))
          } else {
             config.aliasedLibFiles = libFiles
          }

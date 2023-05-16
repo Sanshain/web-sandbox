@@ -32,7 +32,7 @@ export function debounce(func, delay) {
 export function getLangMode(code) {
    let langModeMatch = (typeof code === "string" ? code : code[2]).match(/\/\* ([\w \n]+) \*\//)
 
-   return langModeMatch ? langModeMatch.pop() : null
+   return langModeMatch ? (langModeMatch.pop() || null) : null
 }
 
 /**
@@ -66,7 +66,7 @@ function renameOccurrences(prevName, fullname, editor) {
 export function getSelectedModeName(i) {
    // let mode = (typeof i === 'number' ? playgroundObject.editors[i] : i).session.getMode().$id;
    let mode = playgroundObject.editors[i].session.getMode().$id
-   return mode.split("/").pop()
+   return mode.split("/").pop() || ''
 }
 
 /**
@@ -75,7 +75,7 @@ export function getSelectedModeName(i) {
  * @returns {string} - filename extension
  */
 export function getExtension(name) {
-   return name ? name.split(".").pop() : ""
+   return name ? (name.split(".").pop() || '') : ""
 }
 
 /**
@@ -117,6 +117,7 @@ export function isTSMode(editors) {
    /// Option TWO:
 
    const langSelect = (editors || playgroundObject.editors)[2].container.querySelector("choice-menu")
+   //@ts-expect-error
    return langSelect["selectedItem"] === "typescript"
 
    /// Option THREE:

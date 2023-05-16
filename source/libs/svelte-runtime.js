@@ -1,13 +1,15 @@
 //@ts-check
 
-import { runSvelteApp } from "svelte-compiler/build/svelte_compiler.es";
+// TODO less size:
+import { runSvelteApp } from "svelte-compiler";
 
 // export default runSvelteApp;
 
 const transformedCodeJar = document.querySelector('script[type="text/svelte"]');
 if (transformedCodeJar) {
    try {
-      runSvelteApp(transformedCodeJar.textContent, { byTag: true, cleanBlock: true });
+      debugger;
+      runSvelteApp(transformedCodeJar.textContent || '', { byTag: true, cleanBlock: true, iifed: true });
    } catch (er) {
       console.warn(er);
       window.postMessage(er, "*");
