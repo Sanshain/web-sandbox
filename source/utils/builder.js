@@ -91,9 +91,7 @@ export default function buildScript(content, store, options) {
          sourceMap = outsideMap;
 
       } : undefined
-   });
-
-   debugger
+   });   
 
    // const sourcemaps = `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,` + window.btoa(JSON.stringify(sourceMap));
    if (sourceMap) {

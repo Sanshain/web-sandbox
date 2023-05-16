@@ -8,7 +8,7 @@ import { runSvelteApp } from "svelte-compiler";
 const transformedCodeJar = document.querySelector('script[type="text/svelte"]');
 if (transformedCodeJar) {
    try {
-      debugger;
+      // debugger;
       runSvelteApp(transformedCodeJar.textContent || '', { byTag: true, cleanBlock: true, iifed: true });
    } catch (er) {
       console.warn(er);
