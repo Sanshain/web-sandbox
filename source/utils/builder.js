@@ -2,6 +2,10 @@
 
 import { build } from 'neo-builder';
 import { encode } from 'sourcemap-codec';
+import { deepMergeMap } from 'neo-builder/source/utils';
+
+
+
 
 
 /**
@@ -15,15 +19,16 @@ import { encode } from 'sourcemap-codec';
  * @param {object} store
  * @param {import("neo-builder/types/builder.es").BuildOptions & { 
  *    targetFname?: string | undefined; 
- *    maps: (Record<string, SourceMap> & {Root: SourceMap & {mappingsSchema?: SourceMapMappings}}) | null
+ *    maps: (Record<string, SourceMap> & {Root: SourceMap & {mappingsSchema?: SourceMapMappings}}) | null,
+ *    shiftMaps?: number
  * }} options
  * //return {{builtCode: string, sourcemaps?: string}}
  * @returns {string}
  */
 export default function buildScript(content, store, options) {
 
-   // let exportedFiles = [];
-   
+   // let exportedFiles = [];   
+
    globalThis.__debug && console.log(build);
    let sourceMap = null;
    
@@ -42,56 +47,30 @@ export default function buildScript(content, store, options) {
          if (!maps) return;
 
          const outsideMapSchema = maps['Root']['mappingsSchema'];
-         /** @type {Omit<typeof maps.Root, 'mappingsSchema'>} */
-         const outsideMap = maps.Root;
+         
+         // /** @type {Omit<typeof maps.Root, 'mappingsSchema'>} */
+         // const outsideMap = maps.Root;
          
          ///# algorithm:
+                  
+         let { mergedMap, outsideMapInfo: outsideMap }  = deepMergeMap({ sourcesContent, files, mapping }, {
+            outsideMapInfo: maps.Root,
+            outsideMapping: outsideMapSchema
+         })
+
+         if (options.shiftMaps) {
+            // loclog etc
+            
+            mergedMap = Array(options.shiftMaps - 1 - 1).fill([]).concat(mergedMap);            
+         }
+         console.log(mergedMap);
          
-         /// update file links inside:
-
-         mapping = mapping.map(line => {
-
-            if (line && line.length) {
-               line.forEach((ch, i) => {
-                  if (line[i][1] < files.length - 1) line[i][1] += outsideMap.sources.length;
-               });
-               return line;
-            }
-
-            return [];
-         });
-
-         /// merge itself SourceMapMappings (reduce whatever lines to root lines):
-
-         const mergedMap = mapping.map((line, i) => {
-
-            if (!line || !line.length) return [];
-
-            let _line = (line || []).map((ch, j, arr) => {
-
-               const origCharMap = outsideMapSchema[line[j][2]];
-
-               if (origCharMap && origCharMap.length) return origCharMap[0];
-               else {
-                  if (ch[1] > outsideMap.sources.length - 1) return ch;
-                  else {
-                     return false;
-                  }
-               }
-            });
-
-            return _line.filter(l => l);
-         });
-
-         outsideMap.sources = outsideMap.sources.concat(files.slice(0, -1));
-         outsideMap.sourcesContent = outsideMap.sourcesContent.concat((sourcesContent || []).slice(0, -1));
-      
-         //@ts-expect-error
+         //_ts-expect-error
          outsideMap.mappings = encode(mergedMap);
          sourceMap = outsideMap;
 
       } : undefined
-   });   
+   });      
 
    // const sourcemaps = `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,` + window.btoa(JSON.stringify(sourceMap));
    if (sourceMap) {
@@ -163,3 +142,54 @@ export function thisBuild(content, store) {
    content = content.replace(regex, createModule); //*/
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+// /// update file links inside:
+
+// mapping = mapping.map(line => {
+
+//    if (line && line.length) {
+//       line.forEach((ch, i) => {
+//          if (line[i][1] < files.length - 1) line[i][1] += outsideMap.sources.length;
+//       });
+//       return line;
+//    }
+
+//    return [];
+// });
+
+// /// merge itself SourceMapMappings (reduce whatever lines to root lines):
+
+// let mergedMap = mapping.map((line, i) => {
+
+//    if (!line || !line.length) return [];
+
+//    let _line = (line || []).map((ch, j, arr) => {
+
+//       const origCharMap = outsideMapSchema[line[j][2]];
+
+//       if (origCharMap && origCharMap.length) return origCharMap[0];
+//       else {
+//          if (ch[1] > outsideMap.sources.length - 1) return ch;
+//          else {
+//             return false;
+//          }
+//       }
+//    });
+
+//    return _line.filter(l => l);
+// });
+
+// outsideMap.sources = outsideMap.sources.concat(files.slice(0, -1));
+// outsideMap.sourcesContent = outsideMap.sourcesContent.concat((sourcesContent || []).slice(0, -1));

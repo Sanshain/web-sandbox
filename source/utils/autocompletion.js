@@ -6,207 +6,207 @@
 
 
 export let domFuncs = {
-    style: null,
-    color: null,
+   style: null,
+   color: null,
 
-    // ReactDOM: {
-    //     desc: 'only for react lib namespace',
-    //     return: 'namespace'
-    // },
-    render: {
-        desc: 'render preact/react component to html DOM',
-        sign: {
-            'component': {
-                desc: 'react/preact component',
-                type: 'VNode<any>'
-            },
-            parent: {
-                desc: 'app root inside DOM tree',
-                type: 'HTMLElement'
-            }
-        },
-        return: 'HTMLElement'
-    },
-
-
-    useRef: {
-        desc: 'get a reference to a DOM node inside a functional components',
-        sign: {
-            initialValue: {
-                desc: 'initial value'
-            }
-        },
-        'return': 'Ref<T>'
-    },
-    useState: {
-        desc: 'assigns the starting state value, and returns an array of two elements',
-        sign: {
-            initialState: {
-                type: '<T>(initialState: T | (() => T))',
-                desc: 'initial state'
-            }
-        },
-        'return': '[T, StateUpdater<T>]'
-    },
-    useEffect: {
-        desc: '',
-        sign: {
-            effect: {
-                type: 'EffectCallback',
-                desc: 'callback function'
-            },
-            inputs: {
-                type: 'Inputs?',
-                desc: ''
-            }
-        }
-    },
+   // ReactDOM: {
+   //     desc: 'only for react lib namespace',
+   //     return: 'namespace'
+   // },
+   render: {
+      desc: 'render preact/react component to html DOM',
+      sign: {
+         'component': {
+            desc: 'react/preact component',
+            type: 'VNode<any>'
+         },
+         parent: {
+            desc: 'app root inside DOM tree',
+            type: 'HTMLElement'
+         }
+      },
+      return: 'HTMLElement'
+   },
 
 
-
-    // Array and string methods: 
-
-    indexOf: '',
-    // from: '',  // - interferes with import * form
-    slice: '',
-
-
-    // snippets:
-
-    qf: {
-        desc: '',
-        value: '[].slice.call(document.querySelector(${1:selector})).forEach((${2:elem}) => {\n\t${3}\n})'
-    },
-    qm: {
-        desc: '',
-        value: '[].slice.call(document.querySelector(${1:selector})).map(elem => {\n\t${2}\n})'
-    },
-
-    // qff: {
-    //     desc: '',
-    //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2:innerText} == ${3}).forEach(elem => {\n\t${4}\n})'
-    // },
-    // qfm: {
-    //     desc: '',
-    //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2}).map(elem => {\n\t${3}\n})'
-    // },
-
-    fore: {
-        desc: 'forEach',
-        origin: 'forEach',
-        value: 'forEach((${1:elem}, ${2:i}, ${3:array}) => {\n\t${4}\n})',
-        sign: {
-            callback: { type: ' (elem, i, array) => void', desc: 'функция обратного вызова' },
-            context: { type: ' this?', desc: 'контекст' }
-        }
-    },
-    log: {
-        desc: 'console.log',
-        value: 'console.log(${1})',
-        sign: {
-            message: {
-                type: 'string',
-            }
-        }
-    },
+   useRef: {
+      desc: 'get a reference to a DOM node inside a functional components',
+      sign: {
+         initialValue: {
+            desc: 'initial value'
+         }
+      },
+      'return': 'Ref<T>'
+   },
+   useState: {
+      desc: 'assigns the starting state value, and returns an array of two elements',
+      sign: {
+         initialState: {
+            type: '<T>(initialState: T | (() => T))',
+            desc: 'initial state'
+         }
+      },
+      'return': '[T, StateUpdater<T>]'
+   },
+   useEffect: {
+      desc: '',
+      sign: {
+         effect: {
+            type: 'EffectCallback',
+            desc: 'callback function'
+         },
+         inputs: {
+            type: 'Inputs?',
+            desc: ''
+         }
+      }
+   },
 
 
-    // DOM:
 
-    target: null,
-    classList: null,
-    offsetHeight: null,
-    offsetWidth: null,
-    getComputedStyle: '',
+   // Array and string methods: 
 
-    innerHTML: null,
-    innerText: null,
+   indexOf: '',
+   // from: '',  // - interferes with import * form
+   slice: '',
 
-    appendChild: '',
-    insertBefore: '',
-    createElement: '',
 
-    preventDefault: '',                                         //// - event
-    key: '',                                                    //// - event
+   // snippets:
 
-    closest: '',
-    
-    getElementById: {
-        desc: '',  //  'Найти элемент по его ID',
-        'return': 'HTMLElement?'
-    },
-    
-    querySelectorAll: '',
-    querySelector: {
-        desc: 'get element by selector',
-        sign: {
-            'selector': {
-                type: 'string',
-                desc: 'element selector'
-            }
-        },
-        'return': 'HTMLElement'
-    },
+   qf: {
+      desc: '',
+      value: '[].slice.call(document.querySelector(${1:selector})).forEach((${2:elem}) => {\n\t${3}\n})'
+   },
+   qm: {
+      desc: '',
+      value: '[].slice.call(document.querySelector(${1:selector})).map(elem => {\n\t${2}\n})'
+   },
 
-    // Events: 
+   // qff: {
+   //     desc: '',
+   //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2:innerText} == ${3}).forEach(elem => {\n\t${4}\n})'
+   // },
+   // qfm: {
+   //     desc: '',
+   //     value: '[].slice.call(document.querySelector(${1:selector}).filter(elem => elem.${2}).map(elem => {\n\t${3}\n})'
+   // },
 
-    addEventListener: {
-        desc: '',
-        sign: {
-            'selector': {
-                type: 'string',
-                desc: 'element selector'
-            }
-        },
-    },
+   fore: {
+      desc: 'forEach',
+      origin: 'forEach',
+      value: 'forEach((${1:elem}, ${2:i}, ${3:array}) => {\n\t${4}\n})',
+      sign: {
+         callback: { type: ' (elem, i, array) => void', desc: 'функция обратного вызова' },
+         context: { type: ' this?', desc: 'контекст' }
+      }
+   },
+   log: {
+      desc: 'console.log',
+      value: 'console.log(${1})',
+      sign: {
+         message: {
+            type: 'string',
+         }
+      }
+   },
 
-    onload: '',
-    onclick: '',
-    oninput: '',
-    onkeydown: '',
-    onchange: '',
 
-    onmousedown: '',
-    onmousemove: '',
-    onmouseover: '',
-    onmouseout: '',
+   // DOM:
+
+   target: null,
+   classList: null,
+   offsetHeight: null,
+   offsetWidth: null,
+   getComputedStyle: '',
+
+   innerHTML: null,
+   innerText: null,
+
+   appendChild: '',
+   insertBefore: '',
+   createElement: '',
+
+   preventDefault: '',                                         //// - event
+   key: '',                                                    //// - event
+
+   closest: '',
+
+   getElementById: {
+      desc: '',  //  'Найти элемент по его ID',
+      'return': 'HTMLElement?'
+   },
+
+   querySelectorAll: '',
+   querySelector: {
+      desc: 'get element by selector',
+      sign: {
+         'selector': {
+            type: 'string',
+            desc: 'element selector'
+         }
+      },
+      'return': 'HTMLElement'
+   },
+
+   // Events: 
+
+   addEventListener: {
+      desc: '',
+      sign: {
+         'selector': {
+            type: 'string',
+            desc: 'element selector'
+         }
+      },
+   },
+
+   onload: '',
+   onclick: '',
+   oninput: '',
+   onkeydown: '',
+   onchange: '',
+
+   onmousedown: '',
+   onmousemove: '',
+   onmouseover: '',
+   onmouseout: '',
 }
 
 
 let wordList = Object.keys(domFuncs);
 
 export let keyWords = wordList.map(
-    function (word) {
-        const metaInfo = domFuncs[word];
-        return {
-            caption: word,
-            value: word + (undefined ? '()' : ''),  // для методов без параметров (таких-то и не могу даже вспомнить)
-            // meta: "local",
-            // meta: "static",
+   function (word) {
+      const metaInfo = domFuncs[word];
+      return {
+         caption: word,
+         value: word + (undefined ? '()' : ''),  // для методов без параметров (таких-то и не могу даже вспомнить)
+         // meta: "local",
+         // meta: "static",
 
-            // snippet: 'This2(${1})',
+         // snippet: 'This2(${1})',
 
-            // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
-            snippet: metaInfo !== null ? (metaInfo.value || (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})'))) : undefined,
+         // (metaInfo && metaInfo.sign) - только для описанных сигнатурой
+         snippet: metaInfo !== null ? (metaInfo.value || (word.startsWith('on') ? (word + ' = e => {${1}}') : ((metaInfo.value || word) + '(${1})'))) : undefined,
 
-            type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
-            meta: (metaInfo !== null && !word.startsWith('on')) ? (metaInfo.value ? 'function' : 'function') : 'prop',
+         type: (metaInfo && metaInfo.sign) ? "snippet" : 'static',
+         meta: (metaInfo !== null && !word.startsWith('on')) ? (metaInfo.value ? 'function' : 'function') : 'prop',
 
-            // completer: {
-            //     insertMatch: function (editor, data) {
-            //         editor.completer.insertMatch({ value: data.value })
-            //     }
-            // }
+         // completer: {
+         //     insertMatch: function (editor, data) {
+         //         editor.completer.insertMatch({ value: data.value })
+         //     }
+         // }
 
-            // inputParameters: { 1: '?' },
-        };
-    }
+         // inputParameters: { 1: '?' },
+      };
+   }
 )
 
 
 
 /**
- * @param {AceEditor} editor : ace editor instanse
+ * @param {import("../..").AceEditor} editor : ace editor instanse
  * @param {{ 
  *    hint?: {
  *       desc: string, 
@@ -221,43 +221,43 @@ export let keyWords = wordList.map(
  */
 export function autocompleteExpand(editor, keyWordInfo) {
 
-    
-    // добавление нового ключевого слова:
-    // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
-    // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
+
+   // добавление нового ключевого слова:
+   // editors[2].session.$mode.$highlightRules.$keywordList.push("from './" + newTab.innerText + "'");
+   // editors[2].session.$mode.$highlightRules.$keywordList.push("import {*} from './" + newTab.innerText + "'");
 
 
-    // let moduleName = newTab.innerText.split('.')[0];
-    // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
-    // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
+   // let moduleName = newTab.innerText.split('.')[0];
+   // moduleName = parseInt(moduleName) ? ('_' + moduleName) : moduleName;
+   // editors[2].session.$mode.$highlightRules.$keywordList.push("import * as " + moduleName + " from './" + newTab.innerText + "'");
 
 
 
-    let hint = keyWordInfo.hint;
-    
-    editor.completers.push({
-        getCompletions: function (editor, session, pos, prefix, callback) {
-            // prefix !== '.' ? [] :
-            callback(null, [{
-                caption: keyWordInfo.name,
-                value: keyWordInfo.name,
-                snippet: keyWordInfo.template,
-                meta: keyWordInfo.meta || '',
-            }]);
-        },
-        getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
-            
-            if (hint) {
-                let args = Object.keys(hint.sign || {}).map(arg => arg + ': ' + hint.sign[arg].type).join(', ');
-                item.docHTML = '<h5>' + (hint.origin || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>'
-                let argsDesc = ''
-                for (const key in hint.sign) {
-                    argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].description
-                }
-                item.docHTML += '<ul>' + argsDesc + '</ul>'
+   let hint = keyWordInfo.hint;
+
+   editor.completers.push({
+      getCompletions: function (editor, session, pos, prefix, callback) {
+         // prefix !== '.' ? [] :
+         callback(null, [{
+            caption: keyWordInfo.name,
+            value: keyWordInfo.name,
+            snippet: keyWordInfo.template,
+            meta: keyWordInfo.meta || '',
+         }]);
+      },
+      getDocTooltip: function (/** @type {{ docHTML: string; caption: string; }} */ item) {
+
+         if (hint) {
+            let args = Object.keys(hint.sign || {}).map(arg => arg + ': ' + hint.sign[arg].type).join(', ');
+            item.docHTML = '<h5>' + (hint.origin || item.caption) + '(' + args + ') : ' + hint['return'] + '</h5><hr>' + '<p>' + hint.desc + '</p>'
+            let argsDesc = ''
+            for (const key in hint.sign) {
+               argsDesc += '<li><b>' + key + ':' + (hint.sign[key].type || 'any') + '</b> - ' + hint.sign[key].description
             }
-        }
-    })
+            item.docHTML += '<ul>' + argsDesc + '</ul>'
+         }
+      }
+   })
 }
 
 

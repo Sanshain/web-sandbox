@@ -21,7 +21,7 @@
   "dependencies": {
     "emmet": "^2.3.6",
     "less-plugin-sass2less": "github:Sanshain/less-plugin-sass2less",
-    "neo-builder": "^2.2.12",
+    "neo-builder": "^2.2.18-b",
     "preact": "10.7.2",
     "sourcemap-codec": "^1.4.8",
     "svelte-compiler": "github:Sanshain/svelte-compiler#2.x",

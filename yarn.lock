@@ -1055,10 +1055,10 @@
   "resolved" "https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz"
   "version" "1.4.0"
 
-"neo-builder@^2.2.12":
-  "integrity" "sha512-OX3qvCWflAI9R+3TwMkgwtu1kz37QSl9iBIX6u53cIVXQdkyr+ekodnbFG0YKUfDniPMbBSMArAixJw2MeH6fw=="
-  "resolved" "https://registry.npmjs.org/neo-builder/-/neo-builder-2.2.12.tgz"
-  "version" "2.2.12"
+"neo-builder@^2.2.18-b":
+  "integrity" "sha512-xi51QlVlq0ymi6MjozhIGEUTkxvPiHz3hhYjJ/l+jvCeVpwYMIAlLSPIfiRYy/4Y2yYnFVThZCAhIaRvCpUxHA=="
+  "resolved" "https://registry.npmjs.org/neo-builder/-/neo-builder-2.2.18-b.tgz"
+  "version" "2.2.18-b"
 
 "nopt@~3.0.1":
   "integrity" "sha512-4GUt3kSEYmk4ITxzB/b9vaIDfUVWN/Ml1Fwl11IlnIG2iaJ9O6WXZ9SrYM9NLI8OCBieN2Y8SWC2oJV0RQ7qYg=="

@@ -7,7 +7,8 @@ import {
    playgroundObject,
    singleFileEnv,
    spreadImports as spreadGlobalImports,
-   compilerNames
+   compilerNames,
+   singleFileTypes
 } from "./features/compiler"
 import { generateGlobalInintializer, isPaired } from "./utils/page_generator"
 import { commonStorage, getLangMode, typeFromExtention, getExtension } from "./utils/utils"
@@ -138,7 +139,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
    let appCode = options.appCode || _fs["app.js"] || _fs["app.ts"] || playgroundObject.fileStorage[undefined + ""]
    // globalThis.__debug && console.log('appCode');
 
-   const langMode = getLangMode(appCode)
+   const langMode = getLangMode(appCode || '')
    if (langMode) {
       /**
        * @type {Mode?}
@@ -182,29 +183,11 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
    }
 
    const buildJS = (/** @type {string} */ code) => {
-      // convert to js:
-      code = buildAndTranspile(code, { maps: options.maps, currentLang})
-
-      //
-      let globalReinitializer = generateGlobalInintializer(code)
-
-      if (!options.appCode) {
-         code =
-            'window.addEventListener("' +
-            (scriptType ? "load" : "DOMContentLoaded") +
-            '", function(){' +
-            code +
-            "\n\n" +
-            globalReinitializer +
-            "\n});"
-         // TODO change `options.appCode` to `!scriptType` and `scriptType ? 'load' : 'DOMContentLoaded' to `load`
-      }
 
       // customLOG
       const terminalJar = document.querySelector(".console .lines")
-
+      
       if (terminalJar) {
-         terminalJar.innerHTML = ""
 
          function loclog(/** @type {string} */ value) {
             window.parent.postMessage(
@@ -240,9 +223,29 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
          }
 
          const onmessageFunc = "window.addEventListener('message', " + onmessage.toString() + ");"
-
-         code = "\n" + loclog.toString() + "\n" + onmessageFunc + "\n\n" + code.replace(/console\.(log|warn)/g, "loclog")
+         var preScript = "\n" + loclog.toString() + "\n" + onmessageFunc + "\n\n";         
       }
+
+      // convert to js:
+      code = buildAndTranspile(code, { maps: options.maps, currentLang, shiftMaps: (preScript || '').split('\n').length })
+
+      //
+      let globalReinitializer = generateGlobalInintializer(code)
+
+      if (!options.appCode) {
+         code = 'window.addEventListener("' + (scriptType ? "load" : "DOMContentLoaded") + '", function(){' +
+            code + "\n\n" + globalReinitializer + "\n});"
+         // TODO change `options.appCode` to `!scriptType` and `scriptType ? 'load' : 'DOMContentLoaded' to `load`
+      }
+
+      if (terminalJar) {
+         terminalJar.innerHTML = ""
+
+         // code = (preScript || '') + code.replace(/console\.(log|warn)/g, "loclog")
+         code = (preScript || '') + code.replace(/console\.(log)/g, "loclog")
+      }
+
+      console.log(code);
 
       return code
    }
@@ -258,7 +261,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
    const attrs = {
       script: scriptType
-   }   
+   }
 
    // TODO IMPOSE ORDER (refactor and add @desc for each func):
    /// compilerSubModes дополняем (this block updates Environments and inject resources):
@@ -313,8 +316,14 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
 
    /// TODO? @import 'style.css' to style html tag from link file?
 
-   let htmlContent = baseTags.reduce(
-      (acc, el, i, arr) => ((acc[el] = i < 2 ? (isPaired(el) ? editors[i].getValue() : null) : buildJS(appCode || editors[i].getValue())), acc),
+   const htmlContent = baseTags.reduce(
+      (acc, el, i, arr) => ((acc[el] = i < 2
+         ? (isPaired(el)
+            ? !~singleFileTypes.indexOf(options.frameworkName)
+               ? editors[i].getValue()
+               : (playgroundObject.fileStorage['$global'] || [])[i]
+            : null)
+         : buildJS(appCode || editors[i].getValue())), acc),
       {}
    )
 
@@ -490,12 +499,13 @@ function resourceInject(value, baseMode, actualMode, additionalScripts) {
  * @_param {{ prehandling: (arg0: string) => string; }} currentLang 
  * @param {{
  *    currentLang: Mode, 
- *    maps?: Maps
+ *    maps?: Maps,
+ *    shiftMaps?: number
  * }} [options]
  */
 function buildAndTranspile(code, options) {
    if (window["pageBundler"]) {
-      
+
       /**
        * @type {import('./utils/builder').default}
        */
@@ -507,7 +517,8 @@ function buildAndTranspile(code, options) {
       code = neoBuild(code, playgroundObject.fileStorage || window["fileStore"], {
          entryPoint: 'App.svelte',
          advanced: { require: "same as imports" },
-         maps: options.maps
+         maps: options.maps,
+         shiftMaps: options.shiftMaps
       })
       // result.
 
@@ -664,7 +675,7 @@ function lightRerender(iframe, editors, isJsx, libList, sourceCode) {
 
    const currentLang = playgroundObject.modes && playgroundObject.modes[2] && playgroundObject.modes[2][getLang()]
 
-   code = buildAndTranspile(typeof code == "string" ? code : code[2], {currentLang})
+   code = buildAndTranspile(typeof code == "string" ? code : code[2], { currentLang })
 
    let globalReinitializer = generateGlobalInintializer(code)
 

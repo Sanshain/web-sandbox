@@ -11,9 +11,21 @@ import * as fs from "./fs/store"
  * @param {string} activeTabName
  */
 function generateImportSnippets(activeTabName) {
+
+   const extension = getExtension(activeTabName);
+   const baseName = activeTabName.slice(0, - extension.length - 1)
+
+   if (~singleFileTypes.indexOf(extension)) {
+      let snippet = {
+         name: "import " + baseName + " from './" + activeTabName + "'",
+         // template: "import ${1:" + baseName + "} from './" + activeTabName + "';"
+         template: "import " + baseName + " from './" + activeTabName + "';"
+      }
+      return snippet
+   }   
    let snippets = {
-      name: "import { * } from './" + activeTabName + "'",
-      template: "import { ${1} } from './" + activeTabName + "'"
+      name: "import { * } from './" + baseName + "'",
+      template: "import { ${1} } from './" + baseName + "';"
    }
    return snippets
 }
@@ -125,6 +137,9 @@ export function fileAttach(event) {
    if (playgroundObject.onfileRemove) newTab.oncontextmenu = onContextMenu
 
    if (!event.file) {
+      
+      /// if new:
+
       fs.createAndSaveFile(newTab, origTab) // create new
 
       autocompleteExpand(editors[2], generateImportSnippets(activeTabName)) // editors[2].setValue(fileStore[newTab.innerText]);
