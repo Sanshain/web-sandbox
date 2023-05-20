@@ -29,7 +29,7 @@ export default function buildScript(content, store, options) {
 
    // let exportedFiles = [];   
 
-   globalThis.__debug && console.log(build);
+   // globalThis.__debug && console.log(build);
    let sourceMap = null;
    
    let builtCode = build(content, '.', {

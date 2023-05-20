@@ -67,6 +67,7 @@ export function initialize(values: [string, string, string, Storage | (object | 
     frameworkJug?: string;
     clarifyframework?: (code: string, fwmode: number | SyntaxMode) => SyntaxMode;
 }): ReturnType<typeof initializeEditor>;
+//@ts-expect-error
 export type LangMode = LangMode;
 /**
  * - keyof (Object.keys(compilers) | ['vanile', 'preact', 'vue', 'react'])

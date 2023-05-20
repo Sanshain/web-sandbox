@@ -28,12 +28,12 @@ export const playgroundObject = {
       },
       {
          set(target, prop, value) {
-            // if (prop === '$global') {
+            // if (prop === '_active') {
             //    debugger
             // }
             // else {
             //    debugger
-            // }
+            // }            
             target[prop] = value;
             return true
          },
@@ -45,21 +45,23 @@ export const playgroundObject = {
    onfileRemove: void 0,
    frameworkID: 0,
    get entryPointName() {
+      const xExt = !!(this.frameworkID % 2) ? 'x' : '';
       const framweworkName = compilerNames[this.frameworkID];
       if (~singleFileTypes.indexOf(framweworkName)) return 'App.' + framweworkName;
       else {
          let m = this.fileStorage._active.match(/\.ts(x)?$/m)
-         if (m) return 'app' + m.pop()
+         if (m) return 'app' + m[0];
          else {
-            return 'app.js'
+            return 'app.js' + xExt; // + x;
+            // return 'app.js';
          }
       }
    }
 }
 
 /**
- * @type {{
- *  [K in "svelte"|"vue"] : {
+ * @type {{ 
+ *  [K in "svelte"] : {                                                       // |"vue"
  *      links?: string[],
  *      mode?: string,
  *      join?: (code: string, html: string, style: string) => string,
@@ -162,7 +164,7 @@ export const singleFileEnv = {
          }
       },
    },
-   vue: void 0,
+   // vue: void 0,
 }
 
 export const singleFileTypes = Object.keys(singleFileEnv)
@@ -304,7 +306,7 @@ export const defaultValues = [
       html: '<div id="app">\n\t<button @click="count++">\n\t\tCount is: {{ count }}\n\t</button>\n</div>',
       css: "#app button{ \n\tcolor: green; \n}",
       javascript:
-         "import { createApp } from 'vue'\n\nVue.createApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')",
+         "i" + "mport { createApp } from 'vue'\n\nVue.createApp({\n\tdata() {\n\t\treturn {\n\t\t\tcount: 0\n\t\t}\n\t}\n}).mount('#app')",
    },
    // react
    {

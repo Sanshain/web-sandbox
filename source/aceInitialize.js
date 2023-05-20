@@ -4,7 +4,7 @@ import { default as extend } from "emmet"
 
 import { debounce, getExtension, getSelectedModeName, loadScripts, typeFromExtention } from "./utils/utils"
 import { expand } from "./features/expantion"
-import { compilersSet, defaultValues as initialValues, singleFileEnv, playgroundObject, compilerNames, singleFileTypes } from "./features/compiler"
+import { compilersSet, defaultValues as initialValues, singleFileEnv, playgroundObject, compilerNames, singleFileTypes, defaultValues } from "./features/compiler"
 import { domFuncs, keyWords } from "./utils/autocompletion"
 import { webCompile } from "./pageBuilder"
 import { modes } from "./features/base"
@@ -83,19 +83,24 @@ import { cssKeyWords } from "./features/fs/editor"
 export default function initializeEditor(ace, editorOptions, values) {
    /**
     * @type {FrameworkID}
-    */
+   */
+   
    const initialFramework = editorOptions.frameworkID
-   const frameworksList = Object.keys(compilersSet)
+   const frameworksList = Object.keys(compilersSet);
+   const frameworkName = frameworksList[editorOptions.frameworkID]
 
    const Range = ace.require("ace/range").Range
    const delay = 1500
-
-   const autoPlay = debounce(() => {
-      const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID])
-      const jsxEnabled = Boolean(editorOptions.frameworkID % 2)
-      setTimeout(webCompile.bind(null, jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode))
+   
+   const autoPlay = debounce(function() {
+      if (singleFileEnv[frameworkName]) startApp(frameworksList, editorOptions)                    // does not work clearly (disabled in calling now)
+      else {
+         const frameworkEnvironment = editorOptions.updateEnv(frameworksList[editorOptions.frameworkID])
+         const jsxEnabled = Boolean(editorOptions.frameworkID % 2)
+         setTimeout(webCompile.bind(null, jsxEnabled, frameworkEnvironment, editorOptions.quickCompileMode))
+      }
    }, delay)
-
+   
    const fontSize = ".9em"
 
    values = values || []
@@ -129,11 +134,11 @@ export default function initializeEditor(ace, editorOptions, values) {
       if (!value && modulesStorage) {
          const frameworkName = frameworksList[editorOptions.frameworkID]
          if (~singleFileTypes.indexOf(frameworkName)) {
-            value = modulesStorage["App." + frameworkName][i]
-            
+            const initialPoint = modulesStorage["App." + frameworkName]
+            value = initialPoint ? initialPoint[i] : defaultValues[editorOptions.frameworkID][modes[i]]            
          }
          else if(i === 2) {
-            value = modulesStorage["app.js"] || modulesStorage["app.ts"] || modulesStorage["app.tsx"]  
+            value = modulesStorage["app.js"] || modulesStorage["app.jsx"] || modulesStorage["app.ts"] || modulesStorage["app.tsx"]
          }               
       }
 
@@ -164,7 +169,7 @@ export default function initializeEditor(ace, editorOptions, values) {
       // сама команда уже добавлена и так (почему-то надо добавить для 1-го редактора):
       editor.commands.addCommand(allCommands.copylinesdown)
 
-      i < 2 && editor.textInput.getElement().addEventListener("input", autoPlay)
+      i < 2 && !singleFileEnv[frameworkName] && editor.textInput.getElement().addEventListener("input", autoPlay)
 
       // prettier-ignore
       editor.textInput.getElement().addEventListener("keydown", function (/** @type {{ ctrlKey: any; keyCode: number; key: string; preventDefault: () => void; }} */ event) {            
@@ -177,7 +182,7 @@ export default function initializeEditor(ace, editorOptions, values) {
 
                event.preventDefault()
 
-               startApp(frameworksList, editorOptions, editors)
+               startApp(frameworksList, editorOptions) // editors
 
                console.timeEnd("F9")
             } else if (event.ctrlKey && event.keyCode === 83) {
@@ -527,10 +532,7 @@ export default function initializeEditor(ace, editorOptions, values) {
                                  // переключаемся на эту вкладку
                                  // let tabIndex = Object.keys(playgroundObject.fileStorage).indexOf(filename)                                 
                                  const tabs = document.querySelector(".tabs").children
-                                 let activeTab = [].slice
-                                    .call(tabs)
-                                    .filter((f) => f.innerText == filename)
-                                    .pop()
+                                 let activeTab = [].slice.call(tabs).filter((f) => f.innerText == filename).pop()
                                  //@ts-ignore
                                  activeTab.click()
 
@@ -562,7 +564,7 @@ export default function initializeEditor(ace, editorOptions, values) {
    if (~Object.keys(playgroundObject.modes[2]).slice(1).map((w) => "/* " + w + " */").indexOf(editors[2].session.getLine(0))) {
       
       const tabs = document.querySelector(".tabs")
-      tabs && tabs.classList.add("enabled")
+      tabs && tabs.classList.add("enabled")      
    }
 
    document.location.hash.startsWith("#debug") && console.log("modules Storage get:")
@@ -594,23 +596,35 @@ function bootFileStorage(modulesStorage, fileStorage, options) {
    let fileCreateTab = document.querySelector(".tabs .tab:last-child")
 
    if (fileCreateTab) {
+      const compilerName = compilerNames[options.frameworkID]; // singleFileTypes
       let entryPoint = null;
       for (const key in _modules) {
          if (Object.hasOwnProperty.call(_modules, key)) {
             fileStorage[key] = _modules[key]
 
-            // skip entry point            
-            if (!entryPoint && (/app\.(j|t)sx?/.test(key) || key == void 0 + "" || key === "App." + compilerNames[options.frameworkID])) {
-               entryPoint = key
+            // skip entry point
+            if (!entryPoint && (/app\.(j|t)sx?/.test(key) || key == void 0 + "" || key === "App." + compilerName)) {               
+               // debugger
+               const extension = getExtension(key);
+               if (~singleFileTypes.indexOf(compilerName) && extension !== compilerName) {                  
+                  if (extension.slice(-1) !== 's') {                                        
+                     // app.tsx | undefined - block                     
+                     continue;                      
+                  }
+                  else {
+                     // app.(js|ts) -  allow
+                  }
+               }               
+               fileStorage._active = entryPoint = key;
                continue
             }
 
             // setTimeout(() => fileCreate.click({ target: fileCreate, file: key }));            
-            if (compilerNames[options.frameworkID] && key === globalStore) {
+            if (compilerName && key === globalStore) {
                // debugger
                continue
             }
-            fileAttach({ target: fileCreateTab, file: key, editors: options.editors })
+            fileAttach({ target: fileCreateTab, file: key, editors: options.editors, initial: true })
 
             // editors[2].setValue(_modules[key]) // set editor value
             // // clear selection

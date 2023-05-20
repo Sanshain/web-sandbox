@@ -123,6 +123,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
             // )
          } else if (activeTab) {
             fileStorage[activeTab["innerText"]] = playgroundObject.editors[2].getValue()
+            fileStorage._active = activeTab["innerText"]
          }
          // if (activeTab && options.frameworkName !== getExtension(activeTab["innerText"])) {
 
@@ -132,6 +133,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
          // }
       } else if (activeTab) {
          fileStorage[activeTab["innerText"]] = playgroundObject.editors[2].getValue()
+         fileStorage._active = activeTab["innerText"]
       }
    }
 
@@ -245,7 +247,7 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
          code = (preScript || '') + code.replace(/console\.(log)/g, "loclog")
       }
 
-      console.log(code);
+      // console.log(code);
 
       return code
    }
@@ -269,7 +271,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
       playgroundObject.editors.forEach((editor, i) => {
          /**
           * @type ChoiceMenu
-          */
+         */
+         //_ts-expect-error
          let modeMenu = editor.container.querySelector("choice-menu")
          if (modeMenu) {
             /**

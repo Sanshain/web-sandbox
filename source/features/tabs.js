@@ -57,7 +57,7 @@ const menuPoints = {
  * 
  * 
  * attach new file
- * @param {{ file?: string; target: any; editors?: AceAjax.Editor[] }} event
+ * @param {{ file?: string; target: any; editors?: AceAjax.Editor[], initial?: boolean }} event
  */
 export function fileAttach(event) {
    let fileStore = playgroundObject.fileStorage
@@ -67,9 +67,18 @@ export function fileAttach(event) {
    /** @type {import("../aceInitialize").EditorsEnv} */
    const editors = event["editors"] || window["editors"]
 
-   let activeTabName = nameValidate(event.file || prompt("Enter file name:"), event.editors) || ""
+   let validname = nameValidate(event.file || prompt("Enter file name:"), event.editors) || "";   
 
-   if (!activeTabName) return alert("Invalid file name format")
+   if (typeof validname == 'object') {
+      
+      const errMessage = "Error: " + validname.error;
+      if (event.initial) return console.warn(errMessage + ' `' + event.file + '`');
+      else {
+         return alert("Error: " + validname.error)
+      }      
+   }
+
+   let activeTabName = validname;                                                                       // typeof valid === 'string' ? valid : '';
 
    /// Проверяем имя файла на exists():
 
@@ -92,6 +101,7 @@ export function fileAttach(event) {
        * @returns
        */
       origTab.ondblclick = function onrename(/** @type {{ target: { innerText: string; }; }} */ ev) {
+         
          if (!playgroundObject.onfilerename) return console.warn("Specify onfilerename callback argument to activate the feature!")
 
          const prevName = ev.target.innerText;
@@ -330,14 +340,14 @@ function onContextMenu(e) {
  * Validate file name
  * @param {string} name
  * @param {AceAjax.Editor[]} [editors] 
- * @returns {string | false} - valid file name or false 
+ * @returns {string | {error: string}} - valid file name or false
  */
 function nameValidate(name, editors) {
    //
-   if (!name) return false
+   if (!name) return {error: 'empty file name value'}
 
    const match = name.match(/[\d\w\-]+(?:\.(?<ext>\w+))?/)
-   if (!match) return false
+   if (!match) return { error: 'incorrect file name' }
    else {
       //
       const ext = match.groups.ext
@@ -364,7 +374,7 @@ function nameValidate(name, editors) {
       }
    }
    
-   return false
+   return { error: 'unexpected file name' }
 
    // let ext = getExtension(fileStore._active)
    // ext = "." + (ext || (fileStore["app.ts"] || editors[2].session.getLine(0).match(/typescript/) ? "ts" : "js"))

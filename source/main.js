@@ -390,6 +390,11 @@ export function initialize(values, options) {
 }
 
 /**
+ * @description
+ * - call `onModeChange`s on the config 
+ * - change aceEditor.mode to appropiate
+ * - change tab(s) view visibility (via transform)
+ * - call renameTabs to rename tabs and files in fileStorage
  * 
  * @param {LangMode} mode 
  * @param {CustomEvent<ChoiceDetails>} ev 
@@ -400,14 +405,19 @@ export function initialize(values, options) {
  * }} options 
  */
 function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
+   
    const modeOptions = mode[ev.detail.value] || {
       extension: ".js"
       // mode: 'javascript'
    }
    // const link = options.modes[i][e.detail.value];
-   window['__debug'] && console.log(ev.detail.value)
+   // window['__debug'] && console.log(ev.detail.value)
 
-   globalOptions.onModeChange && globalOptions.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })
+   const keepedEntryPointName = playgroundObject.entryPointName;
+
+   /// call on change modes from config (global and lang callbacks)
+   
+   globalOptions.onModeChange && globalOptions.onModeChange({ mode: ev.detail.value, prevMode: ev.detail.previousValue, editor: editors[i] })   
 
    if (globalOptions.modes[i]) {
       let langmode = globalOptions.modes[i][ev.detail.value] || globalOptions.modes[i][ev.detail.previousValue]
@@ -424,6 +434,8 @@ function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
       }
    }
 
+   /// change EDITOR MODES:
+
    if (!(globalOptions.modes[i] && globalOptions.modes[i][ev.detail.value] && globalOptions.modes[i][ev.detail.value].onModeChange)) {
       // upload to frame will in pageBuilder, here just is highlight change
       i === 1 && editors[i].session.setMode("ace/mode/" + ((modeOptions && modeOptions.mode) || ev.detail.value))
@@ -438,57 +450,25 @@ function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
       }
    }
 
-   // MULTITABS visible MODE:
+   /// MULTITABS visible MODE:
+
    if (i && i - 1) {
       const multitabs = modeOptions && modeOptions.tabs
       var tabs = document.querySelector(".tabs") //  + (multitabs ? '' : '.enabled')
       if (tabs) {
-         //@ts-ignore
-         tabs.style.transition = null
-         if (multitabs) {
-            if (!tabs.classList.contains("enabled")) {
-               // enable tab:
-               tabs.classList.add("enabled")
-            } else {
-               // switch to first tab:
-               // debugger
-               //@ts-expect-erro r
-               // tabs.children[0] && tabs.children[0].click()
-            }
-         } else if (!multitabs && tabs.classList.contains("enabled")) {
-            tabs.classList.remove("enabled")
-         }
+         tabsVisibilityChange(tabs, multitabs);
       }
    }
 
-   // REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:
-   //@ts-ignore
-   var Range = ace.require("ace/range").Range
 
-   // let markLine = editors[i].session.getLine(0)
-   const entryPointName = playgroundObject.entryPointName;
+   /// REPLACE TITLE MARK OF THE MODE (FLAG) IN BEGIN OF FILE:      
 
-   const _markedContentJug = playgroundObject.fileStorage[entryPointName];
-   const markedContent = typeof _markedContentJug == 'string' ? _markedContentJug : _markedContentJug[2]
-   const markValue = "/* " + ev.detail.value + " */"
+   // let markLine = editors[i].session.getLine(0)   
 
-   const saveRoot = saveScript.bind(null, entryPointName);
-   if (markedContent.startsWith("/*")) {      
-      saveRoot(markedContent.replace(/\/\*[\s\S]+?\*\//m, markValue))
-
-      if (playgroundObject.fileStorage._active === entryPointName) {
-         editors[i].session.replace(new Range(0, 0, 0, markedContent.length), markValue)      
-      }
-   } //
-   else {      
-      saveRoot(markValue + "\n\n" + markedContent)
-
-      if (playgroundObject.fileStorage._active === entryPointName) {
-         editors[i].session.insert({ row: 0, column: 0 }, markValue + "\n\n")
-      }      
-   }
+   setLangMark(keepedEntryPointName, ev.detail.value, editors[i].session);
 
    // editors[i].clearSelection()
+
 
    // RENAME FILES:
    if (tabs) {
@@ -500,9 +480,62 @@ function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
 }
 
 
+/**
+ * @param {Element} tabs
+ * @param {boolean} multitabs
+ */
+function tabsVisibilityChange(tabs, multitabs) {
+   tabs['style'].transition = null;
+   if (multitabs) {
+      if (!tabs.classList.contains("enabled")) {
+         // enable tab:
+         tabs.classList.add("enabled");
+      } else {
+         // switch to first tab:
+         // debugger
+         //@ts-expect-erro r
+         // tabs.children[0] && tabs.children[0].click()
+      }
+   } else if (!multitabs && tabs.classList.contains("enabled")) {
+      tabs.classList.remove("enabled");
+   }
+}
+
 
 /**
- *
+ * @param {string} keepedEntryPointName
+ * @param {string} mark
+ * @param {import("./aceInitialize").EditorSession} editorSession
+ */
+function setLangMark(keepedEntryPointName, mark, editorSession) {
+
+   //@ts-ignore
+   var Range = ace.require("ace/range").Range
+
+   const _markedContentJug = playgroundObject.fileStorage[keepedEntryPointName];
+   const markedContent = typeof _markedContentJug == 'string' ? _markedContentJug : _markedContentJug[2];
+   const markValue = "/* " + mark + " */";
+
+   // const saveRoot = saveScript.bind(null, playgroundObject.entryPointName);
+   const saveRoot = saveScript.bind(null, keepedEntryPointName);
+   if (markedContent.startsWith("/*")) {
+      saveRoot(markedContent.replace(/\/\*[\s\S]+?\*\//m, markValue));
+
+      if (playgroundObject.fileStorage._active === playgroundObject.entryPointName) {
+         editorSession.replace(new Range(0, 0, 0, markedContent.length), markValue);
+      }
+   } //
+   else {
+      saveRoot(markValue + "\n\n" + markedContent);
+
+      if (playgroundObject.fileStorage._active === keepedEntryPointName) {
+         editorSession.insert({ row: 0, column: 0 }, markValue + "\n\n");
+      }
+   }
+}
+
+/**
+ * @description Rename tabs and fileStorage files
  * @param {*} tabs
  * @param {{
  *    editors: [AceEditor, AceEditor, AceEditor],
@@ -511,25 +544,31 @@ function onLangModeChanged(mode, ev, {globalOptions, editors, i}) {
  */
 function renameTabs(tabs, options) {
    // TODO .vue and .svelte support
-
+   
    // const fraworkExtName = isSingleFC()
 
    // const modeExt = (modeOptions || { ext: '.js' }).extension; // TODO may be fix error on modeOptions = undefined
    // debugger
 
+   const xExt = !!(playgroundObject.frameworkID % 2) ? 'x' : '';
+
    if (Object.keys(playgroundObject.fileStorage).length > 1) {
 
-      if (!playgroundObject.fileStorage["app" + options.extension]) {
+      if (!playgroundObject.fileStorage["app" + options.extension]) {         
+
          // rename tabs:
          const jsPattern = /([\w_\d]+)\.js(x)?$/m
-         const tsPattern = /([\w_\d]+)\.ts(x)?$/m
+         const tsPattern = /([\w_\d]+)\.ts(x)?$/m;
+         
          ;[].slice.call(tabs.querySelectorAll(".tab")).forEach((/** @type {HTMLElement} */ element) => {
             if (options.extension) {
                if (!element.innerText.endsWith(options.extension)) {
-                  element.innerText = element.innerText.replace(jsPattern, "$1.ts$2")
+                  // element.innerText = element.innerText.replace(jsPattern, "$1.ts$2")
+                  element.innerText = element.innerText.replace(jsPattern, "$1.ts" + xExt)
                }
             } else if (!element.innerText.endsWith(".js")) {
-               element.innerText = element.innerText.replace(tsPattern, "$1.js$2")
+               // element.innerText = element.innerText.replace(tsPattern, "$1.js$2")
+               element.innerText = element.innerText.replace(tsPattern, "$1.js" + xExt)
             }
          })
 
@@ -537,11 +576,12 @@ function renameTabs(tabs, options) {
          /**
           * @type {[RegExp, string]}
           */
-         const extensions = options.extension ? [jsPattern, "$1.ts$2"] : [tsPattern, "$1.js$2"]
-
+         // const extensions = options.extension ? [jsPattern, "$1.ts$2"] : [tsPattern, "$1.js$2"]
+         const extensions = (options.extension && options.extension[1] === 't') ? [jsPattern, "$1.ts" + xExt] : [tsPattern, "$1.js" + xExt]
+         
          let storageFiles = Object.keys(playgroundObject.fileStorage).map((k) => ({
             [k.replace(extensions[0], extensions[1])]: playgroundObject.fileStorage[k]
-         }))
+         }))         
          playgroundObject.fileStorage = Object.assign({}, ...storageFiles)
 
          // imports refactoring:
@@ -554,9 +594,9 @@ function renameTabs(tabs, options) {
 
          let cursor = options.editors[2].selection.getCursor()
          options.editors[2].session.setValue(
-            options.editors[2].session
-               .getValue()
-               .replace(new RegExp(extensions[0].toString().slice(1, -2).replace("$", "(['\"])$"), "m"), extensions[1] + "$3")
+            options.editors[2].session.getValue().replace(
+               new RegExp(extensions[0].toString().slice(1, -2).replace("$", "(['\"])$"), "m"), extensions[1] + "$3"
+            )
          )
          options.editors[2].moveCursorTo(cursor.row, cursor.column)
 
@@ -577,9 +617,9 @@ function renameTabs(tabs, options) {
       const currentExtension = nameChunks.pop();      
 
       // if (!~firstTab.innerText.indexOf(options.extension, firstTab.innerText.length - options.extension.length)) {
-      if (!~[options.extension.slice(1), compilerNames[playgroundObject.frameworkID]].indexOf(currentExtension)) {
-         // firstTab.innerText = firstTab.innerText.split(".").shift() + options.extension         
-         firstTab.innerText = nameChunks.shift() + options.extension
+      if (!~[options.extension.slice(1), compilerNames[playgroundObject.frameworkID]].indexOf(currentExtension)) {         
+         firstTab.innerText = firstTab.innerText.split(".").shift() + options.extension
+         // firstTab.innerText = nameChunks.shift() + options.extension + x
       }
    }
 }

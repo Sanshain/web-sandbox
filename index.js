@@ -230,7 +230,15 @@ const editors = IDE.initialize([], {
             javascript: null,
             "ES module": {
                tabs: true,
-               mode: "javascript" // ace editor mode
+               mode: "javascript", // ace editor mode               
+               extension: (() => {
+                  //@ts-expect-error
+                  const xExt = (+sessionStorage.getItem('mode') % 2) ? 'x' : '';
+                  const entryointTab = document.querySelector('.tab.active');
+                  //@ts-expect-error
+                  entryointTab.textContent += xExt;
+                  return ".js" + xExt
+               })(),
             }
          },
          {
@@ -241,7 +249,8 @@ const editors = IDE.initialize([], {
                // src: 'https://unpkg.com/typescript@4.9.5/lib/typescriptServices.js',
                target: "self", // TODO change to `root`|`top`|`parent`|undefined!
                tabs: true,
-               extension: ".ts",
+               //@ts-ignore
+               extension: ".ts" + ((+sessionStorage.getItem('mode') % 2) ? 'x' : ''),
                /**
                 *
                 * @param {{disable?: boolean, enable: boolean, editor: AceEditor, editors: EditorsEnv}} arg
@@ -258,7 +267,8 @@ const editors = IDE.initialize([], {
                         // position: editor.selection.getCursor(),
 
                         fileNavigator: Object.assign(editors.fileStorage, {
-                           _active: "app.ts"
+                           //@ts-expect-error
+                           _active: "app.ts" + ((document.getElementById('compiler_mode').selectedIndex % 2) ? 'x' : '')
                         }),
                         editor,
                         libFiles: [
@@ -272,7 +282,7 @@ const editors = IDE.initialize([], {
                         autocompleteStart: 1
                      }
                      // Parameters<import('.').TypescriptEditor['initialize']>[0]
-                     const tsEditorInitialize = (/** @type {unknown} */ $config) => {
+                     const tsEditorInitialize = (/** @type {any} */ $config) => {
                         
                         //_ts-expect-error `AceEditor is uncompatible with AceAjax.Editor`
                         const [tsService, ace] = tsEditor.initialize($config)
@@ -415,7 +425,8 @@ function uploadAdditionalLibs(compileMode, editor, config) {
       if (Array.isArray(additionalTypings[compileMode])) {
          config.aliasedLibFiles = {
             [compileMode + ".d.ts"]: additionalTypings[compileMode][0]
-         }         
+         }
+         //@ts-expect-error
          config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1))
       } else {
          // if object
