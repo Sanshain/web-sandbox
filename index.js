@@ -232,10 +232,10 @@ const editors = IDE.initialize([], {
                tabs: true,
                mode: "javascript", // ace editor mode               
                extension: (() => {
-                  //@ts-expect-error
+                  //_ts-expect-error
                   const xExt = (+sessionStorage.getItem('mode') % 2) ? 'x' : '';
                   const entryointTab = document.querySelector('.tab.active');
-                  //@ts-expect-error
+                  //_ts-expect-error
                   entryointTab.textContent += xExt;
                   return ".js" + xExt
                })(),
@@ -426,7 +426,7 @@ function uploadAdditionalLibs(compileMode, editor, config) {
          config.aliasedLibFiles = {
             [compileMode + ".d.ts"]: additionalTypings[compileMode][0]
          }
-         //@ts-expect-error
+         //_ts-expect-error
          config.libFiles = config.libFiles.concat(additionalTypings[compileMode].slice(1))
       } else {
          // if object
@@ -474,3 +474,6 @@ function convertSassToCss(event, getPureCode) {
    event.editor.setValue(css)
    sessionStorage.setItem("__css", getPureCode(css))
 }
+
+
+

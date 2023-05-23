@@ -8,6 +8,7 @@ import type { default as TSEditor } from "ts-a-editor";
 
 
 
+
 // import { Options, PlaygroundEditors } from "./index";
 // import { LangMode, AceEditor, SyntaxMode, initialize } from './types/main';
 
@@ -73,7 +74,6 @@ declare global{
 // DECLARATIONS:
 
 // set `disableSourceOfProjectReferenceRedirect: true`
-
 
 declare const ts: typeof tsc;
 

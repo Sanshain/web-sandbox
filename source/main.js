@@ -6,7 +6,7 @@ import { createPage, webCompile } from './pageBuilder';
 import { expand } from "./features/expantion"
 import { initResizers } from "./features/resizing"
 import {
-    babelCompiler,
+    jscriptxCompiler,
     compilersSet,
     defaultValues,
     singleFileEnv,
@@ -33,6 +33,9 @@ import { modes } from "./features/base.js"
 
 import "./features/consoleDebug"
 import { saveFile, saveScript } from './features/fs/store';
+import { decode } from "sourcemap-codec";
+import { toast } from './features/toasts';
+import { hoveringInit } from './features/hovering';
 
 /**
  * @typedef {import("./ui/ChoiceMenu").ChoiceDetails} ChoiceDetails
@@ -76,7 +79,7 @@ function updateEnvironment(environment, envName, entryPoint) {
             console.log(envName, "version: ", verNum.pop())
          }
 
-         ;(cachedEnvironment = ver[1].concat(isJSX ? [babelCompiler.link] : [])).forEach((link) => environment.push(link))
+         ;(cachedEnvironment = ver[1].concat(isJSX ? [jscriptxCompiler.link] : [])).forEach((link) => environment.push(link))
          return environment
       }
    }
@@ -105,7 +108,7 @@ window.addEventListener("message", function (event) {
 
       // line.innerText = event.data.value;
       let snipElem = line.appendChild(document.createElement("div"))
-      snipElem.textContent =
+      let logValue =
          "> " + typeof event.data.value === "object"
             ? ~event.data.value.toString().indexOf("HTML")
                ? event.data.value
@@ -113,10 +116,76 @@ window.addEventListener("message", function (event) {
             : event.data.value
 
       if (event.data.error) {
+
+         console.warn(event.data.error)
+
+         if (event.data.sourceMap) {
+            const mapInfo = JSON.parse(window.atob(event.data.sourceMap));
+            const rawMap = decode(mapInfo.mappings)
+            const lineNum = ((rawMap[event.data.position.line - 2] || [])[0] || [])[2];
+            const filename = mapInfo.sources[((rawMap[event.data.position.line - 2] || [])[0] || [])[1]]
+            if (lineNum) {
+               let msg = event.data.value.replace(/`[\d:]+`/, ' in `' + lineNum + '` line').slice(2);
+               if (filename) {                  
+                  msg = logValue = msg.replace(/<[\w\.\d]*>/, '&lt;' + filename + '&gt; ')
+                  logValue = '&gt; ' + logValue;
+               }               
+               toast.show(msg)
+            }
+
+            if (playgroundObject.fileStorage._active !== filename) {
+
+               const content = playgroundObject.fileStorage[filename]
+               console.warn('//TODO switch tab');
+            }
+            
+            /// add marker:
+            
+            var Range = ace.require("ace/range").Range
+            //@ts-expect-error
+            const markerID = editors[2].session.addMarker(
+               //@ts-expect-error
+               new Range(lineNum - 1, 0, lineNum - 1, editors[2].session.getLine(lineNum).length), "runtime__error",
+               // type: "text" | MarkerRenderer | "fullLine" | "screenLine"
+               "text",
+               true
+            );
+            // and TODO look up mousemove and check line to hint the error!
+            // console.log(r);
+            
+            const editor = playgroundObject.editors[2];
+            const errMsg = logValue.split('&lt;')[0].slice(5);
+            // console.log('...' + shortError);
+            /// hovering hint under error line:
+
+            const removeHover = hoveringInit(editor, { text: errMsg, hoverSelector: 'runtime__error', className: 'runtime_error' });
+
+            /// set breakpoint:
+
+            editor.session.setBreakpoint(lineNum - 1, 'ace_error');
+
+            /// toooltip on breakpoint:
+
+            const removeToolTop = tooltipOnErrorLine(errMsg);
+            
+            editor.on("input", function oninput () {
+               editor.session.removeMarker(markerID)
+               editor.session.clearBreakpoints()
+               removeToolTop();
+               removeHover();
+               toast.closeAll()
+
+               editor.removeListener('input', oninput);               
+            });
+
+         }
+
          snipElem.style.color = "red"
          // resultElem.style.fontFamily = "'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif";
-         snipElem.style.fontFamily = "monospace"
+         // snipElem.style.fontFamily = "monospace"
       }
+
+      snipElem.innerHTML = logValue.replace('`', '<span>').replace('`', '</span>');
 
       consoleJar.scrollTo(0, consoleJar.scrollHeight)
 
@@ -126,6 +195,32 @@ window.addEventListener("message", function (event) {
    // let line = window.parent.document.querySelector('.console .lines').appendChild(document.createElement('div'));
    // line.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
 })
+
+/**
+ * @param {string} shortError
+ * @returns {Function}
+ */
+function tooltipOnErrorLine(shortError) {
+   
+   const editor = playgroundObject.editors[2];
+
+   const tooltip = document.querySelector('.ace_tooltip') || editor.container.appendChild(document.createElement('div'));
+   tooltip['style'].display = 'none';
+   tooltip.className = 'ace_tooltip';
+   tooltip.innerHTML = shortError;
+
+   setTimeout(() => {
+      const aceError = document.querySelector('.ace_error');
+      aceError['onmouseover'] = (ev) => {
+         tooltip.classList.add('runtime_error__tooltop');
+         tooltip['style'].display = 'block';
+         tooltip['style'].top = ev.target.offsetTop - 25 + 'px';
+      };
+      aceError['onmouseout'] = () => tooltip['style'].display = 'none';
+   }, 150);
+
+   return () => tooltip.parentElement && tooltip.parentElement.removeChild(tooltip)
+}
 
 /**
  *
@@ -334,7 +429,7 @@ export function initialize(values, options) {
       compileSingleFileComponent(extension, frameworkEnvironment, editors)
    } //
    else {
-      const [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined, {
+      const [iframe, curUrl] = createPage(playgroundObject.curUrl, frameworkEnvironment, jsxMode ? jscriptxCompiler.mode : undefined, {
          frameworkName: frameworkName
       }) // editorOptions
 
@@ -355,7 +450,7 @@ export function initialize(values, options) {
 
    document.querySelector(".expand")["onclick"] = (/** @type {{ currentTarget: any; }} */ e) => {
       //
-      expand(e, frameworkEnvironment, jsxMode ? babelCompiler.mode : undefined)
+      expand(e, frameworkEnvironment, jsxMode ? jscriptxCompiler.mode : undefined)
    }
 
    document.getElementById("compiler_mode").onchange = function (event) {

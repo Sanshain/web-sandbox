@@ -1,0 +1,48 @@
+.notification {
+    position: fixed;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: .9em;
+
+    background-color: orangered;
+    /* bottom: 2em; */
+    bottom: -2em;
+    opacity: 0;
+
+    right: 5em;
+    max-width: calc(50% - 8em);
+    padding: 0.4em 1em;
+    text-align: right;
+
+    min-width: 20em;
+    border-radius: 0.5em;
+    background: linear-gradient(0deg, #ff3500ee, #ff4500ee);
+    box-shadow: 0 3px 10px lightcyan;
+
+    transition: 1s;
+}
+
+.notification .close {
+    position: absolute;
+    top: -0.5em;
+    right: 0;
+    transform: rotate(45deg);
+    width: 1em;
+    height: 1em;
+    border-radius: 1em;
+    background-color: crimson;
+    line-height: 1em;
+    text-align: center;
+    transition: .5s;
+    cursor: pointer;
+}
+
+.notification .close:hover {
+    /* transform: rotate(135deg); */
+    box-shadow: 0 0 15px orange;
+}
+
+.notification span {
+    cursor: pointer;
+    text-decoration: underline;
+    user-select: none;
+}

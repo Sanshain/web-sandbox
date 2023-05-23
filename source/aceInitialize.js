@@ -28,7 +28,12 @@ import { cssKeyWords } from "./features/fs/editor"
  *      replace: (range: Range, s: string) => unknown,
  *      insert: (pos: Position, v: string) => void,
  *      getMarkers(front?: true): Record<number, {id: number, range: {start?: Position, end: Position}}>,
+ *      setBreakpoint(row: number, className: string): void,
+ *      clearBreakpoints(),
  *      removeMarker(id: number),
+ *      doc: {
+ *          positionToIndex: Function
+ *      }
  *      getMode: () => {
  *          $id: `ace/mode/${string}`
  *      },
@@ -52,6 +57,12 @@ import { cssKeyWords } from "./features/fs/editor"
  *  getSession: () => EditorSession
  *  focus(),
  *  gotoLine(line: number),
+ *  renderer: {
+ *      textToScreenCoordinates: Function
+ *  }
+ *  on(event: 'input', callback: Function),
+ *  removeListener(event: 'input', Function),
+ *  onTextInput?: Function,
  *  completers?: {
  *      getCompletions: (editor: any, session: any, pos: any, prefix: any, callback: any) => void;
  *      getDocTooltip: (item: {docHTML: string;caption: string;}) => void;
@@ -123,11 +134,11 @@ export default function initializeEditor(ace, editorOptions, values) {
          //  javascript == 2   &&   syntax == 1 | 3 (preact|react)
          // mode = syntax % 2 ? 'tsx' : mode;  // jsx?
          
-         //@ts-expect-error
+         //_ts-expect-error
          mode = "jsx" // jsx
       }
       editor.session.setMode("ace/mode/" + mode)
-      editor.setFontSize(fontSize)      
+      editor.setFontSize(fontSize)
       
       let value = values[i];
       
@@ -592,9 +603,10 @@ export default function initializeEditor(ace, editorOptions, values) {
  * }} options
  */
 function bootFileStorage(modulesStorage, fileStorage, options) {
+   
    const _modules = typeof modulesStorage === "object" ? modulesStorage : JSON.parse(modulesStorage)
    let fileCreateTab = document.querySelector(".tabs .tab:last-child")
-
+   
    if (fileCreateTab) {
       const compilerName = compilerNames[options.frameworkID]; // singleFileTypes
       let entryPoint = null;

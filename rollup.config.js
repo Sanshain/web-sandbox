@@ -37,6 +37,10 @@ const modules = [
     //     outputName: 'IDE',
     // },    
     {
+        inputFile: './source/libs/jsx.js',
+        outputFile: 'jsx.convert.js',
+    },    
+    {
         inputFile: './source/libs/preact.js',
         outputFile: '_preact.js',
 

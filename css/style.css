@@ -1,3 +1,6 @@
+@import url(./notices.css);
+@import url(./error.css);
+
 body{
     background: #333;
     color: white;

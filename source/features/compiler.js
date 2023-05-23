@@ -200,12 +200,14 @@ const preactCompiler = {
       (document.location.port.slice(0, 3) == "300" ? "/build/_preact.js" : "/static/js/compiler_libs/_preact.js"),
 }
 
-export const babelCompiler = {
+export const jscriptxCompiler = {
    // download babel
    // link: 'https://unpkg.com/@babel/standalone/babel.min.js',
-   link: "https://unpkg.com/@babel/standalone@7.21.4/babel.min.js",
+   // link: "https://unpkg.com/@babel/standalone@7.21.4/babel.min.js",   
    // link: 'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.4/babel.min.js',
-   mode: ' type="text/babel" ',
+   link: "http://127.0.0.1:3001/build/jsx.convert.js",
+   // mode: ' type="text/babel" ',
+   mode: ' type="text/jsx" ',
 }
 
 // export const reactCompilers = [babelCompiler.link, reactCompiler.react, reactCompiler.reactDOM];
@@ -267,9 +269,9 @@ export const versionController = {
 
 export const compilersSet = {
    vanile: [],
-   preact: [babelCompiler.link].concat(Object.values(preactCompiler)),
+   preact: [jscriptxCompiler.link].concat(Object.values(preactCompiler)),
    vue: Object.values(vueCompiler),
-   react: Object.values(reactCompiler).concat([babelCompiler.link]),
+   react: Object.values(reactCompiler).concat([jscriptxCompiler.link]),
 
    // TODO CHANGE TO MORE UNIVERSAL PATH:
 

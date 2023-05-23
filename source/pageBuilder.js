@@ -2,7 +2,7 @@
 
 import {
    averageCompilerOptions,
-   babelCompiler,
+   jscriptxCompiler,
    compilersSet,
    playgroundObject,
    singleFileEnv,
@@ -16,6 +16,7 @@ import { commonStorage, getLangMode, typeFromExtention, getExtension } from "./u
 // TODO REMOVE:
 import { ChoiceMenu } from "./ui/ChoiceMenu"
 import { modes as baseModes, modes } from "./features/base"
+import { SOURCE_MAP_base64 } from "./utils/builder"
 // import initializeEditor from './aceInitialize';
 
 /**
@@ -37,7 +38,7 @@ import { modes as baseModes, modes } from "./features/base"
  * }} Mode
  */
 
-export { compilersSet as compilers, babelCompiler }
+// export { compilersSet as compilers, jscriptxCompiler as babelCompiler }
 
 /**
  * @typedef {BaseTags[number] | 'link'} KeyTags
@@ -199,15 +200,31 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
             )
             console.log([].slice.call(arguments).join())
          }
+         
+         function onerror (errorMsg, filename, line, char, error) {
+            // console.log(errorMsg)
+            const appCode = document.querySelector('script#App') || document.querySelector('script');            
+            
+            const [, sourceMap] = appCode.textContent.split(/\n\/\/# sourceMappingURL\=data:application\/json(?:;charset=utf-8)?;base64,/)
+            
+            const value = '> ' + errorMsg + ' <' + filename + '>' + '`' + line + ':' + char + '`';
+
+            window.parent.postMessage({
+               value, error, filename, position: { line, char }, sourceMap
+            }, "*")
+            // return true
+         }
 
          /**
+          * @description Eval console.log expressions
           * @param {{ data: string; }} event
           */
          function onmessage(event) {
             if (typeof event.data == "string") {
-               let data = { type: "string" }
-               try {
-                  data.value = globalThis.eval(event.data)
+               
+               /** @type {{type: 'string', value?: string | object, error?: string}} */
+               const data = { type: "string" }
+               try { data.value = globalThis.eval(event.data)
                } catch (e) {
                   data.value = data.error = "> " + e.stack.split(":").shift() + ": " + e.message
                }
@@ -225,7 +242,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
          }
 
          const onmessageFunc = "window.addEventListener('message', " + onmessage.toString() + ");"
-         var preScript = "\n" + loclog.toString() + "\n" + onmessageFunc + "\n\n";         
+         const onError = 'window.onerror = ' + onerror.toString() + '\n\n'
+         var preScript = "\n" + loclog.toString() + "\n" + onmessageFunc + "\n\n" + onError;
       }
 
       // convert to js:
@@ -235,9 +253,15 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
       let globalReinitializer = generateGlobalInintializer(code)
 
       if (!options.appCode) {
-         code = 'window.addEventListener("' + (scriptType ? "load" : "DOMContentLoaded") + '", function(){' +
-            code + "\n\n" + globalReinitializer + "\n});"
-         // TODO change `options.appCode` to `!scriptType` and `scriptType ? 'load' : 'DOMContentLoaded' to `load`
+
+         const loadEvent = (scriptType ? "load" : "DOMContentLoaded");
+
+         var [code, map] = code.split(SOURCE_MAP_base64);            
+         
+         // TODO? change `options.appCode` to `!scriptType` and `scriptType ? 'load' : 'DOMContentLoaded' to `load`
+         code = 'window.addEventListener("' + loadEvent + '", function(){' + code + "\n\n" + globalReinitializer + "\n});"
+
+         if (map) code += SOURCE_MAP_base64 + map
       }
 
       if (terminalJar) {
@@ -272,7 +296,8 @@ export function createPage(prevUrl, additionalScripts, scriptType, options) {
          /**
           * @type ChoiceMenu
          */
-         //_ts-expect-error
+         //ts-expect-error
+         //@ts-ignore
          let modeMenu = editor.container.querySelector("choice-menu")
          if (modeMenu) {
             /**
@@ -512,13 +537,11 @@ function buildAndTranspile(code, options) {
       /**
        * @type {import('./utils/builder').default}
        */
-      const neoBuild = window["pageBundler"]['default'];
-
-      let sourceMap = null
+      const neoBuild = window["pageBundler"]['default'];      
 
       // TODO add extensions if is absent (inside itself simplestBundler): ?      
       code = neoBuild(code, playgroundObject.fileStorage || window["fileStore"], {
-         entryPoint: 'App.svelte',
+         entryPoint: playgroundObject.entryPointName || 'App.svelte',
          advanced: { require: "same as imports" },
          maps: options.maps,
          shiftMaps: options.shiftMaps
@@ -584,7 +607,7 @@ export function webCompile(isJsx, libList, sourceCode, compileOptions) {
       // globalThis.__debug && console.log(Object.values(compilers)[compilerMode]);
       // let [iframe, curUrl] = createPage(playgroundObject.curUrl, Object.values(compilers)[compilerMode], jsxMode ? babelCompiler.mode : undefined);
 
-      const scriptTagType = compileOptions.scriptMode || (isJsx ? babelCompiler.mode : undefined)
+      const scriptTagType = compileOptions.scriptMode || (isJsx ? jscriptxCompiler.mode : undefined)
 
       const [iframe, curUrl] = createPage(playgroundObject.curUrl, libList, scriptTagType, {
          appCode: sourceCode,
@@ -687,3 +710,5 @@ function lightRerender(iframe, editors, isJsx, libList, sourceCode) {
 
    // iframe.contentDocument.head.querySelector('script').innerHTML = editors[2].getValue()
 }
+
+

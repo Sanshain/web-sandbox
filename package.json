@@ -20,6 +20,9 @@
     "@types/react-dom": "^18.0.11"
   },
   "dependencies": {
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-standalone": "^6.26.0",
+    "buble": "^0.20.0",
     "emmet": "^2.3.6",
     "less-plugin-sass2less": "github:Sanshain/less-plugin-sass2less",
     "neo-builder": "^2.2.18-b",
@@ -34,6 +37,8 @@
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
     "@rollup/plugin-typescript": "^11.1.0",
+    "@types/ace": "^0.0.48",
+    "@types/buble": "^0.20.1",
     "@types/jest": "^29.5.1",
     "dts-bundle-generator": "^8.0.0",
     "eslint-config-prettier": "^8.8.0",

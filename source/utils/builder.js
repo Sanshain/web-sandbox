@@ -5,7 +5,7 @@ import { encode } from 'sourcemap-codec';
 import { deepMergeMap } from 'neo-builder/source/utils';
 
 
-
+export const SOURCE_MAP_base64 = '\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,'
 
 
 /**
@@ -30,17 +30,21 @@ export default function buildScript(content, store, options) {
    // let exportedFiles = [];   
 
    // globalThis.__debug && console.log(build);
-   let sourceMap = null;
+   let sourceMap = null;   
    
    let builtCode = build(content, '.', {
-      ...options,
+      ...options,      
       getContent: (/** @type {string} */ fileName) => {
          // let content = store[key] || store[key.replace(/^\.\//m, '')] || ''
          let content = store[fileName] || store[fileName + '.js'] || store[fileName + '.ts'] || store[fileName + '.jsx'] || store[fileName + '.tsx'];
 
          return content || '';
       },
-      sourceMaps: !options.maps ? options.sourceMaps : void 0,
+      sourceMaps: !options.maps ? {
+         encode,
+         verbose: true,
+         shift: options.shiftMaps + 1 + 1 
+      } : void 0,
       getSourceMap: options.maps ? ({ mapping, sourcesContent, files }) => {
          
          const maps = options.maps
@@ -69,12 +73,16 @@ export default function buildScript(content, store, options) {
          outsideMap.mappings = encode(mergedMap);
          sourceMap = outsideMap;
 
+         return void 0;
+
       } : undefined
    });      
 
+   // debugger
+   
    // const sourcemaps = `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,` + window.btoa(JSON.stringify(sourceMap));
    if (sourceMap) {
-      const sourcemaps = `\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,` + window.btoa(JSON.stringify(sourceMap));
+      const sourcemaps = SOURCE_MAP_base64 + window.btoa(JSON.stringify(sourceMap));
       builtCode = `var App = (function() { ${builtCode.replace('require("svelte/internal")', 'svelteRuntime')} })()` + (sourcemaps || '');
       // return { builtCode, sourcemaps }
    }

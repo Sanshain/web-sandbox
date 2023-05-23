@@ -1,0 +1,25 @@
+.runtime__error{
+    position: absolute;
+    /* text-decoration: underline; */
+    /* text-decoration-style: wavy; */
+    border-bottom: 1px dotted red;   
+    pointer-events: all;
+}
+
+.runtime_error{
+    color: #ff3300 !important;
+    color: #dd5511 !important;
+    color: #ff9966 !important;
+    /* background-color: #995500!important; */
+    opacity: .95;
+    padding: .25em .5em;
+}
+
+.ace_tooltip.runtime_error__tooltop{
+    display: block;
+    position: absolute;
+    left: 2em;
+    opacity: .8;
+    color: #dd3300;
+    background-color: beige;
+}
